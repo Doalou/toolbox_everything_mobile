@@ -3,18 +3,26 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:super_clipboard/super_clipboard.dart';
 
 class QrCodeScreen extends StatefulWidget {
   const QrCodeScreen({super.key});
 
   @override
-  _QrCodeScreenState createState() => _QrCodeScreenState();
+  QrCodeScreenState createState() => QrCodeScreenState();
 }
 
-class _QrCodeScreenState extends State<QrCodeScreen> with SingleTickerProviderStateMixin {
+class QrCodeScreenState extends State<QrCodeScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _textController = TextEditingController();
   String _qrData = '';
+  bool _isDialogShowing = false;
+  final GlobalKey _qrKey = GlobalKey();
 
   @override
   void initState() {
@@ -27,6 +35,119 @@ class _QrCodeScreenState extends State<QrCodeScreen> with SingleTickerProviderSt
     _tabController.dispose();
     _textController.dispose();
     super.dispose();
+  }
+
+  // Copie du texte retirée sur demande
+
+  Future<void> _copyQrImageToClipboard() async {
+    if (_qrData.isEmpty) return;
+
+    try {
+      final clipboard = SystemClipboard.instance;
+      if (clipboard == null) {
+        Fluttertoast.showToast(msg: 'Presse-papiers non disponible');
+        return;
+      }
+
+      // Rendre le QR en image PNG en mémoire
+      final qrPainter = QrPainter(
+        data: _qrData,
+        version: QrVersions.auto,
+        color: Colors.black,
+        emptyColor: Colors.white,
+        gapless: true,
+      );
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      const size = Size(300, 300);
+      qrPainter.paint(canvas, size);
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(300, 300);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final bytes = byteData!.buffer.asUint8List();
+
+      final item = DataWriterItem();
+      item.add(Formats.png(bytes));
+      await clipboard.write([item]);
+
+      Fluttertoast.showToast(msg: 'QR Code copié dans le presse-papiers');
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Impossible de copier l\'image: $e',
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
+  Future<void> _saveQrCode() async {
+    if (_qrData.isEmpty) return;
+
+    try {
+      // Demander les permissions de stockage
+      final status = await Permission.storage.request();
+      if (!status.isGranted) {
+        Fluttertoast.showToast(msg: 'Permission de stockage requise');
+        return;
+      }
+
+      final qrPainter = QrPainter(
+        data: _qrData,
+        version: QrVersions.auto,
+        color: Colors.black,
+        emptyColor: Colors.white,
+        gapless: true,
+      );
+
+      // Obtenir le dossier Downloads
+      Directory? downloadsDir;
+      if (Platform.isAndroid) {
+        // Sur Android, essayer d'accéder au dossier Downloads
+        final externalDir = await getExternalStorageDirectory();
+        if (externalDir != null) {
+          downloadsDir = Directory('${externalDir.path}/../Download');
+          if (!await downloadsDir.exists()) {
+            downloadsDir = Directory('${externalDir.path}/../Downloads');
+          }
+        }
+      } else if (Platform.isIOS) {
+        // Sur iOS, utiliser le dossier Documents
+        downloadsDir = await getApplicationDocumentsDirectory();
+      } else {
+        // Sur d'autres plateformes, utiliser le dossier Documents
+        downloadsDir = await getApplicationDocumentsDirectory();
+      }
+
+      if (downloadsDir == null || !await downloadsDir.exists()) {
+        // Fallback vers le dossier Documents
+        downloadsDir = await getApplicationDocumentsDirectory();
+      }
+
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'qr_code_$timestamp.png';
+      final file = File('${downloadsDir.path}/$fileName');
+
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      final size = const Size(300, 300);
+
+      qrPainter.paint(canvas, size);
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(300, 300);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final bytes = byteData!.buffer.asUint8List();
+
+      await file.writeAsBytes(bytes);
+
+      Fluttertoast.showToast(
+        msg: 'QR Code sauvegardé dans ${downloadsDir.path}',
+        toastLength: Toast.LENGTH_LONG,
+      );
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Erreur lors de la sauvegarde: $e',
+        backgroundColor: Colors.red,
+      );
+    }
   }
 
   @override
@@ -58,6 +179,8 @@ class _QrCodeScreenState extends State<QrCodeScreen> with SingleTickerProviderSt
   }
 
   Widget _buildGeneratorTab() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -84,17 +207,80 @@ class _QrCodeScreenState extends State<QrCodeScreen> with SingleTickerProviderSt
             },
           ),
           const SizedBox(height: 20),
-          if (_qrData.isNotEmpty)
+          if (_qrData.isNotEmpty) ...[
+            Expanded(
+              child: Column(
+                children: [
+                  // QR Code
+                  Container(
+                    key: _qrKey,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: colorScheme.outline.withOpacity(0.2),
+                      ),
+                    ),
+                    child: QrImageView(
+                      data: _qrData,
+                      version: QrVersions.auto,
+                      size: 200.0,
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Boutons d'action
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _copyQrImageToClipboard,
+                        icon: const Icon(Icons.copy),
+                        label: const Text('Copier'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.primaryContainer,
+                          foregroundColor: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _saveQrCode,
+                        icon: const Icon(Icons.save),
+                        label: const Text('Enregistrer'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.secondaryContainer,
+                          foregroundColor: colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
             Expanded(
               child: Center(
-                child: QrImageView(
-                  data: _qrData,
-                  version: QrVersions.auto,
-                  size: 200.0,
-                  backgroundColor: Colors.white,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.qr_code,
+                      size: 80,
+                      color: colorScheme.onSurface.withOpacity(0.3),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Entrez du texte pour générer un QR Code',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -103,9 +289,14 @@ class _QrCodeScreenState extends State<QrCodeScreen> with SingleTickerProviderSt
   Widget _buildScannerTab() {
     return MobileScanner(
       onDetect: (capture) {
+        if (_isDialogShowing) return;
+
         final List<Barcode> barcodes = capture.barcodes;
         if (barcodes.isNotEmpty) {
           final String code = barcodes.first.rawValue ?? 'Aucune donnée';
+          setState(() {
+            _isDialogShowing = true;
+          });
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -126,9 +317,13 @@ class _QrCodeScreenState extends State<QrCodeScreen> with SingleTickerProviderSt
                 ),
               ],
             ),
-          );
+          ).then((_) {
+            setState(() {
+              _isDialogShowing = false;
+            });
+          });
         }
       },
     );
   }
-} 
+}

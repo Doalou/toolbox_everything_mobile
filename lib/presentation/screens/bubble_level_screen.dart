@@ -1,25 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 
 class BubbleLevelScreen extends StatefulWidget {
   const BubbleLevelScreen({super.key});
 
   @override
-  _BubbleLevelScreenState createState() => _BubbleLevelScreenState();
+  BubbleLevelScreenState createState() => BubbleLevelScreenState();
 }
 
-class _BubbleLevelScreenState extends State<BubbleLevelScreen> {
-  double _x = 0.0, _y = 0.0;
+class BubbleLevelScreenState extends State<BubbleLevelScreen> {
+  double x = 0.0;
+  double y = 0.0;
 
   @override
   void initState() {
     super.initState();
+    // Appliquer le verrouillage selon les paramètres utilisateur
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final settings = Provider.of<SettingsProvider>(context, listen: false);
+      if (settings.lockBubbleLevelPortrait) {
+        SystemChrome.setPreferredOrientations(const [
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ]);
+      }
+    });
     accelerometerEventStream().listen((AccelerometerEvent event) {
       setState(() {
-        _x = event.x;
-        _y = event.y;
+        x = event.x;
+        y = event.y;
       });
     });
+  }
+
+  @override
+  void dispose() {
+    // Rétablir les orientations par défaut lorsque l'écran est quitté
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    super.dispose();
   }
 
   @override
@@ -30,8 +56,8 @@ class _BubbleLevelScreenState extends State<BubbleLevelScreen> {
         child: CustomPaint(
           size: const Size(200, 200),
           painter: BubbleLevelPainter(
-            x: _x,
-            y: _y,
+            x: x,
+            y: y,
             dividerColor: Theme.of(context).dividerColor,
             primaryColor: Theme.of(context).colorScheme.primary,
           ),
@@ -79,4 +105,4 @@ class BubbleLevelPainter extends CustomPainter {
   bool shouldRepaint(BubbleLevelPainter oldDelegate) {
     return x != oldDelegate.x || y != oldDelegate.y;
   }
-} 
+}

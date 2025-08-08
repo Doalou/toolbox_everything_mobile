@@ -6,10 +6,10 @@ class UnitConverterScreen extends StatefulWidget {
   const UnitConverterScreen({super.key});
 
   @override
-  _UnitConverterScreenState createState() => _UnitConverterScreenState();
+  UnitConverterScreenState createState() => UnitConverterScreenState();
 }
 
-class _UnitConverterScreenState extends State<UnitConverterScreen> {
+class UnitConverterScreenState extends State<UnitConverterScreen> {
   final ConversionService _conversionService = ConversionService();
   late ConversionCategory _selectedCategory;
   late Unit _fromUnit;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:toolbox_everything_mobile/core/models/tool_item.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/password_generator_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/qr_code_screen.dart';
@@ -11,6 +11,12 @@ import 'package:toolbox_everything_mobile/presentation/screens/file_converter_sc
 import 'package:toolbox_everything_mobile/presentation/screens/downloader_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/about_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/settings_screen.dart';
+import 'package:toolbox_everything_mobile/presentation/screens/number_converter_screen.dart';
+import 'package:toolbox_everything_mobile/presentation/screens/notes_screen.dart';
+import 'package:toolbox_everything_mobile/presentation/screens/lorem_generator_screen.dart';
+import 'package:toolbox_everything_mobile/presentation/screens/hash_calculator_screen.dart';
+import 'package:toolbox_everything_mobile/presentation/screens/timer_screen.dart';
+import 'package:toolbox_everything_mobile/presentation/screens/connection_tester_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/widgets/tool_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -22,7 +28,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late List<ToolItem> tools;
-  
+  late List<ToolItem> filteredTools;
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
@@ -30,426 +39,533 @@ class _HomeScreenState extends State<HomeScreen> {
       ToolItem(
         title: 'Générateur de MDP',
         icon: Icons.password,
-        screen: const PasswordGeneratorScreen(),
+        screenBuilder: () => const PasswordGeneratorScreen(),
+        category: ToolCategory.security,
       ),
       ToolItem(
         title: 'QR Code',
         icon: Icons.qr_code,
-        screen: const QrCodeScreen(),
+        screenBuilder: () => const QrCodeScreen(),
+        category: ToolCategory.utilities,
       ),
       ToolItem(
         title: 'Convertisseur d\'unités',
         icon: Icons.swap_horiz,
-        screen: const UnitConverterScreen(),
+        screenBuilder: () => const UnitConverterScreen(),
+        category: ToolCategory.conversion,
+      ),
+      ToolItem(
+        title: 'Convertisseur binaire',
+        icon: Icons.transform,
+        screenBuilder: () => const NumberConverterScreen(),
+        category: ToolCategory.conversion,
+      ),
+      ToolItem(
+        title: 'Bloc-notes',
+        icon: Icons.note_add,
+        screenBuilder: () => const NotesScreen(),
+        category: ToolCategory.productivity,
+      ),
+      ToolItem(
+        title: 'Lorem Ipsum',
+        icon: Icons.text_snippet,
+        screenBuilder: () => const LoremGeneratorScreen(),
+        category: ToolCategory.productivity,
+      ),
+      ToolItem(
+        title: 'Calculateur Hash',
+        icon: Icons.fingerprint,
+        screenBuilder: () => const HashCalculatorScreen(),
+        category: ToolCategory.security,
+      ),
+      ToolItem(
+        title: 'Minuteur',
+        icon: Icons.timer,
+        screenBuilder: () => const TimerScreen(),
+        category: ToolCategory.utilities,
       ),
       ToolItem(
         title: 'Boussole',
         icon: Icons.explore,
-        screen: const CompassScreen(),
+        screenBuilder: () => const CompassScreen(),
+        category: ToolCategory.mobile,
       ),
       ToolItem(
         title: 'Niveau à bulle',
         icon: Icons.architecture,
-        screen: const BubbleLevelScreen(),
+        screenBuilder: () => const BubbleLevelScreen(),
+        category: ToolCategory.mobile,
       ),
       ToolItem(
         title: 'Convertisseur de fichiers',
-        icon: Icons.transform,
-        screen: const FileConverterScreen(),
+        icon: Icons.file_copy,
+        screenBuilder: () => const FileConverterScreen(),
+        category: ToolCategory.conversion,
       ),
       ToolItem(
         title: 'Téléchargeur',
         icon: Icons.download,
-        screen: const DownloaderScreen(),
+        screenBuilder: () => const DownloaderScreen(),
+        category: ToolCategory.media,
+      ),
+      ToolItem(
+        title: 'Testeur de Connexion',
+        icon: Icons.wifi,
+        screenBuilder: () => const ConnectionTesterScreen(),
+        category: ToolCategory.utilities,
       ),
     ];
+    filteredTools = List.from(tools);
+
+    _searchController.addListener(_filterTools);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterTools() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        filteredTools = List.from(tools);
+      } else {
+        filteredTools = tools.where((tool) {
+          return tool.title.toLowerCase().contains(query);
+        }).toList();
+      }
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchController.clear();
+        filteredTools = List.from(tools);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Responsive grid calculation
+    int crossAxisCount = 2;
+    if (screenWidth > 600) crossAxisCount = 3;
+    if (screenWidth > 900) crossAxisCount = 4;
+
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         slivers: [
-          // AppBar moderne avec design héroïque  
+          // Modern App Bar
           SliverAppBar(
-            expandedHeight: 140,
+            expandedHeight: 160,
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: Colors.transparent,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primaryContainer.withOpacity(0.4),
-                      colorScheme.secondaryContainer.withOpacity(0.3),
-                      colorScheme.tertiaryContainer.withOpacity(0.2),
-                    ],
-                    stops: const [0.0, 0.6, 1.0],
+            backgroundColor: colorScheme.surface,
+            surfaceTintColor: Colors.transparent,
+            flexibleSpace: FlexibleSpaceBar(background: _buildHeader(context)),
+            actions: [_buildActionButtons(context)],
+          ),
+
+          // Search Bar
+          if (_isSearching)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: colorScheme.outline.withOpacity(0.2),
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher un outil...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
                   ),
                 ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+              ),
+            ),
+
+          // Tools Section Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.apps_rounded,
+                    color: colorScheme.primary,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _isSearching
+                          ? 'Résultats (${filteredTools.length})'
+                          : 'Vos outils',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.onSurface,
+                          ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _toggleSearch,
+                    icon: Icon(
+                      _isSearching ? Icons.close : Icons.search,
+                      color: colorScheme.primary,
+                    ),
+                    tooltip: _isSearching
+                        ? 'Fermer la recherche'
+                        : 'Rechercher',
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Tools Grid - Uniform and Responsive
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 0.9,
+              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                return ToolCard(
+                  tool: filteredTools[index],
+                  animationDelay: 0, // Disable internal animation
+                );
+              }, childCount: filteredTools.length),
+            ),
+          ),
+
+          // Bottom spacing
+          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        ],
+      ),
+
+      // Modern FAB
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: "home_suggest",
+        onPressed: () => _showSuggestionBottomSheet(context),
+        backgroundColor: colorScheme.primaryContainer,
+        foregroundColor: colorScheme.onPrimaryContainer,
+        elevation: 0,
+        icon: Icon(Icons.lightbulb_outline, size: 20),
+        label: const Text(
+          'Suggérer',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF6750A4).withOpacity(0.15),
+            const Color(0xFFE91E63).withOpacity(0.10),
+            const Color(0xFF00BCD4).withOpacity(0.08),
+            colorScheme.surface.withOpacity(0.8),
+          ],
+          stops: const [0.0, 0.3, 0.6, 1.0],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 1000),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: const RadialGradient(
+                        center: Alignment.center,
+                        colors: [Color(0xFF6750A4), Color(0xFF9C27B0)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6750A4).withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.build_circle,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 16),
-                        FadeInDown(
-                          delay: const Duration(milliseconds: 200),
-                          child: Text(
-                            'Toolbox',
-                            style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -1.0,
-                            ),
-                          ),
+                        Text(
+                          'Toolbox Everything',
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                              ),
                         ),
                         const SizedBox(height: 4),
-                        FadeInDown(
-                          delay: const Duration(milliseconds: 400),
-                          child: Text(
-                            'Vos outils numériques essentiels',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: colorScheme.onSurface.withOpacity(0.8),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        FadeInDown(
-                          delay: const Duration(milliseconds: 600),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer.withOpacity(0.8),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '100% Offline • Gratuit',
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                color: colorScheme.onPrimaryContainer,
-                                fontWeight: FontWeight.w600,
+                        Text(
+                          'Vos outils numériques essentiels',
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                                fontWeight: FontWeight.w500,
                               ),
-                            ),
-                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ),
-            ),
-            actions: [
-              FadeInRight(
-                delay: const Duration(milliseconds: 800),
-                child: Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.settings_outlined, 
-                          color: colorScheme.primary, size: 24),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) => const SettingsScreen(),
-                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                return SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(1.0, 0.0),
-                                    end: Offset.zero,
-                                  ).animate(CurvedAnimation(
-                                    parent: animation,
-                                    curve: Curves.easeOutCubic,
-                                  )),
-                                  child: child,
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.info_outline, 
-                          color: colorScheme.primary, size: 24),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) => const AboutScreen(),
-                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                return SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(1.0, 0.0),
-                                    end: Offset.zero,
-                                  ).animate(CurvedAnimation(
-                                    parent: animation,
-                                    curve: Curves.easeOutCubic,
-                                  )),
-                                  child: child,
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
             ],
           ),
-          
-          // Section statistiques
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: FadeInUp(
-                delay: const Duration(milliseconds: 800),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.surfaceContainer,
-                        colorScheme.surfaceContainerLow,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                '${tools.length}',
-                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Flexible(
-                              child: Text(
-                                'Outils',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurface.withOpacity(0.7),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 48,
-                        color: colorScheme.outlineVariant.withOpacity(0.5),
-                      ),
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.offline_bolt,
-                              color: colorScheme.primary,
-                              size: 28,
-                            ),
-                            const SizedBox(height: 4),
-                            Flexible(
-                              child: Text(
-                                'Offline',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurface.withOpacity(0.7),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 48,
-                        color: colorScheme.outlineVariant.withOpacity(0.5),
-                      ),
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.security,
-                              color: colorScheme.primary,
-                              size: 28,
-                            ),
-                            const SizedBox(height: 4),
-                            Flexible(
-                              child: Text(
-                                'Sécurisé',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurface.withOpacity(0.7),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(right: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildActionButton(
+            context,
+            Icons.settings_outlined,
+            () => _navigateToScreen(context, const SettingsScreen()),
           ),
-          
-          // Titre section outils
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-              child: FadeInUp(
-                delay: const Duration(milliseconds: 1000),
-                child: Text(
-                  'Découvrez nos outils',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          
-          // Grille asymétrique moderne
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            sliver: SliverMasonryGrid.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childCount: tools.length,
-              itemBuilder: (context, index) {
-                // Pattern asymétrique pour créer du dynamisme
-                final isLarge = (index == 0 || index == 3 || index == 5);
-                
-                return SizedBox(
-                  height: isLarge ? 220 : 180,
-                  child: ToolCard(
-                    tool: tools[index],
-                    animationDelay: 1200 + (index * 100),
-                  ),
-                );
-              },
-            ),
-          ),
-          
-          // Section vide pour permettre le scroll
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 100),
+          const SizedBox(width: 8),
+          _buildActionButton(
+            context,
+            Icons.info_outline,
+            () => _navigateToScreen(context, const AboutScreen()),
           ),
         ],
       ),
-      
-      // Floating Action Button avec design moderne
-      floatingActionButton: FadeInUp(
-        delay: const Duration(milliseconds: 2000),
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            // Action pour suggestions d'amélioration
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (context) => Container(
-                height: MediaQuery.of(context).size.height * 0.4,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colorScheme.surface.withOpacity(0.9),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          child: Icon(icon, color: colorScheme.primary, size: 24),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToScreen(BuildContext context, Widget screen) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => screen,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position:
+                Tween<Offset>(
+                  begin: const Offset(1.0, 0.0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
                 ),
+            child: FadeTransition(opacity: animation, child: child),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
+  }
+
+  void _showSuggestionBottomSheet(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.45,
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12),
+              decoration: BoxDecoration(
+                color: colorScheme.outline.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
+                    // Icon
                     Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(top: 12),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: colorScheme.outline,
-                        borderRadius: BorderRadius.circular(2),
+                        color: colorScheme.primaryContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.lightbulb_outline,
+                        size: 32,
+                        color: colorScheme.onPrimaryContainer,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.lightbulb_outline,
-                            size: 48,
-                            color: colorScheme.primary,
+
+                    const SizedBox(height: 20),
+
+                    // Title
+                    Text(
+                      'Suggestions d\'outils',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.onSurface,
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Suggestions d\'outils',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Vous avez une idée d\'outil à ajouter ? Nous sommes à l\'écoute !',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: colorScheme.onSurface.withOpacity(0.7),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.send),
-                              label: const Text('Envoyer une suggestion'),
-                            ),
-                          ),
-                        ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Description
+                    Text(
+                      'Vous avez une idée d\'outil à ajouter ?\nNous sommes à l\'écoute de vos suggestions !',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                        height: 1.5,
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    // Action Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          Navigator.pop(context);
+
+                          const mailto = 'contact@doalo.fr';
+                          const subject = 'Suggestion pour Toolbox Everything';
+                          const body =
+                              'Bonjour, j\'ai une idée d\'outil à suggérer : ...';
+
+                          final Uri emailLaunchUri = Uri(
+                            scheme: 'mailto',
+                            path: mailto,
+                            query:
+                                'subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}',
+                          );
+
+                          if (await canLaunchUrl(emailLaunchUri)) {
+                            await launchUrl(emailLaunchUri);
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                    'Impossible d\'ouvrir une application d\'e-mail.',
+                                  ),
+                                  backgroundColor: colorScheme.error,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.send_rounded),
+                        label: const Text(
+                          'Envoyer une suggestion',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            );
-          },
-          backgroundColor: colorScheme.primaryContainer,
-          foregroundColor: colorScheme.onPrimaryContainer,
-          elevation: 0,
-          icon: const Icon(Icons.add),
-          label: const Text('Suggérer'),
+            ),
+          ],
         ),
       ),
     );
   }
-} 
+}

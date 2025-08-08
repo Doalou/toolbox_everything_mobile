@@ -1,20 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:provider/provider.dart';
-import 'package:animate_do/animate_do.dart';
 import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
+import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
+import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final settingsProvider = Provider.of<SettingsProvider>(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         slivers: [
           // AppBar moderne
           SliverAppBar(
@@ -30,8 +42,8 @@ class SettingsScreen extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      colorScheme.primaryContainer.withOpacity(0.3),
-                      colorScheme.secondaryContainer.withOpacity(0.2),
+                      colorScheme.primaryContainer.withValues(alpha: 0.3),
+                      colorScheme.secondaryContainer.withValues(alpha: 0.2),
                     ],
                   ),
                 ),
@@ -40,15 +52,13 @@ class SettingsScreen extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(60, 20, 20, 0),
                     child: Align(
                       alignment: Alignment.bottomLeft,
-                      child: FadeInLeft(
-                        delay: const Duration(milliseconds: 200),
-                        child: Text(
-                          'Paramètres',
-                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                      child: Text(
+                        'Paramètres',
+                        style: Theme.of(context).textTheme.headlineLarge
+                            ?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ),
                   ),
@@ -56,41 +66,54 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Contenu des paramètres
           SliverPadding(
             padding: const EdgeInsets.all(20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Section Apparence
-                FadeInUp(
-                  delay: const Duration(milliseconds: 400),
-                  child: _buildSectionHeader(context, 'Apparence', Icons.palette),
-                ),
-                
+                _buildSectionHeader(context, 'Apparence', Icons.palette),
+
                 const SizedBox(height: 16),
-                
+
+                // Sélecteur de thème
+                _buildThemeSelector(context, themeProvider),
+
+                const SizedBox(height: 16),
+
                 // Carte couleur principale
-                FadeInUp(
-                  delay: const Duration(milliseconds: 600),
-                  child: _buildColorCard(context, themeProvider),
-                ),
-                
+                _buildColorCard(context, themeProvider),
+
                 const SizedBox(height: 32),
-                
-                // Section À propos
-                FadeInUp(
-                  delay: const Duration(milliseconds: 800),
-                  child: _buildSectionHeader(context, 'À propos', Icons.info),
+
+                // Section Comportement
+                _buildSectionHeader(context, 'Comportement', Icons.tune),
+
+                const SizedBox(height: 12),
+
+                Card(
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    leading: const Icon(Icons.screen_lock_rotation),
+                    title: const Text(
+                      'Verrouiller le niveau à bulle en portrait',
+                    ),
+                    subtitle: const Text(
+                      'Empêche la rotation pour une lecture plus stable',
+                    ),
+                    trailing: Switch(
+                      value: settingsProvider.lockBubbleLevelPortrait,
+                      onChanged: (v) =>
+                          settingsProvider.setLockBubbleLevelPortrait(v),
+                    ),
+                  ),
                 ),
-                
-                const SizedBox(height: 16),
-                
-                // Carte informations app
-                FadeInUp(
-                  delay: const Duration(milliseconds: 1000),
-                  child: _buildInfoCard(context),
-                ),
+
+                // Section À propos retirée sur demande
               ]),
             ),
           ),
@@ -99,9 +122,57 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+  Widget _buildThemeSelector(
+    BuildContext context,
+    ThemeProvider themeProvider,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Mode d\'affichage',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  icon: Icon(Icons.light_mode),
+                  label: Text('Clair'),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.system,
+                  icon: Icon(Icons.brightness_auto),
+                  label: Text('Système'),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  icon: Icon(Icons.dark_mode),
+                  label: Text('Sombre'),
+                ),
+              ],
+              selected: {themeProvider.themeMode},
+              onSelectionChanged: (newSelection) {
+                themeProvider.setThemeMode(newSelection.first);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    IconData icon,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Row(
       children: [
         Container(
@@ -110,11 +181,7 @@ class SettingsScreen extends StatelessWidget {
             color: colorScheme.primaryContainer,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            icon,
-            color: colorScheme.onPrimaryContainer,
-            size: 20,
-          ),
+          child: Icon(icon, color: colorScheme.onPrimaryContainer, size: 20),
         ),
         const SizedBox(width: 12),
         Text(
@@ -130,27 +197,24 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildColorCard(BuildContext context, ThemeProvider themeProvider) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            colorScheme.surface,
-            colorScheme.surfaceContainerLow,
-          ],
+          colors: [colorScheme.surface, colorScheme.surfaceContainerLow],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.08),
+            color: colorScheme.shadow.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
         border: Border.all(
-          color: colorScheme.outlineVariant.withOpacity(0.3),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
       child: Material(
@@ -176,7 +240,9 @@ class SettingsScreen extends StatelessWidget {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: themeProvider.seedColor.withOpacity(0.3),
+                              color: themeProvider.seedColor.withValues(
+                                alpha: 0.3,
+                              ),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
                             ),
@@ -189,9 +255,9 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(width: 20),
-                    
+
                     // Texte descriptif
                     Expanded(
                       child: Column(
@@ -199,21 +265,23 @@ class SettingsScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Couleur principale',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Personnalisez l\'apparence de votre application',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurface.withOpacity(0.7),
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ),
+                                ),
                           ),
                         ],
                       ),
                     ),
-                    
+
                     // Icône action
                     Icon(
                       Icons.arrow_forward_ios,
@@ -222,27 +290,27 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 20),
-                
-                // Palette de couleurs expressives 
+
+                // Palette de couleurs expressives
                 Text(
                   'Couleurs suggérées',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface.withOpacity(0.8),
+                    color: colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // Grille de couleurs
                 Wrap(
                   spacing: 12,
                   runSpacing: 12,
-                  children: ThemeProvider.expressiveColors.map((color) {
-                    final isSelected = color.value == themeProvider.seedColor.value;
-                    
+                  children: AppConstants.expressiveColors.map((color) {
+                    final isSelected = color == themeProvider.seedColor;
+
                     return GestureDetector(
                       onTap: () {
                         themeProvider.setSeedColor(color);
@@ -255,7 +323,7 @@ class SettingsScreen extends StatelessWidget {
                           color: color,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected 
+                            color: isSelected
                                 ? colorScheme.onSurface
                                 : Colors.transparent,
                             width: 2,
@@ -263,18 +331,14 @@ class SettingsScreen extends StatelessWidget {
                           boxShadow: [
                             if (isSelected)
                               BoxShadow(
-                                color: color.withOpacity(0.4),
+                                color: color.withValues(alpha: 0.4),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
                           ],
                         ),
                         child: isSelected
-                            ? Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 20,
-                              )
+                            ? Icon(Icons.check, color: Colors.white, size: 20)
                             : null,
                       ),
                     );
@@ -288,79 +352,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.surface,
-            colorScheme.surfaceContainerLow,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.widgets,
-                    color: colorScheme.onPrimaryContainer,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Toolbox Everything',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      'Version 1.0.0',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-            
-            Text(
-              'Une collection d\'outils pratiques pour développeurs, étudiants et passionnés de technologie.',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Carte À propos retirée
 
   void _showColorPicker(BuildContext context, ThemeProvider themeProvider) {
     showModalBottomSheet(
@@ -386,7 +378,7 @@ class SettingsScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
+
               // Header
               Padding(
                 padding: const EdgeInsets.all(20),
@@ -394,9 +386,8 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     Text(
                       'Choisissez une couleur',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const Spacer(),
                     IconButton(
@@ -406,22 +397,33 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Color Picker
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: ColorPicker(
-                    pickerColor: themeProvider.seedColor,
-                    onColorChanged: (color) {
-                      themeProvider.setSeedColor(color);
-                    },
-                    labelTypes: const [],
-                    pickerAreaHeightPercent: 0.8,
+                  child: SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width - 40,
+                      ),
+                      child: ColorPicker(
+                        pickerColor: themeProvider.seedColor,
+                        onColorChanged: (color) {
+                          themeProvider.setSeedColor(color);
+                        },
+                        labelTypes: const [],
+                        pickerAreaHeightPercent: 0.6,
+                        displayThumbColor: true,
+                        portraitOnly: true,
+                        paletteType: PaletteType.hsl,
+                        enableAlpha: false,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              
+
               // Actions
               Padding(
                 padding: const EdgeInsets.all(20),
@@ -439,4 +441,4 @@ class SettingsScreen extends StatelessWidget {
       },
     );
   }
-} 
+}

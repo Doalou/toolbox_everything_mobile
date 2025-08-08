@@ -1,4 +1,4 @@
-package com.example.toolbox_everything_mobile
+package com.toolbox.everything.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

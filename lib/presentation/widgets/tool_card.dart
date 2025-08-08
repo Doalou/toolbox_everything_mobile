@@ -1,299 +1,289 @@
 import 'package:flutter/material.dart';
-import 'package:animate_do/animate_do.dart';
 import 'package:toolbox_everything_mobile/core/models/tool_item.dart';
+import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 
 class ToolCard extends StatefulWidget {
   final ToolItem tool;
   final int animationDelay;
+  final VoidCallback? onFavoriteToggle;
 
   const ToolCard({
-    super.key, 
+    super.key,
     required this.tool,
     this.animationDelay = 0,
+    this.onFavoriteToggle,
   });
 
   @override
   State<ToolCard> createState() => _ToolCardState();
 }
 
-class _ToolCardState extends State<ToolCard> 
-    with TickerProviderStateMixin {
-  late AnimationController _hoverController;
-  late AnimationController _tapController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _elevationAnimation;
-  late Animation<double> _glowAnimation;
-  late Animation<double> _tapScaleAnimation;
-  
+class _ToolCardState extends State<ToolCard> {
   bool _isHovered = false;
-
-  @override
-  void initState() {
-    super.initState();
-    
-    // Animation controller pour le hover
-    _hoverController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    
-    // Animation controller pour le tap
-    _tapController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.03,
-    ).animate(CurvedAnimation(
-      parent: _hoverController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _elevationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 12.0,
-    ).animate(CurvedAnimation(
-      parent: _hoverController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _glowAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _hoverController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _tapScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _tapController,
-      curve: Curves.easeOutCubic,
-    ));
-  }
-
-  @override
-  void dispose() {
-    _hoverController.dispose();
-    _tapController.dispose();
-    super.dispose();
-  }
-
-  void _onTapDown(TapDownDetails details) {
-    _tapController.forward();
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    _tapController.reverse();
-  }
-
-  void _onTapCancel() {
-    _tapController.reverse();
-  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return FadeInUp(
-      delay: Duration(milliseconds: widget.animationDelay),
-      duration: const Duration(milliseconds: 800),
-      child: AnimatedBuilder(
-        animation: Listenable.merge([_hoverController, _tapController]),
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value * _tapScaleAnimation.value,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  // Ombre principale
-                  BoxShadow(
-                    color: colorScheme.shadow.withOpacity(0.08),
-                    blurRadius: 8 + (_elevationAnimation.value * 0.5),
-                    offset: Offset(0, 4 + (_elevationAnimation.value * 0.3)),
+
+    // Utilisation des couleurs expressives depuis les constantes
+    final cardColor = AppConstants.expressiveColors.getColorByText(
+      widget.tool.title,
+    );
+
+    return Semantics(
+      label: 'Outil ${widget.tool.title}',
+      hint: 'Appuyez pour ouvrir ${widget.tool.title}',
+      button: true,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: AnimatedContainer(
+          duration: AppConstants.mediumAnimation,
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.identity()
+            ..translate(0.0, _isHovered ? -4.0 : 0.0)
+            ..scale(_isHovered ? 1.02 : 1.0),
+          decoration: BoxDecoration(
+            gradient: _isHovered
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      cardColor.withValues(alpha: 0.1),
+                      cardColor.withValues(alpha: 0.05),
+                    ],
+                  )
+                : LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colorScheme.surfaceContainer,
+                      colorScheme.surfaceContainerLow,
+                    ],
                   ),
-                  // Glow effect
-                  if (_glowAnimation.value > 0)
-                    BoxShadow(
-                      color: colorScheme.primary.withOpacity(0.1 * _glowAnimation.value),
-                      blurRadius: 20 * _glowAnimation.value,
-                      offset: const Offset(0, 0),
-                    ),
-                ],
+            borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
+            border: Border.all(
+              color: _isHovered
+                  ? cardColor.withValues(alpha: 0.4)
+                  : colorScheme.outline.withValues(alpha: 0.1),
+              width: _isHovered ? 2 : 1,
+            ),
+            boxShadow: [
+              if (_isHovered) ...[
+                BoxShadow(
+                  color: cardColor.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: cardColor.withValues(alpha: 0.1),
+                  blurRadius: 40,
+                  offset: const Offset(0, 16),
+                ),
+              ] else
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(
+                AppConstants.largeBorderRadius,
               ),
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.surfaceContainer,
-                        colorScheme.surfaceContainerLow,
+              splashColor: colorScheme.primary.withValues(alpha: 0.1),
+              highlightColor: colorScheme.primary.withValues(alpha: 0.05),
+              onTap: () => _navigateToTool(context),
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(AppConstants.largePadding),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Icon Container avec plus de caractère
+                        AnimatedContainer(
+                          duration: AppConstants.mediumAnimation,
+                          padding: const EdgeInsets.all(
+                            AppConstants.defaultPadding,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: _isHovered
+                                ? RadialGradient(
+                                    center: Alignment.center,
+                                    colors: [
+                                      cardColor.withValues(alpha: 0.8),
+                                      cardColor.withValues(alpha: 0.6),
+                                    ],
+                                  )
+                                : RadialGradient(
+                                    center: Alignment.center,
+                                    colors: [
+                                      colorScheme.primaryContainer,
+                                      colorScheme.primaryContainer.withOpacity(
+                                        0.8,
+                                      ),
+                                    ],
+                                  ),
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.defaultBorderRadius,
+                            ),
+                            boxShadow: _isHovered
+                                ? [
+                                    BoxShadow(
+                                      color: cardColor.withValues(alpha: 0.3),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: AnimatedRotation(
+                            turns: _isHovered ? 0.05 : 0.0,
+                            duration: AppConstants.mediumAnimation,
+                            child: Icon(
+                              widget.tool.icon,
+                              size: AppConstants.largeIconSize,
+                              color: _isHovered
+                                  ? Colors.white
+                                  : colorScheme.onPrimaryContainer,
+                              semanticLabel: 'Icône ${widget.tool.title}',
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: AppConstants.defaultPadding),
+
+                        // Title
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              widget.tool.title,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                    height: 1.3,
+                                  ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: AppConstants.smallPadding),
+
+                        // Interaction indicator plus attrayant
+                        AnimatedContainer(
+                          duration: AppConstants.mediumAnimation,
+                          height: 4,
+                          width: _isHovered ? 50 : 25,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: _isHovered
+                                  ? [cardColor, cardColor.withOpacity(0.6)]
+                                  : [
+                                      colorScheme.primary.withOpacity(0.4),
+                                      colorScheme.primary.withOpacity(0.2),
+                                    ],
+                            ),
+                            borderRadius: BorderRadius.circular(2),
+                            boxShadow: _isHovered
+                                ? [
+                                    BoxShadow(
+                                      color: cardColor.withValues(alpha: 0.4),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                        ),
                       ],
-                      stops: const [0.0, 1.0],
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: _isHovered 
-                          ? colorScheme.primary.withOpacity(0.2)
-                          : colorScheme.outlineVariant.withOpacity(0.3),
-                      width: 1,
                     ),
                   ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(24),
-                    splashColor: colorScheme.primary.withOpacity(0.1),
-                    highlightColor: colorScheme.primary.withOpacity(0.05),
-                    onTapDown: _onTapDown,
-                    onTapUp: _onTapUp,
-                    onTapCancel: _onTapCancel,
-                    onTap: () {
-                      // Haptic feedback
-                      // HapticFeedback.lightImpact();
-                      
-                      // Navigation avec animation héroïque
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) => widget.tool.screen,
-                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                            const begin = Offset(1.0, 0.0);
-                            const end = Offset.zero;
-                            const curve = Curves.easeOutCubic;
 
-                            var tween = Tween(begin: begin, end: end).chain(
-                              CurveTween(curve: curve),
-                            );
-
-                            return SlideTransition(
-                              position: animation.drive(tween),
-                              child: FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              ),
-                            );
-                          },
-                          transitionDuration: const Duration(milliseconds: 500),
+                  // Bouton favori
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: AnimatedOpacity(
+                      opacity: _isHovered || widget.tool.isFavorite ? 1.0 : 0.0,
+                      duration: AppConstants.mediumAnimation,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface.withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.shadow.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                    onHover: (hovering) {
-                      setState(() {
-                        _isHovered = hovering;
-                      });
-                      if (hovering) {
-                        _hoverController.forward();
-                      } else {
-                        _hoverController.reverse();
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Icône avec effet de glow animé
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  colorScheme.primaryContainer.withOpacity(
-                                    0.2 + (0.1 * _glowAnimation.value)
-                                  ),
-                                  colorScheme.primaryContainer.withOpacity(
-                                    0.05 + (0.05 * _glowAnimation.value)
-                                  ),
-                                ],
-                              ),
-                              boxShadow: [
-                                if (_glowAnimation.value > 0)
-                                  BoxShadow(
-                                    color: colorScheme.primary.withOpacity(
-                                      0.15 * _glowAnimation.value
-                                    ),
-                                    blurRadius: 16 * _glowAnimation.value,
-                                    offset: const Offset(0, 0),
-                                  ),
-                              ],
-                            ),
-                            child: AnimatedScale(
-                              scale: 1.0 + (0.1 * _glowAnimation.value),
-                              duration: const Duration(milliseconds: 300),
-                              child: Icon(
-                                widget.tool.icon,
-                                size: 36.0,
-                                color: Color.lerp(
-                                  colorScheme.primary,
-                                  colorScheme.primary,
-                                  _glowAnimation.value,
-                                ),
-                              ),
-                            ),
+                        child: IconButton(
+                          onPressed: () {
+                            widget.tool.toggleFavorite();
+                            widget.onFavoriteToggle?.call();
+                            setState(() {});
+                          },
+                          icon: Icon(
+                            widget.tool.isFavorite
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: widget.tool.isFavorite
+                                ? Colors.red
+                                : colorScheme.onSurface.withOpacity(0.6),
+                            size: 20,
                           ),
-                          
-                          const SizedBox(height: 20),
-                          
-                          // Titre avec style expressif
-                          AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 300),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: colorScheme.onSurface,
-                              fontSize: 16 + (1 * _glowAnimation.value),
-                            ) ?? const TextStyle(),
-                            child: Flexible(
-                              child: Text(
-                                widget.tool.title,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
+                          tooltip: widget.tool.isFavorite
+                              ? 'Retirer des favoris'
+                              : 'Ajouter aux favoris',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
                           ),
-                          
-                          const SizedBox(height: 8),
-                          
-                          // Indicateur d'interaction avec animation
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOutCubic,
-                            height: 3,
-                            width: _isHovered ? 60 : 30,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  colorScheme.primary.withOpacity(
-                                    _isHovered ? 1.0 : 0.4
-                                  ),
-                                  colorScheme.primary.withOpacity(
-                                    _isHovered ? 0.3 : 0.1
-                                  ),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(1.5),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToTool(BuildContext context) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            widget.tool.screenBuilder(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position:
+                Tween<Offset>(
+                  begin: const Offset(1.0, 0.0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
+            child: FadeTransition(opacity: animation, child: child),
           );
         },
+        transitionDuration: const Duration(milliseconds: 400),
       ),
     );
   }
