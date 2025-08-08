@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_min_gpl/return_code.dart';
 
 class DownloaderScreen extends StatefulWidget {
   const DownloaderScreen({super.key});
@@ -25,6 +27,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
   StreamInfo? _downloadingStreamInfo;
   List<VideoStreamInfo> _availableStreams = [];
   List<AudioStreamInfo> _availableAudio = [];
+  List<VideoOnlyStreamInfo> _availableVideoOnlyInternal = [];
 
   @override
   void initState() {
@@ -58,6 +61,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
       _video = null;
       _availableStreams.clear();
       _availableAudio.clear();
+      _availableVideoOnlyInternal.clear();
       _isDownloading = false;
       _downloadProgress = 0.0;
       _downloadingStreamInfo = null;
@@ -73,6 +77,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
       final manifest = await _yt.videos.streamsClient.getManifest(videoId);
       _availableStreams = manifest.muxed.sortByVideoQuality();
       _availableAudio = manifest.audioOnly.sortByBitrate();
+      _availableVideoOnlyInternal = manifest.videoOnly.sortByVideoQuality();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -167,6 +172,76 @@ class DownloaderScreenState extends State<DownloaderScreen>
       }
 
       await fileStream.close();
+
+      // Fallback fusion si l'utilisateur a choisi une "meilleure qualité" qui n'existe pas en muxed
+      // (par ex: 1080p sans audio). Ici, si on a téléchargé une piste vidéo seule
+      // (container parfois 'webm' avec codecs VP9/AV1) on tente d'attacher le meilleur audio disponible.
+      if (streamInfo is VideoOnlyStreamInfo && _availableAudio.isNotEmpty) {
+        final audioBest = _selectBestAudio(_availableAudio);
+        // Télécharge l'audio
+        final audioPath =
+            '${downloadsDir.path}/${sanitizedTitle}_audio.${audioBest.container.name}';
+        final audioFile = File(audioPath);
+        final audioStream = _yt.videos.streamsClient.get(audioBest);
+        final audioSink = audioFile.openWrite();
+        await for (final chunk in audioStream) {
+          audioSink.add(chunk);
+        }
+        await audioSink.close();
+
+        // Sortie fusionnée en MP4 si possible
+        final mergedPath =
+            '${downloadsDir.path}/${sanitizedTitle}_${streamInfo.videoQualityLabel}.mp4';
+        final cmd =
+            "-y -i '${file.path}' -i '$audioPath' -c:v copy -c:a aac -shortest '$mergedPath'";
+        final session = await FFmpegKit.execute(cmd);
+        final rc = await session.getReturnCode();
+        if (ReturnCode.isSuccess(rc)) {
+          // Supprime fichiers temporaires vidéo et audio, conserve le MP4 fusionné
+          try {
+            await file.delete();
+            await audioFile.delete();
+          } catch (_) {}
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(
+                      Icons.download_done,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Fusion réussie: ${mergedPath.split('/').last}\nDossier: ${downloadsDir.path}',
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                action: SnackBarAction(
+                  label: 'OUVRIR',
+                  textColor: Colors.white,
+                  onPressed: () => OpenFile.open(mergedPath),
+                ),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Échec de la fusion vidéo+audio'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
 
       if (mounted) {
         setState(() {
@@ -264,6 +339,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
                 _video = null;
                 _availableStreams.clear();
                 _availableAudio.clear();
+                _availableVideoOnlyInternal.clear();
                 _isDownloading = false;
                 _downloadProgress = 0.0;
                 _downloadingStreamInfo = null;
@@ -521,6 +597,8 @@ class DownloaderScreenState extends State<DownloaderScreen>
         ),
         const SizedBox(height: 16),
         if (_availableStreams.isNotEmpty) _buildMuxedGroupedCategory(),
+        if (_availableVideoOnlyInternal.isNotEmpty)
+          _buildFusionGroupedCategory(),
         if (_availableAudio.isNotEmpty) _buildAudioBestCategory(),
       ],
     );
@@ -681,6 +759,114 @@ class DownloaderScreenState extends State<DownloaderScreen>
           const SizedBox(height: 8),
           // Liste complète des pistes audio
           ..._availableAudio.map((a) => _buildStreamTile(a)).toList(),
+        ],
+      ),
+    );
+  }
+
+  // Regroupe les flux vidéo seuls et propose une fusion automatique avec la meilleure piste audio
+  Map<String, List<VideoOnlyStreamInfo>> _groupVideoOnlyByQuality(
+    List<VideoOnlyStreamInfo> streams,
+  ) {
+    final Map<String, List<VideoOnlyStreamInfo>> groups = {};
+    for (final s in streams) {
+      final label = s.videoQualityLabel;
+      groups.putIfAbsent(label, () => []).add(s);
+    }
+    return groups;
+  }
+
+  VideoOnlyStreamInfo _selectBestVideoOnly(List<VideoOnlyStreamInfo> group) {
+    final mp4 = group
+        .where((s) => s.container.name.toLowerCase() == 'mp4')
+        .toList();
+    final candidates = mp4.isNotEmpty ? mp4 : group;
+    candidates.sort((a, b) => b.size.totalBytes.compareTo(a.size.totalBytes));
+    return candidates.first;
+  }
+
+  Widget _buildFusionGroupedCategory() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final groups = _groupVideoOnlyByQuality(_availableVideoOnlyInternal);
+    final sortedKeys = groups.keys.toList()
+      ..sort((a, b) {
+        int parseHeight(String label) {
+          final match = RegExp(r'(\d{3,4})p').firstMatch(label);
+          return match != null ? int.parse(match.group(1)!) : 0;
+        }
+
+        return parseHeight(b).compareTo(parseHeight(a));
+      });
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        leading: Icon(
+          Icons.video_settings_outlined,
+          color: colorScheme.primary,
+        ),
+        title: const Text(
+          'Vidéo + Audio (Fusion automatique)',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: const Text(
+          'Utilisé quand aucune option muxed n\'est disponible à cette qualité',
+        ),
+        children: [
+          for (final key in sortedKeys)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: colorScheme.outline.withOpacity(0.15),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            key,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const Spacer(),
+                          ElevatedButton.icon(
+                            onPressed: _isDownloading
+                                ? null
+                                : () {
+                                    final best = _selectBestVideoOnly(
+                                      groups[key]!,
+                                    );
+                                    _downloadStream(best, 'auto');
+                                  },
+                            icon: const Icon(Icons.download_for_offline),
+                            label: const Text(
+                              'Télécharger la meilleure (fusion)',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Variantes de cette qualité (toutes provoqueront une fusion)
+                      ...groups[key]!.map((s) => _buildStreamTile(s)).toList(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
