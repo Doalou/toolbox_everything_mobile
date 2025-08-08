@@ -26,7 +26,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
   double _downloadProgress = 0.0;
   StreamInfo? _downloadingStreamInfo;
   List<VideoStreamInfo> _availableStreams = [];
-  List<AudioStreamInfo> _availableAudio = [];
+  List<AudioOnlyStreamInfo> _availableAudio = [];
   List<VideoOnlyStreamInfo> _availableVideoOnlyInternal = [];
 
   @override
