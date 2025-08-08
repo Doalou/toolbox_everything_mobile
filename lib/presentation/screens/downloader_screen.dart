@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'package:ffmpeg_kit_flutter_min_gpl/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_min_gpl/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 
 class DownloaderScreen extends StatefulWidget {
   const DownloaderScreen({super.key});
@@ -599,7 +599,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
         if (_availableStreams.isNotEmpty) _buildMuxedGroupedCategory(),
         if (_availableVideoOnlyInternal.isNotEmpty)
           _buildFusionGroupedCategory(),
-        if (_availableAudio.isNotEmpty) _buildAudioBestCategory(),
+        if (_availableAudio.isNotEmpty) _buildAudioGroupedCategory(),
       ],
     );
   }
@@ -685,10 +685,13 @@ class DownloaderScreenState extends State<DownloaderScreen>
                     children: [
                       Row(
                         children: [
-                          Text(
-                            key,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                          Expanded(
+                            child: Text(
+                              key,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           const Spacer(),
                           ElevatedButton.icon(
@@ -716,9 +719,23 @@ class DownloaderScreenState extends State<DownloaderScreen>
     );
   }
 
-  Widget _buildAudioBestCategory() {
+  // Regroupe les flux audio par codec pour un affichage plus clair
+  Map<String, List<AudioOnlyStreamInfo>> _groupAudioByCodec(
+    List<AudioOnlyStreamInfo> streams,
+  ) {
+    final Map<String, List<AudioOnlyStreamInfo>> groups = {};
+    for (final s in streams) {
+      final key = '${s.audioCodec.toUpperCase()} (${s.container.name})';
+      groups.putIfAbsent(key, () => []).add(s);
+    }
+    return groups;
+  }
+
+  Widget _buildAudioGroupedCategory() {
     final colorScheme = Theme.of(context).colorScheme;
-    final best = _selectBestAudio(_availableAudio);
+    final groups = _groupAudioByCodec(_availableAudio);
+    final sortedKeys = groups.keys.toList()..sort();
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 16),
@@ -734,31 +751,52 @@ class DownloaderScreenState extends State<DownloaderScreen>
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Meilleure qualité détectée: '
-                    '${best.container.name.toUpperCase()} '
-                    '- ${best.bitrate.kiloBitsPerSecond.round()} kbps',
-                    style: Theme.of(context).textTheme.bodyMedium,
+          for (final key in sortedKeys)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: colorScheme.outline.withOpacity(0.15),
                   ),
                 ),
-                ElevatedButton.icon(
-                  onPressed: _isDownloading
-                      ? null
-                      : () => _downloadStream(best, 'auto'),
-                  icon: const Icon(Icons.download_for_offline),
-                  label: const Text('Télécharger la meilleure'),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              key,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: _isDownloading
+                                ? null
+                                : () {
+                                    final best = _selectBestAudio(groups[key]!);
+                                    _downloadStream(best, 'auto');
+                                  },
+                            icon: const Icon(Icons.download_for_offline),
+                            label: const Text('Meilleure'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ...groups[key]!.map((s) => _buildStreamTile(s)).toList(),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          // Liste complète des pistes audio
-          ..._availableAudio.map((a) => _buildStreamTile(a)).toList(),
         ],
       ),
     );
@@ -837,10 +875,13 @@ class DownloaderScreenState extends State<DownloaderScreen>
                     children: [
                       Row(
                         children: [
-                          Text(
-                            key,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                          Expanded(
+                            child: Text(
+                              key,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           const Spacer(),
                           ElevatedButton.icon(

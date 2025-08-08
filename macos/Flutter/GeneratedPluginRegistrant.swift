@@ -7,7 +7,7 @@ import Foundation
 
 import connectivity_plus
 import device_info_plus
-import ffmpeg_kit_flutter_min_gpl
+import ffmpeg_kit_flutter_new
 import file_picker
 import flutter_local_notifications
 import irondash_engine_context

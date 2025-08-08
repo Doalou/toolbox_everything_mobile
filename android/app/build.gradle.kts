@@ -34,7 +34,7 @@ android {
         applicationId = "com.toolbox.everything.mobile"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23 // Requis par super_clipboard pour copier des images
+        minSdk = 24 // Requis par ffmpeg_kit_flutter_new
         targetSdk = 35 // Android 15 pour compatibilité plugins
         // La ligne ci-dessous est redondante car compileSdk est déjà défini au niveau supérieur
         // compileSdk = 35 // Android 15
