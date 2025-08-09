@@ -1,5 +1,6 @@
 import 'package:open_file/open_file.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -28,6 +29,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
   List<VideoStreamInfo> _availableStreams = [];
   List<AudioOnlyStreamInfo> _availableAudio = [];
   List<VideoOnlyStreamInfo> _availableVideoOnlyInternal = [];
+  String? _lastDownloadedPath;
 
   @override
   void initState() {
@@ -148,9 +150,12 @@ class DownloaderScreenState extends State<DownloaderScreen>
           .replaceAll(RegExp(r'\s+'), '_');
 
       final extension = streamInfo.container.name;
-      final fileName =
-          '${sanitizedTitle}_${streamInfo is VideoStreamInfo ? streamInfo.videoQuality.toString() : (streamInfo as AudioOnlyStreamInfo).bitrate.toString()}.$extension';
-      final filePath = '${downloadsDir.path}/$fileName';
+      final qualityPart = streamInfo is VideoStreamInfo
+          ? streamInfo.qualityLabel
+          : (streamInfo as AudioOnlyStreamInfo).bitrate.toString();
+      final rawFilePath =
+          '${downloadsDir.path}/${sanitizedTitle}_$qualityPart.$extension';
+      final filePath = _ensureUniquePath(rawFilePath);
       final file = File(filePath);
 
       // Télécharger avec suivi de progression
@@ -179,8 +184,9 @@ class DownloaderScreenState extends State<DownloaderScreen>
       if (streamInfo is VideoOnlyStreamInfo && _availableAudio.isNotEmpty) {
         final audioBest = _selectBestAudio(_availableAudio);
         // Télécharge l'audio
-        final audioPath =
+        final audioRaw =
             '${downloadsDir.path}/${sanitizedTitle}_audio.${audioBest.container.name}';
+        final audioPath = _ensureUniquePath(audioRaw);
         final audioFile = File(audioPath);
         final audioStream = _yt.videos.streamsClient.get(audioBest);
         final audioSink = audioFile.openWrite();
@@ -190,20 +196,42 @@ class DownloaderScreenState extends State<DownloaderScreen>
         await audioSink.close();
 
         // Sortie fusionnée en MP4 si possible
-        final mergedPath =
-            '${downloadsDir.path}/${sanitizedTitle}_${streamInfo.videoQualityLabel}.mp4';
-        final cmd =
-            "-y -i '${file.path}' -i '$audioPath' -c:v copy -c:a aac -shortest '$mergedPath'";
+        final mergedBase =
+            '${downloadsDir.path}/${sanitizedTitle}_${streamInfo.qualityLabel}';
+
+        // Détermine le conteneur de sortie et les codecs en fonction des flux
+        final String videoContainer = streamInfo.container.name.toLowerCase();
+        // final String audioContainer = audioBest.container.name.toLowerCase();
+
+        // Par défaut, on privilégie MKV pour compatibilité maximale
+        String outExt = 'mkv';
+        String ffArgs = '-c copy';
+
+        // Si la vidéo est MP4 (H.264/HEVC) on peut sortir en MP4 et copier la vidéo
+        if (videoContainer == 'mp4') {
+          outExt = 'mp4';
+          // aac très compatible en MP4
+          ffArgs = '-c:v copy -c:a aac';
+        }
+
+        // Construit la commande finale
+        final String finalOutPath = _ensureUniquePath('$mergedBase.$outExt');
+        final String cmd =
+            "-y -i '${file.path}' -i '$audioPath' -map 0:v:0 -map 1:a:0 $ffArgs -shortest '$finalOutPath'";
+
         final session = await FFmpegKit.execute(cmd);
         final rc = await session.getReturnCode();
         if (ReturnCode.isSuccess(rc)) {
-          // Supprime fichiers temporaires vidéo et audio, conserve le MP4 fusionné
+          // Supprime fichiers temporaires vidéo et audio, conserve le fichier fusionné
           try {
             await file.delete();
             await audioFile.delete();
           } catch (_) {}
 
           if (mounted) {
+            setState(() {
+              _lastDownloadedPath = finalOutPath;
+            });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
@@ -216,7 +244,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Fusion réussie: ${mergedPath.split('/').last}\nDossier: ${downloadsDir.path}',
+                        'Fusion réussie: ${finalOutPath.split('/').last}\nDossier: ${downloadsDir.path}',
                       ),
                     ),
                   ],
@@ -226,7 +254,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
                 action: SnackBarAction(
                   label: 'OUVRIR',
                   textColor: Colors.white,
-                  onPressed: () => OpenFile.open(mergedPath),
+                  onPressed: () => OpenFile.open(finalOutPath),
                 ),
               ),
             );
@@ -250,6 +278,9 @@ class DownloaderScreenState extends State<DownloaderScreen>
           _downloadingStreamInfo = null;
         });
 
+        setState(() {
+          _lastDownloadedPath = filePath;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -258,7 +289,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Téléchargé: $fileName\nDossier: ${downloadsDir.path}',
+                    'Téléchargé: ${filePath.split('/').last}\nDossier: ${downloadsDir.path}',
                   ),
                 ),
               ],
@@ -321,6 +352,24 @@ class DownloaderScreenState extends State<DownloaderScreen>
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
+  // Assure un nom de fichier unique en ajoutant (1), (2), ... si nécessaire
+  String _ensureUniquePath(String desiredPath) {
+    final file = File(desiredPath);
+    if (!file.existsSync()) return desiredPath;
+
+    final dotIndex = desiredPath.lastIndexOf('.');
+    final base = dotIndex > 0
+        ? desiredPath.substring(0, dotIndex)
+        : desiredPath;
+    final ext = dotIndex > 0 ? desiredPath.substring(dotIndex) : '';
+
+    var counter = 1;
+    while (File('$base ($counter)$ext').existsSync()) {
+      counter++;
+    }
+    return '$base ($counter)$ext';
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -332,6 +381,22 @@ class DownloaderScreenState extends State<DownloaderScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          IconButton(
+            onPressed: () async {
+              // Ouvre le dossier de téléchargements de l'app
+              Directory? dir;
+              if (Platform.isAndroid) {
+                dir = await getExternalStorageDirectory();
+              } else {
+                dir = await getApplicationDocumentsDirectory();
+              }
+              if (dir != null) {
+                OpenFile.open(dir.path);
+              }
+            },
+            icon: Icon(Icons.folder_open, color: colorScheme.primary),
+            tooltip: 'Ouvrir le dossier',
+          ),
           IconButton(
             onPressed: () {
               _urlController.clear();
@@ -394,6 +459,41 @@ class DownloaderScreenState extends State<DownloaderScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
+                  if (_lastDownloadedPath != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.outline.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.history, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _lastDownloadedPath!.split('/').last,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton.icon(
+                            onPressed: () =>
+                                OpenFile.open(_lastDownloadedPath!),
+                            icon: const Icon(Icons.open_in_new, size: 18),
+                            label: const Text('Ouvrir'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  // Texte d'intro
+                  const SizedBox(height: 8),
                   Text(
                     'Téléchargez vos vidéos et musiques préférées',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -401,83 +501,74 @@ class DownloaderScreenState extends State<DownloaderScreen>
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 12),
+                  // Champ URL + actions (agrandi et responsive)
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width - 40,
+                        child: TextField(
+                          controller: _urlController,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.copyWith(fontSize: 16),
+                          decoration: InputDecoration(
+                            hintText: 'Collez l\'URL YouTube ici',
+                            filled: true,
+                            fillColor: colorScheme.surfaceContainer,
+                            prefixIcon: const Icon(Icons.link),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          onSubmitted: (_) => _fetchVideoInfo(),
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final data = await Clipboard.getData('text/plain');
+                          final text = data?.text ?? '';
+                          if (text.isNotEmpty) {
+                            setState(() => _urlController.text = text);
+                            _fetchVideoInfo();
+                          }
+                        },
+                        icon: const Icon(Icons.paste),
+                        label: const Text('Coller'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          textStyle: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      FilledButton.icon(
+                        onPressed: _fetchVideoInfo,
+                        icon: const Icon(Icons.search),
+                        label: const Text('Analyser'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          textStyle: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
 
             const SizedBox(height: 32),
-
-            // Zone de saisie URL (sans animation)
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Icon(Icons.link, color: colorScheme.primary, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'URL de la vidéo YouTube',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _urlController,
-                            style: Theme.of(context).textTheme.bodyLarge,
-                            decoration: InputDecoration(
-                              hintText: 'https://youtube.com/watch?v=...',
-                              border: InputBorder.none,
-                              prefixIcon: Icon(
-                                Icons.youtube_searched_for,
-                                color: const Color(0xFFFF0000),
-                              ),
-                            ),
-                            onSubmitted: (_) => _fetchVideoInfo(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        FloatingActionButton(
-                          heroTag: "youtube_search",
-                          onPressed: _isLoading ? null : _fetchVideoInfo,
-                          backgroundColor: const Color(0xFFFF0000),
-                          foregroundColor: Colors.white,
-                          mini: true,
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(Icons.search),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
             if (_video != null) ...[
               const SizedBox(height: 32),
@@ -595,6 +686,16 @@ class DownloaderScreenState extends State<DownloaderScreen>
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
+        const SizedBox(height: 12),
+        // Bouton global: meilleure qualité auto (muxed > fusion)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: ElevatedButton.icon(
+            onPressed: _isDownloading ? null : _downloadBestAuto,
+            icon: const Icon(Icons.workspace_premium_outlined),
+            label: const Text('Télécharger la meilleure qualité (auto)'),
+          ),
+        ),
         const SizedBox(height: 16),
         if (_availableStreams.isNotEmpty) _buildMuxedGroupedCategory(),
         if (_availableVideoOnlyInternal.isNotEmpty)
@@ -610,7 +711,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
   ) {
     final Map<String, List<VideoStreamInfo>> groups = {};
     for (final s in streams) {
-      final label = s.videoQualityLabel;
+      final label = s.qualityLabel;
       groups.putIfAbsent(label, () => []).add(s);
     }
     return groups;
@@ -657,7 +758,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
       ),
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
@@ -675,7 +776,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.15),
+                    color: colorScheme.outline.withValues(alpha: 0.15),
                   ),
                 ),
                 child: Padding(
@@ -741,7 +842,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
       ),
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
@@ -759,7 +860,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.15),
+                    color: colorScheme.outline.withValues(alpha: 0.15),
                   ),
                 ),
                 child: Padding(
@@ -808,7 +909,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
   ) {
     final Map<String, List<VideoOnlyStreamInfo>> groups = {};
     for (final s in streams) {
-      final label = s.videoQualityLabel;
+      final label = s.qualityLabel;
       groups.putIfAbsent(label, () => []).add(s);
     }
     return groups;
@@ -841,7 +942,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
       ),
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
@@ -865,7 +966,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.15),
+                    color: colorScheme.outline.withValues(alpha: 0.15),
                   ),
                 ),
                 child: Padding(
@@ -921,7 +1022,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
     String subtitle;
 
     if (stream is VideoStreamInfo) {
-      title = 'Vidéo - ${stream.videoQualityLabel}';
+      title = 'Vidéo - ${stream.qualityLabel}';
       subtitle =
           '${stream.videoResolution.width}x${stream.videoResolution.height}, ${stream.framerate.framesPerSecond}fps';
     } else if (stream is AudioOnlyStreamInfo) {
@@ -962,7 +1063,7 @@ class DownloaderScreenState extends State<DownloaderScreen>
     String streamLabel = '';
     if (_downloadingStreamInfo is VideoStreamInfo) {
       streamLabel =
-          'Vidéo - ${(_downloadingStreamInfo as VideoStreamInfo).videoQualityLabel}';
+          'Vidéo - ${(_downloadingStreamInfo as VideoStreamInfo).qualityLabel}';
     } else if (_downloadingStreamInfo is AudioOnlyStreamInfo) {
       streamLabel =
           'Audio - ${(_downloadingStreamInfo as AudioOnlyStreamInfo).bitrate.kiloBitsPerSecond.round()}kbps';
@@ -1012,5 +1113,39 @@ class DownloaderScreenState extends State<DownloaderScreen>
         ],
       ),
     );
+  }
+
+  // Sélectionne et télécharge la meilleure qualité disponible (muxed prioritaire)
+  Future<void> _downloadBestAuto() async {
+    if (_video == null) return;
+    // Trouve la meilleure muxed par hauteur
+    VideoStreamInfo? bestMuxed;
+    if (_availableStreams.isNotEmpty) {
+      final list = List<VideoStreamInfo>.from(_availableStreams);
+      list.sort(
+        (a, b) => b.videoResolution.height.compareTo(a.videoResolution.height),
+      );
+      bestMuxed = list.first;
+    }
+
+    // Trouve la meilleure videoOnly par hauteur
+    VideoOnlyStreamInfo? bestVideoOnly;
+    if (_availableVideoOnlyInternal.isNotEmpty) {
+      final list = List<VideoOnlyStreamInfo>.from(_availableVideoOnlyInternal);
+      list.sort(
+        (a, b) => b.videoResolution.height.compareTo(a.videoResolution.height),
+      );
+      bestVideoOnly = list.first;
+    }
+
+    // Décide: préfère muxed si hauteur >= videoOnly, sinon fusion
+    if (bestMuxed != null &&
+        (bestVideoOnly == null ||
+            bestMuxed.videoResolution.height >=
+                bestVideoOnly.videoResolution.height)) {
+      await _downloadStream(bestMuxed, 'auto');
+    } else if (bestVideoOnly != null) {
+      await _downloadStream(bestVideoOnly, 'auto');
+    }
   }
 }

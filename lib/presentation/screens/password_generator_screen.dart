@@ -76,7 +76,7 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
       _showHistory = false;
     });
 
-    _historyTimer = Timer(const Duration(seconds: 5), () {
+    _historyTimer = Timer(const Duration(seconds: 15), () {
       if (mounted) {
         setState(() {
           _showHistory = true;

@@ -82,7 +82,7 @@ class _ToolCardState extends State<ToolCard> {
                 ),
               ] else
                 BoxShadow(
-                  color: colorScheme.shadow.withOpacity(0.08),
+                  color: colorScheme.shadow.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -123,8 +123,8 @@ class _ToolCardState extends State<ToolCard> {
                                     center: Alignment.center,
                                     colors: [
                                       colorScheme.primaryContainer,
-                                      colorScheme.primaryContainer.withOpacity(
-                                        0.8,
+                                      colorScheme.primaryContainer.withValues(
+                                        alpha: 0.8,
                                       ),
                                     ],
                                   ),
@@ -185,10 +185,17 @@ class _ToolCardState extends State<ToolCard> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: _isHovered
-                                  ? [cardColor, cardColor.withOpacity(0.6)]
+                                  ? [
+                                      cardColor,
+                                      cardColor.withValues(alpha: 0.6),
+                                    ]
                                   : [
-                                      colorScheme.primary.withOpacity(0.4),
-                                      colorScheme.primary.withOpacity(0.2),
+                                      colorScheme.primary.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      colorScheme.primary.withValues(
+                                        alpha: 0.2,
+                                      ),
                                     ],
                             ),
                             borderRadius: BorderRadius.circular(2),
@@ -238,7 +245,7 @@ class _ToolCardState extends State<ToolCard> {
                                 : Icons.favorite_border,
                             color: widget.tool.isFavorite
                                 ? Colors.red
-                                : colorScheme.onSurface.withOpacity(0.6),
+                                : colorScheme.onSurface.withValues(alpha: 0.6),
                             size: 20,
                           ),
                           tooltip: widget.tool.isFavorite

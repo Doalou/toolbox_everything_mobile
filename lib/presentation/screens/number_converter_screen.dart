@@ -25,7 +25,6 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
     'ascii': FocusNode(),
   };
 
-  String _lastUpdated = '';
   late AnimationController _pulseController;
   bool _isUpdatingControllers = false;
 
@@ -38,11 +37,11 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
     );
     // Animation retirée; le contrôleur reste pour un léger feedback si besoin
 
-    // Listeners pour la conversion automatique
-    _controllers['decimal']!.addListener(() => _convertFrom('decimal'));
-    _controllers['binary']!.addListener(() => _convertFrom('binary'));
-    _controllers['hexadecimal']!.addListener(() => _convertFrom('hexadecimal'));
-    _controllers['ascii']!.addListener(() => _convertFrom('ascii'));
+    // Les listeners sont retirés au profit de onChanged pour une meilleure fiabilité
+    // _controllers['decimal']!.addListener(() => _convertFrom('decimal'));
+    // _controllers['binary']!.addListener(() => _convertFrom('binary'));
+    // _controllers['hexadecimal']!.addListener(() => _convertFrom('hexadecimal'));
+    // _controllers['ascii']!.addListener(() => _convertFrom('ascii'));
   }
 
   @override
@@ -59,20 +58,21 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
 
   void _convertFrom(String sourceType) {
     if (_isUpdatingControllers) return;
-    if (_lastUpdated == sourceType) return;
-    _lastUpdated = sourceType;
+    // La garde _lastUpdated n'est plus utile avec onChanged
+    // if (_lastUpdated == sourceType) return;
+    // _lastUpdated = sourceType;
 
+    final String value = _controllers[sourceType]!.text.trim();
+    if (value.isEmpty) {
+      _clearAllExcept(sourceType);
+      return;
+    }
+
+    int? decimalValue;
+    String? asciiValue;
+
+    // Conversion vers décimal d'abord
     try {
-      final String value = _controllers[sourceType]!.text.trim();
-      if (value.isEmpty) {
-        _clearAllExcept(sourceType);
-        return;
-      }
-
-      int? decimalValue;
-      String? asciiValue;
-
-      // Conversion vers décimal d'abord
       switch (sourceType) {
         case 'decimal':
           decimalValue = int.tryParse(value);
@@ -104,42 +104,52 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
       _clearAllExcept(sourceType);
     }
 
-    _lastUpdated = '';
+    // _lastUpdated = '';
+  }
+
+  // Conversion immédiate depuis TextField.onChanged et rafraîchissement UI
+  void _onChanged(String sourceType) {
+    if (_isUpdatingControllers) return;
+    _convertFrom(sourceType);
   }
 
   void _updateFields(int decimal, String? ascii, String except) {
     _isUpdatingControllers = true;
     try {
-      if (except != 'decimal') {
-        _controllers['decimal']!.text = decimal.toString();
-      }
-      if (except != 'binary') {
-        _controllers['binary']!.text = decimal.toRadixString(2);
-      }
-      if (except != 'hexadecimal') {
-        _controllers['hexadecimal']!.text =
-            '0x${decimal.toRadixString(16).toUpperCase()}';
-      }
-      if (except != 'ascii') {
-        if (decimal >= 32 && decimal <= 126) {
-          _controllers['ascii']!.text = String.fromCharCode(decimal);
-        } else if (ascii != null) {
-          _controllers['ascii']!.text = ascii;
-        } else {
-          _controllers['ascii']!.text = '(non-printable)';
+      setState(() {
+        if (except != 'decimal') {
+          _controllers['decimal']!.text = decimal.toString();
         }
-      }
+        if (except != 'binary') {
+          _controllers['binary']!.text = decimal.toRadixString(2);
+        }
+        if (except != 'hexadecimal') {
+          _controllers['hexadecimal']!.text =
+              '0x${decimal.toRadixString(16).toUpperCase()}';
+        }
+        if (except != 'ascii') {
+          if (decimal >= 32 && decimal <= 126) {
+            _controllers['ascii']!.text = String.fromCharCode(decimal);
+          } else if (ascii != null) {
+            _controllers['ascii']!.text = ascii;
+          } else {
+            _controllers['ascii']!.text = '(non-printable)';
+          }
+        }
+      });
     } finally {
       _isUpdatingControllers = false;
     }
   }
 
   void _clearAllExcept(String except) {
-    for (var entry in _controllers.entries) {
-      if (entry.key != except) {
-        entry.value.text = '';
+    setState(() {
+      for (var entry in _controllers.entries) {
+        if (entry.key != except) {
+          entry.value.text = '';
+        }
       }
-    }
+    });
   }
 
   void _triggerPulse() {
@@ -153,6 +163,30 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
       controller.clear();
     }
     setState(() {});
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '${bytes} B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024 * 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  // Regroupe une chaîne binaire en paquets de 4 bits avec padding à gauche
+  String _groupBinaryForDisplay(String bin) {
+    if (bin.isEmpty) return '';
+    // Pad à un multiple de 4
+    final remainder = bin.length % 4;
+    final padded = remainder == 0
+        ? bin
+        : bin.padLeft(bin.length + (4 - remainder), '0');
+    final buffer = StringBuffer();
+    for (int i = 0; i < padded.length; i += 4) {
+      if (i > 0) buffer.write(' ');
+      buffer.write(padded.substring(i, i + 4));
+    }
+    return buffer.toString();
   }
 
   @override
@@ -215,7 +249,9 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
                   Text(
                     'Binaire • Décimal • Hexadécimal • ASCII',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onPrimaryContainer.withOpacity(0.7),
+                      color: colorScheme.onPrimaryContainer.withValues(
+                        alpha: 0.7,
+                      ),
                     ),
                   ),
                 ],
@@ -304,13 +340,13 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
         border: Border.all(
           color: isActive
               ? colorScheme.primary
-              : colorScheme.outline.withOpacity(0.2),
+              : colorScheme.outline.withValues(alpha: 0.2),
           width: isActive ? 2 : 1,
         ),
         boxShadow: [
           if (isActive)
             BoxShadow(
-              color: colorScheme.primary.withOpacity(0.1),
+              color: colorScheme.primary.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -397,8 +433,56 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
                   FilteringTextInputFormatter.allow(RegExp(pattern)),
                   if (key == 'ascii') LengthLimitingTextInputFormatter(1),
                 ],
+                onChanged: (_) => _onChanged(key),
               ),
             ),
+            // Aperçu groupé et infos supplémentaires
+            if (key == 'binary' && _controllers['binary']!.text.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.12),
+                      ),
+                    ),
+                    child: Text(
+                      _groupBinaryForDisplay(_controllers['binary']!.text),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.12),
+                      ),
+                    ),
+                    child: Text(
+                      '${_controllers['binary']!.text.length} bits',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

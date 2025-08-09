@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:animate_do/animate_do.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:toolbox_everything_mobile/core/models/tool_item.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/password_generator_screen.dart';
@@ -186,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: colorScheme.outline.withOpacity(0.2),
+                      color: colorScheme.outline.withValues(alpha: 0.2),
                     ),
                   ),
                   child: TextField(
@@ -299,10 +298,10 @@ class _HomeScreenState extends State<HomeScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF6750A4).withOpacity(0.15),
-            const Color(0xFFE91E63).withOpacity(0.10),
-            const Color(0xFF00BCD4).withOpacity(0.08),
-            colorScheme.surface.withOpacity(0.8),
+            const Color(0xFF6750A4).withValues(alpha: 0.15),
+            const Color(0xFFE91E63).withValues(alpha: 0.10),
+            const Color(0xFF00BCD4).withValues(alpha: 0.08),
+            colorScheme.surface.withValues(alpha: 0.8),
           ],
           stops: const [0.0, 0.3, 0.6, 1.0],
         ),
@@ -327,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF6750A4).withOpacity(0.3),
+                          color: const Color(0xFF6750A4).withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -358,7 +357,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           'Vos outils numériques essentiels',
                           style: Theme.of(context).textTheme.bodyLarge
                               ?.copyWith(
-                                color: colorScheme.onSurface.withOpacity(0.7),
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
+                                ),
                                 fontWeight: FontWeight.w500,
                               ),
                         ),
@@ -406,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Material(
-      color: colorScheme.surface.withOpacity(0.9),
+      color: colorScheme.surface.withValues(alpha: 0.9),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -465,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 4,
               margin: const EdgeInsets.only(top: 12),
               decoration: BoxDecoration(
-                color: colorScheme.outline.withOpacity(0.3),
+                color: colorScheme.outline.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -508,7 +509,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Vous avez une idée d\'outil à ajouter ?\nNous sommes à l\'écoute de vos suggestions !',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                         height: 1.5,
                       ),
                     ),

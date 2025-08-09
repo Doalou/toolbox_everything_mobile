@@ -8,6 +8,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:super_clipboard/super_clipboard.dart';
+import 'package:pdf/widgets.dart' as pw;
+// import 'package:printing/printing.dart';
 
 class QrCodeScreen extends StatefulWidget {
   const QrCodeScreen({super.key});
@@ -150,6 +152,80 @@ class QrCodeScreenState extends State<QrCodeScreen>
     }
   }
 
+  Future<void> _exportQrToPdf() async {
+    if (_qrData.isEmpty) return;
+    try {
+      // Rendre le QR en PNG en mémoire
+      final qrPainter = QrPainter(
+        data: _qrData,
+        version: QrVersions.auto,
+        color: Colors.black,
+        emptyColor: Colors.white,
+        gapless: true,
+      );
+
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      const size = Size(300, 300);
+      qrPainter.paint(canvas, size);
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(300, 300);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final bytes = byteData!.buffer.asUint8List();
+
+      final pdf = pw.Document();
+      final pwImage = pw.MemoryImage(bytes);
+
+      pdf.addPage(
+        pw.Page(
+          build: (context) => pw.Column(
+            mainAxisAlignment: pw.MainAxisAlignment.center,
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Text('QR Code', style: pw.TextStyle(fontSize: 18)),
+              pw.SizedBox(height: 12),
+              pw.Image(pwImage, width: 240, height: 240),
+              pw.SizedBox(height: 12),
+              pw.Text(
+                _qrData,
+                textAlign: pw.TextAlign.center,
+                style: const pw.TextStyle(fontSize: 10),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      // Choisir un dossier accessible sans permission (dossier app)
+      Directory dir;
+      if (Platform.isAndroid) {
+        final d = await getExternalStorageDirectory();
+        if (d == null) throw 'Dossier externe indisponible';
+        dir = d;
+      } else {
+        dir = await getApplicationDocumentsDirectory();
+      }
+
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'qr_code_$timestamp.pdf';
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(await pdf.save());
+
+      Fluttertoast.showToast(
+        msg: 'PDF exporté dans ${dir.path}',
+        toastLength: Toast.LENGTH_LONG,
+      );
+
+      // Optionnel: partage direct du PDF
+      // await Printing.sharePdf(bytes: await pdf.save(), filename: fileName);
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Erreur export PDF: $e',
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,7 +295,7 @@ class QrCodeScreenState extends State<QrCodeScreen>
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: colorScheme.outline.withOpacity(0.2),
+                        color: colorScheme.outline.withValues(alpha: 0.2),
                       ),
                     ),
                     child: QrImageView(
@@ -230,9 +306,11 @@ class QrCodeScreenState extends State<QrCodeScreen>
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Boutons d'action
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  // Boutons d'action (Wrap pour éviter les débordements)
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
                     children: [
                       ElevatedButton.icon(
                         onPressed: _copyQrImageToClipboard,
@@ -252,6 +330,15 @@ class QrCodeScreenState extends State<QrCodeScreen>
                           foregroundColor: colorScheme.onSecondaryContainer,
                         ),
                       ),
+                      ElevatedButton.icon(
+                        onPressed: _exportQrToPdf,
+                        icon: const Icon(Icons.picture_as_pdf),
+                        label: const Text('Exporter PDF'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.tertiaryContainer,
+                          foregroundColor: colorScheme.onTertiaryContainer,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -266,13 +353,13 @@ class QrCodeScreenState extends State<QrCodeScreen>
                     Icon(
                       Icons.qr_code,
                       size: 80,
-                      color: colorScheme.onSurface.withOpacity(0.3),
+                      color: colorScheme.onSurface.withValues(alpha: 0.3),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Entrez du texte pour générer un QR Code',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       textAlign: TextAlign.center,
                     ),
