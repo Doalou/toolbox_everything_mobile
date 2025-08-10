@@ -11,13 +11,19 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **YouTube Downloader**: section « Audio seul » clairement séparée sous « Vidéo + Audio » avec bouton « Télécharger la meilleure » par groupe.
 - **QR Code**: export direct en PDF (avec prévisualisation possible via partage), bouton en plus des actions existantes.
 - **YouTube Downloader**: bouton « Ouvrir le dossier » (rapide), action « Coller l’URL », et champ de saisie intégré dans l’en-tête.
+ - **YouTube Downloader**: texte d’aide « Téléchargez vos vidéos et musiques préférées » déplacé au‑dessus du champ de lien pour une meilleure lisibilité.
+ - **YouTube Downloader**: téléchargements en arrière‑plan avec notifications de progression, annulation et relance rapide.
+ - **YouTube Downloader**: presets rapides de formats (MP4 720p, MP4 1080p, M4A 128/256 kbps).
+- **Système**: initialisation du service de notifications au démarrage (flutter_local_notifications).
 
 ### Modifié
 - **YouTube Downloader**: fiabilisation de la fusion automatique via FFmpeg (meilleure sélection audio/vidéo, gestion de noms uniques).
+- **YouTube Downloader**: zone de saisie agrandie (padding, hauteur minimale et taille d’icône augmentés) pour un confort d’usage.
+ - **UI Globale**: hauteur minimale uniformisée des boutons (52px) via le thème pour une meilleure cohérence visuelle.
+- **Android**: ajout de la permission `POST_NOTIFICATIONS` (Android 13+) dans le manifeste.
 - **QR Code**: mise en page des boutons avec Wrap pour éviter les débordements sur petits écrans.
 - **UX/Code**: migration large de `.withOpacity()` vers `.withValues(alpha: ...)` pour éviter la perte de précision couleur (Flutter 3.22+).
 - **Générateur de MDP**: délai d'affichage de l'historique porté de 5s à 15s (20 derniers éléments).
-- **YouTube Downloader**: zone de saisie de l'URL agrandie (police/padding), actions « Coller »/« Analyser » revues et texte d’introduction déplacé au‑dessus du champ.
 
 ### Corrigé
 - Message de fin de téléchargement: correction du nom de fichier affiché (suppression de la référence à `fileName` inexistante).

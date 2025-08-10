@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
+import 'package:toolbox_everything_mobile/core/services/notification_service.dart';
 
 class DownloaderScreen extends StatefulWidget {
   const DownloaderScreen({super.key});
@@ -18,11 +19,11 @@ class DownloaderScreenState extends State<DownloaderScreen>
     with TickerProviderStateMixin {
   final TextEditingController _urlController = TextEditingController();
   final YoutubeExplode _yt = YoutubeExplode();
+  final NotificationService _notifier = NotificationService.instance;
 
   late AnimationController _searchController;
 
   Video? _video;
-  bool _isLoading = false;
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   StreamInfo? _downloadingStreamInfo;
@@ -30,6 +31,9 @@ class DownloaderScreenState extends State<DownloaderScreen>
   List<AudioOnlyStreamInfo> _availableAudio = [];
   List<VideoOnlyStreamInfo> _availableVideoOnlyInternal = [];
   String? _lastDownloadedPath;
+  bool _cancelRequested = false;
+  StreamInfo? _lastRequestedStream;
+  int _currentNotificationId = 1001;
 
   @override
   void initState() {
@@ -59,7 +63,6 @@ class DownloaderScreenState extends State<DownloaderScreen>
     _searchController.forward();
 
     setState(() {
-      _isLoading = true;
       _video = null;
       _availableStreams.clear();
       _availableAudio.clear();
@@ -115,7 +118,6 @@ class DownloaderScreenState extends State<DownloaderScreen>
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
         _searchController.reverse();
       }
     }
@@ -128,6 +130,8 @@ class DownloaderScreenState extends State<DownloaderScreen>
       _isDownloading = true;
       _downloadProgress = 0.0;
       _downloadingStreamInfo = streamInfo;
+      _lastRequestedStream = streamInfo;
+      _cancelRequested = false;
     });
 
     try {
@@ -165,7 +169,43 @@ class DownloaderScreenState extends State<DownloaderScreen>
       var downloaded = 0;
       final total = streamInfo.size.totalBytes;
 
+      // Notification: démarrage
+      await _notifier.startProgress(
+        _currentNotificationId,
+        title: 'Téléchargement',
+        body: _video!.title,
+      );
+
       await for (final chunk in stream) {
+        if (_cancelRequested) {
+          await fileStream.close();
+          try {
+            await file.delete();
+          } catch (_) {}
+          await _notifier.cancel(_currentNotificationId);
+          if (mounted) {
+            setState(() {
+              _isDownloading = false;
+              _downloadProgress = 0.0;
+              _downloadingStreamInfo = null;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Téléchargement annulé'),
+                action: SnackBarAction(
+                  label: 'RELANCER',
+                  onPressed: () {
+                    final s = _lastRequestedStream;
+                    if (s != null) {
+                      _downloadStream(s, 'auto');
+                    }
+                  },
+                ),
+              ),
+            );
+          }
+          return;
+        }
         downloaded += chunk.length;
         fileStream.add(chunk);
 
@@ -174,6 +214,16 @@ class DownloaderScreenState extends State<DownloaderScreen>
             _downloadProgress = downloaded / total;
           });
         }
+
+        // Notification: progression
+        final pct = (_downloadProgress * 100).clamp(0, 100);
+        await _notifier.updateProgress(
+          _currentNotificationId,
+          title: 'Téléchargement (${pct.toStringAsFixed(0)}%)',
+          body: _video!.title,
+          progress: downloaded,
+          maxProgress: total,
+        );
       }
 
       await fileStream.close();
@@ -259,6 +309,11 @@ class DownloaderScreenState extends State<DownloaderScreen>
               ),
             );
           }
+          await _notifier.complete(
+            _currentNotificationId,
+            title: 'Téléchargement terminé',
+            body: finalOutPath.split('/').last,
+          );
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -268,6 +323,11 @@ class DownloaderScreenState extends State<DownloaderScreen>
               ),
             );
           }
+          await _notifier.fail(
+            _currentNotificationId,
+            title: 'Échec du téléchargement',
+            body: 'Fusion vidéo+audio',
+          );
         }
       }
 
@@ -306,6 +366,11 @@ class DownloaderScreenState extends State<DownloaderScreen>
           ),
         );
       }
+      await _notifier.complete(
+        _currentNotificationId,
+        title: 'Téléchargement terminé',
+        body: filePath.split('/').last,
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -328,6 +393,11 @@ class DownloaderScreenState extends State<DownloaderScreen>
           ),
         );
       }
+      await _notifier.fail(
+        _currentNotificationId,
+        title: 'Échec du téléchargement',
+        body: '$e',
+      );
     }
   }
 
@@ -492,46 +562,44 @@ class DownloaderScreenState extends State<DownloaderScreen>
                       ),
                     ),
                   ],
-                  // Texte d'intro
-                  const SizedBox(height: 8),
-                  Text(
-                    'Téléchargez vos vidéos et musiques préférées',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  // Texte d'aide au-dessus du champ de lien
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      'Téléchargez vos vidéos et musiques préférées',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.75),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 12),
-                  // Champ URL + actions (agrandi et responsive)
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 8,
-                    runSpacing: 8,
+                  // Champ URL + actions
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width - 40,
+                      Expanded(
                         child: TextField(
                           controller: _urlController,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyLarge?.copyWith(fontSize: 16),
+                          style: const TextStyle(fontSize: 16),
                           decoration: InputDecoration(
                             hintText: 'Collez l\'URL YouTube ici',
                             filled: true,
-                            fillColor: colorScheme.surfaceContainer,
-                            prefixIcon: const Icon(Icons.link),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 16,
-                            ),
+                            fillColor: colorScheme.surface,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
                             ),
                           ),
                           onSubmitted: (_) => _fetchVideoInfo(),
                         ),
                       ),
-                      OutlinedButton.icon(
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Coller',
                         onPressed: () async {
                           final data = await Clipboard.getData('text/plain');
                           final text = data?.text ?? '';
@@ -541,25 +609,17 @@ class DownloaderScreenState extends State<DownloaderScreen>
                           }
                         },
                         icon: const Icon(Icons.paste),
-                        label: const Text('Coller'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                          textStyle: const TextStyle(fontSize: 16),
-                        ),
+                        color: colorScheme.primary,
+                        iconSize: 26,
                       ),
-                      FilledButton.icon(
+                      const SizedBox(width: 4),
+                      ElevatedButton.icon(
                         onPressed: _fetchVideoInfo,
                         icon: const Icon(Icons.search),
                         label: const Text('Analyser'),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                          textStyle: const TextStyle(fontSize: 16),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          minimumSize: const Size(0, 52),
                         ),
                       ),
                     ],
@@ -687,6 +747,78 @@ class DownloaderScreenState extends State<DownloaderScreen>
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
+        // Presets rapides
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton.icon(
+              onPressed: _isDownloading || _availableStreams.isEmpty
+                  ? null
+                  : () {
+                      final s = _availableStreams
+                          .where((v) => v.qualityLabel.contains('720p'))
+                          .toList();
+                      if (s.isNotEmpty) _downloadStream(s.first, 'mp4_720p');
+                    },
+              icon: const Icon(Icons.video_file_outlined),
+              label: const Text('MP4 720p'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _isDownloading || _availableStreams.isEmpty
+                  ? null
+                  : () {
+                      final s = _availableStreams
+                          .where((v) => v.qualityLabel.contains('1080p'))
+                          .toList();
+                      if (s.isNotEmpty) _downloadStream(s.first, 'mp4_1080p');
+                    },
+              icon: const Icon(Icons.video_file_outlined),
+              label: const Text('MP4 1080p'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _isDownloading || _availableAudio.isEmpty
+                  ? null
+                  : () {
+                      final m4a = _availableAudio
+                          .where((a) => a.container.name.toLowerCase() == 'm4a')
+                          .toList();
+                      final list = (m4a.isNotEmpty ? m4a : _availableAudio)
+                        ..sort(
+                          (a, b) => (a.bitrate.kiloBitsPerSecond - 128)
+                              .abs()
+                              .compareTo(
+                                (b.bitrate.kiloBitsPerSecond - 128).abs(),
+                              ),
+                        );
+                      _downloadStream(list.first, 'm4a_128');
+                    },
+              icon: const Icon(Icons.audiotrack_outlined),
+              label: const Text('M4A 128 kbps'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _isDownloading || _availableAudio.isEmpty
+                  ? null
+                  : () {
+                      final m4a = _availableAudio
+                          .where((a) => a.container.name.toLowerCase() == 'm4a')
+                          .toList();
+                      final list = (m4a.isNotEmpty ? m4a : _availableAudio)
+                        ..sort(
+                          (a, b) => (a.bitrate.kiloBitsPerSecond - 256)
+                              .abs()
+                              .compareTo(
+                                (b.bitrate.kiloBitsPerSecond - 256).abs(),
+                              ),
+                        );
+                      _downloadStream(list.first, 'm4a_256');
+                    },
+              icon: const Icon(Icons.audiotrack_outlined),
+              label: const Text('M4A 256 kbps'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         // Bouton global: meilleure qualité auto (muxed > fusion)
         Align(
           alignment: Alignment.centerLeft,
@@ -1097,17 +1229,20 @@ class DownloaderScreenState extends State<DownloaderScreen>
           ),
           const SizedBox(height: 8),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${(_downloadProgress * 100).toStringAsFixed(1)}%',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              if (_downloadingStreamInfo != null)
-                Text(
-                  '${_formatFileSize((_downloadProgress * _downloadingStreamInfo!.size.totalBytes).round())} / ${_formatFileSize(_downloadingStreamInfo!.size.totalBytes)}',
+              Expanded(
+                child: Text(
+                  '${(_downloadProgress * 100).toStringAsFixed(1)}%'
+                  '${_downloadingStreamInfo != null ? '  ·  ' + _formatFileSize((_downloadProgress * _downloadingStreamInfo!.size.totalBytes).round()) + ' / ' + _formatFileSize(_downloadingStreamInfo!.size.totalBytes) : ''}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => setState(() => _cancelRequested = true),
+                icon: const Icon(Icons.cancel_outlined),
+                label: const Text('Annuler'),
+              ),
             ],
           ),
         ],

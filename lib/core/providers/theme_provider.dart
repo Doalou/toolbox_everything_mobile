@@ -3,8 +3,10 @@ import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 
 class ThemeProvider with ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
-  Color _seedColor = AppConstants.expressiveColors.first; // Utilise la première couleur expressive
-  
+  Color _seedColor = AppConstants
+      .expressiveColors
+      .first; // Utilise la première couleur expressive
+
   ThemeMode get themeMode => _themeMode;
   Color get seedColor => _seedColor;
 
@@ -36,10 +38,13 @@ class ThemeProvider with ChangeNotifier {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colorScheme,
-      
+
       // Typography moderne et lisible
-      textTheme: _createModernTextTheme(colorScheme, brightness == Brightness.dark),
-      
+      textTheme: _createModernTextTheme(
+        colorScheme,
+        brightness == Brightness.dark,
+      ),
+
       // Cards avec design épuré
       cardTheme: CardThemeData(
         elevation: AppConstants.cardElevation,
@@ -50,17 +55,20 @@ class ThemeProvider with ChangeNotifier {
         ),
         margin: const EdgeInsets.all(AppConstants.smallPadding),
       ),
-      
+
       // Boutons modernes avec moins d'élévation
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: AppConstants.buttonElevation,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderRadius: BorderRadius.circular(
+              AppConstants.defaultBorderRadius,
+            ),
           ),
+          minimumSize: const Size.fromHeight(52),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.largePadding, 
+            horizontal: AppConstants.largePadding,
             vertical: AppConstants.defaultPadding,
           ),
           textStyle: const TextStyle(
@@ -70,15 +78,18 @@ class ThemeProvider with ChangeNotifier {
           ),
         ),
       ),
-      
+
       // Boutons outlined épurés
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderRadius: BorderRadius.circular(
+              AppConstants.defaultBorderRadius,
+            ),
           ),
+          minimumSize: const Size.fromHeight(52),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.largePadding, 
+            horizontal: AppConstants.largePadding,
             vertical: AppConstants.defaultPadding,
           ),
           side: BorderSide(color: colorScheme.outline, width: 1),
@@ -89,15 +100,16 @@ class ThemeProvider with ChangeNotifier {
           ),
         ),
       ),
-      
+
       // Text buttons minimalistes
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppConstants.smallBorderRadius),
           ),
+          minimumSize: const Size.fromHeight(52),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.largePadding, 
+            horizontal: AppConstants.largePadding,
             vertical: AppConstants.smallPadding,
           ),
           textStyle: const TextStyle(
@@ -107,7 +119,7 @@ class ThemeProvider with ChangeNotifier {
           ),
         ),
       ),
-      
+
       // FAB avec design cohérent
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: AppConstants.buttonElevation,
@@ -120,7 +132,7 @@ class ThemeProvider with ChangeNotifier {
           letterSpacing: 0.2,
         ),
       ),
-      
+
       // AppBar épurée
       appBarTheme: AppBarTheme(
         elevation: 0,
@@ -137,7 +149,7 @@ class ThemeProvider with ChangeNotifier {
           height: 1.2,
         ),
       ),
-      
+
       // Input fields modernes
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -148,7 +160,10 @@ class ThemeProvider with ChangeNotifier {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3), width: 1),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.3),
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
@@ -159,7 +174,7 @@ class ThemeProvider with ChangeNotifier {
           borderSide: BorderSide(color: colorScheme.error, width: 1),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppConstants.largePadding, 
+          horizontal: AppConstants.largePadding,
           vertical: AppConstants.defaultPadding,
         ),
         labelStyle: TextStyle(
@@ -170,17 +185,19 @@ class ThemeProvider with ChangeNotifier {
           color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
         ),
       ),
-      
+
       // BottomSheet moderne
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: colorScheme.surface,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppConstants.largePadding)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppConstants.largePadding),
+          ),
         ),
         elevation: 0,
         modalElevation: 0,
       ),
-      
+
       // Dialog épuré
       dialogTheme: DialogThemeData(
         backgroundColor: colorScheme.surface,
@@ -194,7 +211,7 @@ class ThemeProvider with ChangeNotifier {
           color: colorScheme.onSurface,
         ),
       ),
-      
+
       // SnackBar moderne
       snackBarTheme: SnackBarThemeData(
         backgroundColor: colorScheme.inverseSurface,
@@ -208,11 +225,11 @@ class ThemeProvider with ChangeNotifier {
         behavior: SnackBarBehavior.floating,
         elevation: 0,
       ),
-      
+
       // ListTile cohérent
       listTileTheme: ListTileThemeData(
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppConstants.largePadding, 
+          horizontal: AppConstants.largePadding,
           vertical: AppConstants.smallPadding,
         ),
         shape: RoundedRectangleBorder(
@@ -228,14 +245,14 @@ class ThemeProvider with ChangeNotifier {
           color: colorScheme.onSurfaceVariant,
         ),
       ),
-      
+
       // Divider subtil
       dividerTheme: DividerThemeData(
         color: colorScheme.outlineVariant.withValues(alpha: 0.2),
         thickness: 1,
         space: AppConstants.largePadding,
       ),
-      
+
       // Chip moderne
       chipTheme: ChipThemeData(
         backgroundColor: colorScheme.surfaceContainerLow,
@@ -254,7 +271,7 @@ class ThemeProvider with ChangeNotifier {
 
   TextTheme _createModernTextTheme(ColorScheme colorScheme, bool isDark) {
     final baseColor = colorScheme.onSurface;
-    
+
     return TextTheme(
       // Display styles - pour les titres héroïques
       displayLarge: TextStyle(
@@ -278,7 +295,7 @@ class ThemeProvider with ChangeNotifier {
         letterSpacing: -0.2,
         height: 1.3,
       ),
-      
+
       // Headline styles - pour les titres de sections
       headlineLarge: TextStyle(
         fontSize: 24,
@@ -301,7 +318,7 @@ class ThemeProvider with ChangeNotifier {
         letterSpacing: 0.0,
         height: 1.4,
       ),
-      
+
       // Title styles - pour les titres de cards
       titleLarge: TextStyle(
         fontSize: 16,
@@ -324,7 +341,7 @@ class ThemeProvider with ChangeNotifier {
         letterSpacing: 0.1,
         height: 1.4,
       ),
-      
+
       // Body styles - pour le contenu
       bodyLarge: TextStyle(
         fontSize: 16,
@@ -347,7 +364,7 @@ class ThemeProvider with ChangeNotifier {
         letterSpacing: 0.2,
         height: 1.4,
       ),
-      
+
       // Label styles - pour les boutons et labels
       labelLarge: TextStyle(
         fontSize: 14,
@@ -372,4 +389,4 @@ class ThemeProvider with ChangeNotifier {
       ),
     );
   }
-} 
+}

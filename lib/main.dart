@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/home_screen.dart';
+import 'package:toolbox_everything_mobile/core/services/notification_service.dart';
 
 class NoGlowScrollBehavior extends ScrollBehavior {
   const NoGlowScrollBehavior();
@@ -23,7 +24,9 @@ class NoGlowScrollBehavior extends ScrollBehavior {
   }
 }
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.instance.initialize();
   runApp(
     MultiProvider(
       providers: [
