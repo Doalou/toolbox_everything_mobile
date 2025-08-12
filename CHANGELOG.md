@@ -5,30 +5,28 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.4] - 2025-08-09
+## [1.0.0] - 2025-08-10
 
 ### Ajouté
-- **YouTube Downloader**: section « Audio seul » clairement séparée sous « Vidéo + Audio » avec bouton « Télécharger la meilleure » par groupe.
-- **QR Code**: export direct en PDF (avec prévisualisation possible via partage), bouton en plus des actions existantes.
-- **YouTube Downloader**: bouton « Ouvrir le dossier » (rapide), action « Coller l’URL », et champ de saisie intégré dans l’en-tête.
- - **YouTube Downloader**: texte d’aide « Téléchargez vos vidéos et musiques préférées » déplacé au‑dessus du champ de lien pour une meilleure lisibilité.
- - **YouTube Downloader**: téléchargements en arrière‑plan avec notifications de progression, annulation et relance rapide.
- - **YouTube Downloader**: presets rapides de formats (MP4 720p, MP4 1080p, M4A 128/256 kbps).
-- **Système**: initialisation du service de notifications au démarrage (flutter_local_notifications).
+- Téléchargements en arrière‑plan avec notifications (progression, succès/échec) et annulation/relance.
+- Presets rapides: MP4 720p/1080p, M4A 128/256 kbps.
+- Politique de confidentialité dédiée (`privacy/index.html`).
+- YouTube Downloader: section « Audio seul » distincte, bouton « Ouvrir le dossier », action « Coller l’URL », champ de saisie intégré au header, texte d’aide repositionné.
+- Système: initialisation du service de notifications au démarrage (flutter_local_notifications).
 
 ### Modifié
-- **YouTube Downloader**: fiabilisation de la fusion automatique via FFmpeg (meilleure sélection audio/vidéo, gestion de noms uniques).
-- **YouTube Downloader**: zone de saisie agrandie (padding, hauteur minimale et taille d’icône augmentés) pour un confort d’usage.
- - **UI Globale**: hauteur minimale uniformisée des boutons (52px) via le thème pour une meilleure cohérence visuelle.
-- **Android**: ajout de la permission `POST_NOTIFICATIONS` (Android 13+) dans le manifeste.
-- **QR Code**: mise en page des boutons avec Wrap pour éviter les débordements sur petits écrans.
-- **UX/Code**: migration large de `.withOpacity()` vers `.withValues(alpha: ...)` pour éviter la perte de précision couleur (Flutter 3.22+).
-- **Générateur de MDP**: délai d'affichage de l'historique porté de 5s à 15s (20 derniers éléments).
+- Uniformisation UI globale: boutons min 52px (Material 3), champs cohérents.
+- Téléchargeur: zone de saisie agrandie, fusion FFmpeg plus robuste (sélection audio/vidéo, noms uniques).
+- Android: ajout de la permission `POST_NOTIFICATIONS` (Android 13+).
+- QR Code: mise en page des boutons avec Wrap pour éviter les débordements.
+- UX/Code: migration de `.withOpacity()` vers `.withValues(alpha: ...)` (Flutter 3.22+).
+- Générateur de MDP: délai d’historique porté à 15s (20 éléments).
 
 ### Corrigé
-- Message de fin de téléchargement: correction du nom de fichier affiché (suppression de la référence à `fileName` inexistante).
-- Convertisseur binaire: conversions maintenant instantanées lors de la saisie (suppression des listeners redondants, garde de ré-entrée).
-- Lints: suppression des imports inutilisés, des interpolations avec accolades inutiles, et variables locales non utilisées.
+- Build Android: stabilité (icône de notifications, dépendances FFmpeg) et erreurs de build résolues.
+- YouTube Downloader: message de fin de téléchargement (nom de fichier) corrigé.
+- Convertisseur binaire: réactivité (suppression listeners redondants) et fiabilité.
+- Lints: imports inutilisés/interpolations/variables non utilisées supprimés.
 
 ---
 
