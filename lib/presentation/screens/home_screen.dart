@@ -17,6 +17,8 @@ import 'package:toolbox_everything_mobile/presentation/screens/hash_calculator_s
 import 'package:toolbox_everything_mobile/presentation/screens/timer_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/connection_tester_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/widgets/tool_card.dart';
+import 'package:provider/provider.dart';
+import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -151,6 +153,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bool lowResourceMode = context.select<SettingsProvider, bool>(
+      (s) => s.lowResourceMode,
+    );
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Responsive grid calculation
@@ -165,13 +170,15 @@ class _HomeScreenState extends State<HomeScreen> {
         slivers: [
           // Modern App Bar
           SliverAppBar(
-            expandedHeight: 160,
+            expandedHeight: lowResourceMode ? 120 : 160,
             floating: false,
             pinned: true,
             elevation: 0,
             backgroundColor: colorScheme.surface,
             surfaceTintColor: Colors.transparent,
-            flexibleSpace: FlexibleSpaceBar(background: _buildHeader(context)),
+            flexibleSpace: FlexibleSpaceBar(
+              background: _buildHeader(context, lowResourceMode),
+            ),
             actions: [_buildActionButtons(context)],
           ),
 
@@ -289,22 +296,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, bool lowResourceMode) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF6750A4).withValues(alpha: 0.15),
-            const Color(0xFFE91E63).withValues(alpha: 0.10),
-            const Color(0xFF00BCD4).withValues(alpha: 0.08),
-            colorScheme.surface.withValues(alpha: 0.8),
-          ],
-          stops: const [0.0, 0.3, 0.6, 1.0],
-        ),
+        gradient: lowResourceMode
+            ? null
+            : LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF6750A4).withValues(alpha: 0.15),
+                  const Color(0xFFE91E63).withValues(alpha: 0.10),
+                  const Color(0xFF00BCD4).withValues(alpha: 0.08),
+                  colorScheme.surface.withValues(alpha: 0.8),
+                ],
+                stops: const [0.0, 0.3, 0.6, 1.0],
+              ),
+        color: lowResourceMode ? colorScheme.surface : null,
       ),
       child: SafeArea(
         child: Padding(
@@ -316,21 +326,32 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 children: [
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 1000),
+                    duration: lowResourceMode
+                        ? Duration.zero
+                        : const Duration(milliseconds: 1000),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      gradient: const RadialGradient(
-                        center: Alignment.center,
-                        colors: [Color(0xFF6750A4), Color(0xFF9C27B0)],
-                      ),
+                      gradient: lowResourceMode
+                          ? null
+                          : const RadialGradient(
+                              center: Alignment.center,
+                              colors: [Color(0xFF6750A4), Color(0xFF9C27B0)],
+                            ),
+                      color: lowResourceMode
+                          ? colorScheme.primaryContainer
+                          : null,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6750A4).withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow: lowResourceMode
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF6750A4,
+                                ).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                     ),
                     child: const Icon(
                       Icons.build_circle,
@@ -376,8 +397,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Container(
       margin: const EdgeInsets.only(right: 12),
       child: Row(

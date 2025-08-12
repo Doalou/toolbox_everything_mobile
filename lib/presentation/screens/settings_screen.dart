@@ -113,6 +113,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
 
+                const SizedBox(height: 12),
+
+                // Mode économie de ressources
+                Card(
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    leading: const Icon(Icons.battery_saver),
+                    title: const Text('Mode économie de ressources'),
+                    subtitle: const Text(
+                      'Réduit les animations, les ombres et l’usage mémoire pour de meilleures performances',
+                    ),
+                    trailing: Switch(
+                      value: settingsProvider.lowResourceMode,
+                      onChanged: (v) => settingsProvider.setLowResourceMode(v),
+                    ),
+                  ),
+                ),
+
                 // Section À propos retirée sur demande
               ]),
             ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
+import 'package:provider/provider.dart';
+import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 
 /// Widget réutilisable pour afficher les états d'erreur
 class ErrorStateWidget extends StatelessWidget {
@@ -21,7 +23,10 @@ class ErrorStateWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+    final bool lowResourceMode = context.select<SettingsProvider, bool>(
+      (s) => s.lowResourceMode,
+    );
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.largePadding),
@@ -32,10 +37,21 @@ class ErrorStateWidget extends StatelessWidget {
               padding: const EdgeInsets.all(AppConstants.largePadding),
               decoration: BoxDecoration(
                 color: colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
+                borderRadius: BorderRadius.circular(
+                  AppConstants.largeBorderRadius,
+                ),
                 border: Border.all(
                   color: colorScheme.error.withValues(alpha: 0.3),
                 ),
+                boxShadow: lowResourceMode
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: colorScheme.error.withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -93,15 +109,12 @@ class ErrorStateWidget extends StatelessWidget {
 class LoadingStateWidget extends StatelessWidget {
   final String? message;
 
-  const LoadingStateWidget({
-    super.key,
-    this.message,
-  });
+  const LoadingStateWidget({super.key, this.message});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -145,7 +158,7 @@ class EmptyStateWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.largePadding),
@@ -187,4 +200,4 @@ class EmptyStateWidget extends StatelessWidget {
       ),
     );
   }
-} 
+}

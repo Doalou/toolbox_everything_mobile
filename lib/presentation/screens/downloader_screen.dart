@@ -176,6 +176,10 @@ class DownloaderScreenState extends State<DownloaderScreen>
         body: _video!.title,
       );
 
+      // Throttle notifications pour limiter la charge CPU sur appareils modestes
+      int lastNotifiedBytes = 0;
+      const int notifyStep = 256 * 1024; // 256KB
+
       await for (final chunk in stream) {
         if (_cancelRequested) {
           await fileStream.close();
@@ -216,14 +220,18 @@ class DownloaderScreenState extends State<DownloaderScreen>
         }
 
         // Notification: progression
-        final pct = (_downloadProgress * 100).clamp(0, 100);
-        await _notifier.updateProgress(
-          _currentNotificationId,
-          title: 'Téléchargement (${pct.toStringAsFixed(0)}%)',
-          body: _video!.title,
-          progress: downloaded,
-          maxProgress: total,
-        );
+        if (downloaded - lastNotifiedBytes >= notifyStep ||
+            downloaded == total) {
+          lastNotifiedBytes = downloaded;
+          final pct = (_downloadProgress * 100).clamp(0, 100);
+          await _notifier.updateProgress(
+            _currentNotificationId,
+            title: 'Téléchargement (${pct.toStringAsFixed(0)}%)',
+            body: _video!.title,
+            progress: downloaded,
+            maxProgress: total,
+          );
+        }
       }
 
       await fileStream.close();
@@ -668,23 +676,27 @@ class DownloaderScreenState extends State<DownloaderScreen>
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.network(
-              _video!.thumbnails.highResUrl,
+              _video!.thumbnails.standardResUrl, // vignettes plus légères
               fit: BoxFit.cover,
               width: double.infinity,
               height: 180,
+              cacheWidth: 600, // réduit l'empreinte mémoire
+              cacheHeight: 338,
               loadingBuilder: (context, child, progress) {
                 if (progress == null) return child;
                 return Container(
                   height: 180,
                   color: colorScheme.surfaceContainerHighest,
-                  child: const Center(child: CircularProgressIndicator()),
+                  child: const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 );
               },
               errorBuilder: (context, error, stack) {
                 return Container(
                   height: 180,
                   color: colorScheme.surfaceContainerHighest,
-                  child: const Icon(Icons.error_outline, size: 48),
+                  child: const Icon(Icons.error_outline, size: 40),
                 );
               },
             ),

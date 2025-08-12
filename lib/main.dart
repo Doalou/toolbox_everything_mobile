@@ -4,6 +4,7 @@ import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/home_screen.dart';
 import 'package:toolbox_everything_mobile/core/services/notification_service.dart';
+import 'package:flutter/painting.dart' as painting;
 
 class NoGlowScrollBehavior extends ScrollBehavior {
   const NoGlowScrollBehavior();
@@ -27,6 +28,9 @@ class NoGlowScrollBehavior extends ScrollBehavior {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.instance.initialize();
+  // Optimisation mémoire pour appareils low-cost
+  painting.imageCache.maximumSize = 100; // nombre max d'images en cache
+  painting.imageCache.maximumSizeBytes = 50 << 20; // ~50 Mo
   runApp(
     MultiProvider(
       providers: [
