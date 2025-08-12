@@ -21,6 +21,8 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - QR Code: mise en page des boutons avec Wrap pour éviter les débordements.
 - UX/Code: migration de `.withOpacity()` vers `.withValues(alpha: ...)` (Flutter 3.22+).
 - Générateur de MDP: délai d’historique porté à 15s (20 éléments).
+ - Optimisations performance: cache images réduit (~50 Mo), vignettes standardisées, throttling des notifications (téléchargements).
+ - Mode économie de ressources: désactivation/atténuation des animations et ombres (cards, header, widgets d’état) pour appareils modestes.
 
 ### Corrigé
 - Build Android: stabilité (icône de notifications, dépendances FFmpeg) et erreurs de build résolues.

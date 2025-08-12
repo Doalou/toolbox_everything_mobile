@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:toolbox_everything_mobile/core/models/tool_item.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
+import 'package:provider/provider.dart';
+import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 
 class ToolCard extends StatefulWidget {
   final ToolItem tool;
@@ -24,6 +26,9 @@ class _ToolCardState extends State<ToolCard> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bool lowResourceMode = context.select<SettingsProvider, bool>(
+      (s) => s.lowResourceMode,
+    );
 
     // Utilisation des couleurs expressives depuis les constantes
     final cardColor = AppConstants.expressiveColors.getColorByText(
@@ -35,16 +40,24 @@ class _ToolCardState extends State<ToolCard> {
       hint: 'Appuyez pour ouvrir ${widget.tool.title}',
       button: true,
       child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
+        onEnter: (_) {
+          if (!lowResourceMode) setState(() => _isHovered = true);
+        },
+        onExit: (_) {
+          if (!lowResourceMode) setState(() => _isHovered = false);
+        },
         child: AnimatedContainer(
-          duration: AppConstants.mediumAnimation,
+          duration: lowResourceMode
+              ? Duration.zero
+              : AppConstants.mediumAnimation,
           curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()
-            ..translate(0.0, _isHovered ? -4.0 : 0.0)
-            ..scale(_isHovered ? 1.02 : 1.0),
+          transform: lowResourceMode
+              ? Matrix4.identity()
+              : (Matrix4.identity()
+                  ..translate(0.0, _isHovered ? -4.0 : 0.0)
+                  ..scale(_isHovered ? 1.02 : 1.0)),
           decoration: BoxDecoration(
-            gradient: _isHovered
+            gradient: (_isHovered && !lowResourceMode)
                 ? LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -63,13 +76,13 @@ class _ToolCardState extends State<ToolCard> {
                   ),
             borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
             border: Border.all(
-              color: _isHovered
+              color: (_isHovered && !lowResourceMode)
                   ? cardColor.withValues(alpha: 0.4)
                   : colorScheme.outline.withValues(alpha: 0.1),
-              width: _isHovered ? 2 : 1,
+              width: (_isHovered && !lowResourceMode) ? 2 : 1,
             ),
             boxShadow: [
-              if (_isHovered) ...[
+              if (_isHovered && !lowResourceMode) ...[
                 BoxShadow(
                   color: cardColor.withValues(alpha: 0.2),
                   blurRadius: 20,
@@ -80,7 +93,7 @@ class _ToolCardState extends State<ToolCard> {
                   blurRadius: 40,
                   offset: const Offset(0, 16),
                 ),
-              ] else
+              ] else if (!lowResourceMode)
                 BoxShadow(
                   color: colorScheme.shadow.withValues(alpha: 0.08),
                   blurRadius: 8,
@@ -106,12 +119,14 @@ class _ToolCardState extends State<ToolCard> {
                       children: [
                         // Icon Container avec plus de caractère
                         AnimatedContainer(
-                          duration: AppConstants.mediumAnimation,
+                          duration: lowResourceMode
+                              ? Duration.zero
+                              : AppConstants.mediumAnimation,
                           padding: const EdgeInsets.all(
                             AppConstants.defaultPadding,
                           ),
                           decoration: BoxDecoration(
-                            gradient: _isHovered
+                            gradient: (_isHovered && !lowResourceMode)
                                 ? RadialGradient(
                                     center: Alignment.center,
                                     colors: [
@@ -131,7 +146,7 @@ class _ToolCardState extends State<ToolCard> {
                             borderRadius: BorderRadius.circular(
                               AppConstants.defaultBorderRadius,
                             ),
-                            boxShadow: _isHovered
+                            boxShadow: (_isHovered && !lowResourceMode)
                                 ? [
                                     BoxShadow(
                                       color: cardColor.withValues(alpha: 0.3),
@@ -142,8 +157,12 @@ class _ToolCardState extends State<ToolCard> {
                                 : null,
                           ),
                           child: AnimatedRotation(
-                            turns: _isHovered ? 0.05 : 0.0,
-                            duration: AppConstants.mediumAnimation,
+                            turns: (_isHovered && !lowResourceMode)
+                                ? 0.05
+                                : 0.0,
+                            duration: lowResourceMode
+                                ? Duration.zero
+                                : AppConstants.mediumAnimation,
                             child: Icon(
                               widget.tool.icon,
                               size: AppConstants.largeIconSize,
@@ -179,12 +198,14 @@ class _ToolCardState extends State<ToolCard> {
 
                         // Interaction indicator plus attrayant
                         AnimatedContainer(
-                          duration: AppConstants.mediumAnimation,
+                          duration: lowResourceMode
+                              ? Duration.zero
+                              : AppConstants.mediumAnimation,
                           height: 4,
-                          width: _isHovered ? 50 : 25,
+                          width: (_isHovered && !lowResourceMode) ? 50 : 25,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: _isHovered
+                              colors: (_isHovered && !lowResourceMode)
                                   ? [
                                       cardColor,
                                       cardColor.withValues(alpha: 0.6),
@@ -199,7 +220,7 @@ class _ToolCardState extends State<ToolCard> {
                                     ],
                             ),
                             borderRadius: BorderRadius.circular(2),
-                            boxShadow: _isHovered
+                            boxShadow: (_isHovered && !lowResourceMode)
                                 ? [
                                     BoxShadow(
                                       color: cardColor.withValues(alpha: 0.4),
