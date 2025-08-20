@@ -72,10 +72,16 @@ class MyApp extends StatelessWidget {
                   )
                 : themeProvider.darkTheme;
 
+            final pageTransitionsTheme = const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+              },
+            );
+
             return MaterialApp(
               title: 'Toolbox Everything',
-              theme: lightTheme,
-              darkTheme: darkTheme,
+              theme: lightTheme.copyWith(pageTransitionsTheme: pageTransitionsTheme),
+              darkTheme: darkTheme.copyWith(pageTransitionsTheme: pageTransitionsTheme),
               themeMode: themeProvider.themeMode,
               themeAnimationDuration: Duration.zero,
               themeAnimationCurve: Curves.linear,
