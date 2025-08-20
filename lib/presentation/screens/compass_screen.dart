@@ -15,33 +15,11 @@ class CompassScreenState extends State<CompassScreen>
   double? _heading;
   bool _isCalibrating = true;
 
-  late AnimationController _pulseController;
-  late AnimationController _rotationController;
-  late Animation<double> _pulseAnimation;
-  late Animation<double> _rotationAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-    _rotationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _rotationController, curve: Curves.easeOutCubic),
-    );
-
-    _pulseController.repeat(reverse: true);
 
     // Simuler la calibration
     Future.delayed(const Duration(seconds: 2), () {
@@ -55,20 +33,18 @@ class CompassScreenState extends State<CompassScreen>
 
   @override
   void dispose() {
-    _pulseController.dispose();
-    _rotationController.dispose();
     super.dispose();
   }
 
   String _getDirection(double heading) {
-    if (heading >= 337.5 || heading < 22.5) return 'Nord';
-    if (heading >= 22.5 && heading < 67.5) return 'Nord-Est';
-    if (heading >= 67.5 && heading < 112.5) return 'Est';
-    if (heading >= 112.5 && heading < 157.5) return 'Sud-Est';
-    if (heading >= 157.5 && heading < 202.5) return 'Sud';
-    if (heading >= 202.5 && heading < 247.5) return 'Sud-Ouest';
-    if (heading >= 247.5 && heading < 292.5) return 'Ouest';
-    if (heading >= 292.5 && heading < 337.5) return 'Nord-Ouest';
+    if (heading >= 337.5 || heading < 22.5) { return 'Nord'; }
+    if (heading >= 22.5 && heading < 67.5) { return 'Nord-Est'; }
+    if (heading >= 67.5 && heading < 112.5) { return 'Est'; }
+    if (heading >= 112.5 && heading < 157.5) { return 'Sud-Est'; }
+    if (heading >= 157.5 && heading < 202.5) { return 'Sud'; }
+    if (heading >= 202.5 && heading < 247.5) { return 'Sud-Ouest'; }
+    if (heading >= 247.5 && heading < 292.5) { return 'Ouest'; }
+    if (heading >= 292.5 && heading < 337.5) { return 'Nord-Ouest'; }
     return 'Inconnu';
   }
 
@@ -89,7 +65,7 @@ class CompassScreenState extends State<CompassScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Boussole'),
         backgroundColor: Colors.transparent,
@@ -133,13 +109,8 @@ class CompassScreenState extends State<CompassScreen>
             return _buildUnsupportedView();
           }
 
-          // Mettre à jour la direction avec animation
-          if (_heading != direction) {
-            _heading = direction;
-            _rotationController.forward().then((_) {
-              _rotationController.reset();
-            });
-          }
+          // Mettre à jour la direction
+          _heading = direction;
 
           return _buildCompassView(direction, colorScheme);
         },
@@ -152,7 +123,7 @@ class CompassScreenState extends State<CompassScreen>
     final directionColor = _getDirectionColor(direction);
 
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
+      physics: const ClampingScrollPhysics(),
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
@@ -163,45 +134,18 @@ class CompassScreenState extends State<CompassScreen>
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    directionColor.withValues(alpha: 0.1),
-                    directionColor.withValues(alpha: 0.05),
-                    colorScheme.primaryContainer.withValues(alpha: 0.3),
-                  ],
-                ),
+                color: colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: directionColor.withValues(alpha: 0.2),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
               ),
               child: Column(
                 children: [
-                  AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _isCalibrating ? _pulseAnimation.value : 1.0,
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: directionColor.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.explore,
-                            size: 32,
-                            color: directionColor,
-                          ),
-                        ),
-                      );
-                    },
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: directionColor.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.explore, size: 32, color: directionColor),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -238,15 +182,7 @@ class CompassScreenState extends State<CompassScreen>
           // Boussole principale
           FadeInUp(
             delay: const Duration(milliseconds: 400),
-            child: AnimatedBuilder(
-              animation: _rotationAnimation,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: 1 + (_rotationAnimation.value * 0.05),
-                  child: _buildCompassRose(direction, directionColor),
-                );
-              },
-            ),
+            child: _buildCompassRose(direction, directionColor),
           ),
 
           const SizedBox(height: 40),
@@ -280,24 +216,11 @@ class CompassScreenState extends State<CompassScreen>
       height: 280,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            directionColor.withValues(alpha: 0.1),
-            directionColor.withValues(alpha: 0.05),
-            Colors.transparent,
-          ],
-        ),
         border: Border.all(
           color: directionColor.withValues(alpha: 0.3),
           width: 2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: directionColor.withValues(alpha: 0.2),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: Colors.transparent,
       ),
       child: Stack(
         alignment: Alignment.center,
@@ -365,37 +288,13 @@ class CompassScreenState extends State<CompassScreen>
           ),
 
           // Aiguille principale (fixe, pointe vers le haut)
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _isCalibrating ? _pulseAnimation.value : 1.0,
-                child: Container(
-                  width: 6,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        const Color(0xFFE53E3E), // Rouge pour le Nord
-                        directionColor.withValues(alpha: 0.8),
-                        Colors.grey.shade600,
-                      ],
-                      stops: const [0.0, 0.6, 1.0],
-                    ),
-                    borderRadius: BorderRadius.circular(3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: directionColor.withValues(alpha: 0.4),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+          Container(
+            width: 6,
+            height: 120,
+            decoration: BoxDecoration(
+              color: directionColor,
+              borderRadius: BorderRadius.circular(3),
+            ),
           ),
 
           // Centre de la boussole

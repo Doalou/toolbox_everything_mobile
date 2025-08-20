@@ -17,8 +17,90 @@ import 'package:toolbox_everything_mobile/presentation/screens/hash_calculator_s
 import 'package:toolbox_everything_mobile/presentation/screens/timer_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/connection_tester_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/widgets/tool_card.dart';
+import 'package:toolbox_everything_mobile/core/services/usage_stats_service.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
+
+final List<ToolItem> _tools = [
+  ToolItem(
+    title: 'Générateur de MDP',
+    icon: Icons.password,
+    screenBuilder: () => const PasswordGeneratorScreen(),
+    category: ToolCategory.security,
+  ),
+  ToolItem(
+    title: 'QR Code',
+    icon: Icons.qr_code,
+    screenBuilder: () => const QrCodeScreen(),
+    category: ToolCategory.utilities,
+  ),
+  ToolItem(
+    title: 'Convertisseur d\'unités',
+    icon: Icons.swap_horiz,
+    screenBuilder: () => const UnitConverterScreen(),
+    category: ToolCategory.conversion,
+  ),
+  ToolItem(
+    title: 'Convertisseur binaire',
+    icon: Icons.transform,
+    screenBuilder: () => const NumberConverterScreen(),
+    category: ToolCategory.conversion,
+  ),
+  ToolItem(
+    title: 'Bloc-notes',
+    icon: Icons.note_add,
+    screenBuilder: () => const NotesScreen(),
+    category: ToolCategory.productivity,
+  ),
+  ToolItem(
+    title: 'Lorem Ipsum',
+    icon: Icons.text_snippet,
+    screenBuilder: () => const LoremGeneratorScreen(),
+    category: ToolCategory.productivity,
+  ),
+  ToolItem(
+    title: 'Calculateur Hash',
+    icon: Icons.fingerprint,
+    screenBuilder: () => const HashCalculatorScreen(),
+    category: ToolCategory.security,
+  ),
+  ToolItem(
+    title: 'Minuteur',
+    icon: Icons.timer,
+    screenBuilder: () => const TimerScreen(),
+    category: ToolCategory.utilities,
+  ),
+  ToolItem(
+    title: 'Boussole',
+    icon: Icons.explore,
+    screenBuilder: () => const CompassScreen(),
+    category: ToolCategory.mobile,
+  ),
+  ToolItem(
+    title: 'Niveau à bulle',
+    icon: Icons.architecture,
+    screenBuilder: () => const BubbleLevelScreen(),
+    category: ToolCategory.mobile,
+  ),
+  ToolItem(
+    title: 'Convertisseur de fichiers',
+    icon: Icons.file_copy,
+    screenBuilder: () => const FileConverterScreen(),
+    category: ToolCategory.conversion,
+  ),
+  ToolItem(
+    title: 'Téléchargeur',
+    icon: Icons.download,
+    screenBuilder: () => const DownloaderScreen(),
+    category: ToolCategory.media,
+  ),
+  ToolItem(
+    title: 'Testeur de Connexion',
+    icon: Icons.wifi,
+    screenBuilder: () => const ConnectionTesterScreen(),
+    category: ToolCategory.utilities,
+  ),
+];
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,7 +110,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late List<ToolItem> tools;
   late List<ToolItem> filteredTools;
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
@@ -36,89 +117,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    tools = [
-      ToolItem(
-        title: 'Générateur de MDP',
-        icon: Icons.password,
-        screenBuilder: () => const PasswordGeneratorScreen(),
-        category: ToolCategory.security,
-      ),
-      ToolItem(
-        title: 'QR Code',
-        icon: Icons.qr_code,
-        screenBuilder: () => const QrCodeScreen(),
-        category: ToolCategory.utilities,
-      ),
-      ToolItem(
-        title: 'Convertisseur d\'unités',
-        icon: Icons.swap_horiz,
-        screenBuilder: () => const UnitConverterScreen(),
-        category: ToolCategory.conversion,
-      ),
-      ToolItem(
-        title: 'Convertisseur binaire',
-        icon: Icons.transform,
-        screenBuilder: () => const NumberConverterScreen(),
-        category: ToolCategory.conversion,
-      ),
-      ToolItem(
-        title: 'Bloc-notes',
-        icon: Icons.note_add,
-        screenBuilder: () => const NotesScreen(),
-        category: ToolCategory.productivity,
-      ),
-      ToolItem(
-        title: 'Lorem Ipsum',
-        icon: Icons.text_snippet,
-        screenBuilder: () => const LoremGeneratorScreen(),
-        category: ToolCategory.productivity,
-      ),
-      ToolItem(
-        title: 'Calculateur Hash',
-        icon: Icons.fingerprint,
-        screenBuilder: () => const HashCalculatorScreen(),
-        category: ToolCategory.security,
-      ),
-      ToolItem(
-        title: 'Minuteur',
-        icon: Icons.timer,
-        screenBuilder: () => const TimerScreen(),
-        category: ToolCategory.utilities,
-      ),
-      ToolItem(
-        title: 'Boussole',
-        icon: Icons.explore,
-        screenBuilder: () => const CompassScreen(),
-        category: ToolCategory.mobile,
-      ),
-      ToolItem(
-        title: 'Niveau à bulle',
-        icon: Icons.architecture,
-        screenBuilder: () => const BubbleLevelScreen(),
-        category: ToolCategory.mobile,
-      ),
-      ToolItem(
-        title: 'Convertisseur de fichiers',
-        icon: Icons.file_copy,
-        screenBuilder: () => const FileConverterScreen(),
-        category: ToolCategory.conversion,
-      ),
-      ToolItem(
-        title: 'Téléchargeur',
-        icon: Icons.download,
-        screenBuilder: () => const DownloaderScreen(),
-        category: ToolCategory.media,
-      ),
-      ToolItem(
-        title: 'Testeur de Connexion',
-        icon: Icons.wifi,
-        screenBuilder: () => const ConnectionTesterScreen(),
-        category: ToolCategory.utilities,
-      ),
-    ];
-    filteredTools = List.from(tools);
-
+    filteredTools = _tools;
     _searchController.addListener(_filterTools);
+    _loadFavorites();
   }
 
   @override
@@ -131,11 +132,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        filteredTools = List.from(tools);
+        filteredTools = _tools;
       } else {
-        filteredTools = tools.where((tool) {
+        filteredTools = _tools.where((tool) {
           return tool.title.toLowerCase().contains(query);
         }).toList();
+      }
+    });
+  }
+
+  Future<void> _loadFavorites() async {
+    final favs = await UsageStatsService.loadFavorites();
+    setState(() {
+      for (final t in _tools) {
+        t.isFavorite = favs.contains(t.title);
       }
     });
   }
@@ -145,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _isSearching = !_isSearching;
       if (!_isSearching) {
         _searchController.clear();
-        filteredTools = List.from(tools);
+        filteredTools = _tools;
       }
     });
   }
@@ -156,143 +166,149 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool lowResourceMode = context.select<SettingsProvider, bool>(
       (s) => s.lowResourceMode,
     );
-    final screenWidth = MediaQuery.of(context).size.width;
 
-    // Responsive grid calculation
-    int crossAxisCount = 2;
-    if (screenWidth > 600) crossAxisCount = 3;
-    if (screenWidth > 900) crossAxisCount = 4;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Responsive grid calculation based on available width
+        int crossAxisCount = 2;
+        if (constraints.maxWidth > 600) crossAxisCount = 3;
+        if (constraints.maxWidth > 900) crossAxisCount = 4;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: CustomScrollView(
-        physics: const ClampingScrollPhysics(),
-        slivers: [
-          // Modern App Bar
-          SliverAppBar(
-            expandedHeight: lowResourceMode ? 120 : 160,
-            floating: false,
-            pinned: true,
-            elevation: 0,
-            backgroundColor: colorScheme.surface,
-            surfaceTintColor: Colors.transparent,
-            flexibleSpace: FlexibleSpaceBar(
-              background: _buildHeader(context, lowResourceMode),
-            ),
-            actions: [_buildActionButtons(context)],
-          ),
+        return Scaffold(
+          // si dynamique, on laisse le fond géré globalement (peut être noir AMOLED)
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: CustomScrollView(
+            physics: const ClampingScrollPhysics(),
+            slivers: [
+              // Modern App Bar
+              SliverAppBar(
+                expandedHeight: lowResourceMode ? 120 : 160,
+                floating: false,
+                pinned: true,
+                elevation: 0,
+                backgroundColor: colorScheme.surface,
+                surfaceTintColor: Colors.transparent,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: _buildHeader(context, lowResourceMode),
+                ),
+                actions: [_buildActionButtons(context)],
+              ),
 
-          // Search Bar
-          if (_isSearching)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: colorScheme.outline.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher un outil...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                        },
+              // Search Bar
+              if (_isSearching)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainer,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colorScheme.outline.withValues(alpha: 0.2),
+                        ),
                       ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher un outil...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
 
-          // Tools Section Header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.apps_rounded,
-                    color: colorScheme.primary,
-                    size: 28,
+              // Tools Section Header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.apps_rounded,
+                        color: colorScheme.primary,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _isSearching
+                              ? 'Résultats (${filteredTools.length})'
+                              : 'Vos outils',
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: colorScheme.onSurface,
+                              ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _toggleSearch,
+                        icon: Icon(
+                          _isSearching ? Icons.close : Icons.search,
+                          color: colorScheme.primary,
+                        ),
+                        tooltip: _isSearching
+                            ? 'Fermer la recherche'
+                            : 'Rechercher',
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _isSearching
-                          ? 'Résultats (${filteredTools.length})'
-                          : 'Vos outils',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurface,
-                          ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _toggleSearch,
-                    icon: Icon(
-                      _isSearching ? Icons.close : Icons.search,
-                      color: colorScheme.primary,
-                    ),
-                    tooltip: _isSearching
-                        ? 'Fermer la recherche'
-                        : 'Rechercher',
-                  ),
-                ],
+                ),
               ),
-            ),
+
+              // Tools Grid - Uniform and Responsive
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.9,
+                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    return SizedBox.expand(
+                      child: ToolCard(
+                        tool: filteredTools[index],
+                        animationDelay: 0, // Disable internal animation
+                      ),
+                    );
+                  }, childCount: filteredTools.length),
+                ),
+              ),
+
+              // Bottom spacing
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ],
           ),
 
-          // Tools Grid - Uniform and Responsive
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 0.9,
-              ),
-              delegate: SliverChildBuilderDelegate((context, index) {
-                return ToolCard(
-                  tool: filteredTools[index],
-                  animationDelay: 0, // Disable internal animation
-                );
-              }, childCount: filteredTools.length),
+          // Modern FAB
+          floatingActionButton: FloatingActionButton.extended(
+            heroTag: "home_suggest",
+            onPressed: () => _showSuggestionBottomSheet(context),
+            backgroundColor: colorScheme.primaryContainer,
+            foregroundColor: colorScheme.onPrimaryContainer,
+            elevation: 0,
+            icon: Icon(Icons.lightbulb_outline, size: 20),
+            label: const Text(
+              'Suggérer',
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-
-          // Bottom spacing
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
-        ],
-      ),
-
-      // Modern FAB
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: "home_suggest",
-        onPressed: () => _showSuggestionBottomSheet(context),
-        backgroundColor: colorScheme.primaryContainer,
-        foregroundColor: colorScheme.onPrimaryContainer,
-        elevation: 0,
-        icon: Icon(Icons.lightbulb_outline, size: 20),
-        label: const Text(
-          'Suggérer',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -301,20 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: lowResourceMode
-            ? null
-            : LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF6750A4).withValues(alpha: 0.15),
-                  const Color(0xFFE91E63).withValues(alpha: 0.10),
-                  const Color(0xFF00BCD4).withValues(alpha: 0.08),
-                  colorScheme.surface.withValues(alpha: 0.8),
-                ],
-                stops: const [0.0, 0.3, 0.6, 1.0],
-              ),
-        color: lowResourceMode ? colorScheme.surface : null,
+        color: colorScheme.surface,
       ),
       child: SafeArea(
         child: Padding(
@@ -331,31 +334,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         : const Duration(milliseconds: 1000),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      gradient: lowResourceMode
-                          ? null
-                          : const RadialGradient(
-                              center: Alignment.center,
-                              colors: [Color(0xFF6750A4), Color(0xFF9C27B0)],
-                            ),
-                      color: lowResourceMode
-                          ? colorScheme.primaryContainer
-                          : null,
+                      color: colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: lowResourceMode
-                          ? null
-                          : [
-                              BoxShadow(
-                                color: const Color(
-                                  0xFF6750A4,
-                                ).withValues(alpha: 0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                      boxShadow: null,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.build_circle,
-                      color: Colors.white,
+                      color: colorScheme.onPrimaryContainer,
                       size: 32,
                     ),
                   ),
@@ -405,13 +390,19 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildActionButton(
             context,
             Icons.settings_outlined,
-            () => _navigateToScreen(context, const SettingsScreen()),
+            () {
+              final lowResourceMode = context.read<SettingsProvider>().lowResourceMode;
+              _navigateToScreen(context, const SettingsScreen(), lowResourceMode);
+            },
           ),
           const SizedBox(width: 8),
           _buildActionButton(
             context,
             Icons.info_outline,
-            () => _navigateToScreen(context, const AboutScreen()),
+            () {
+              final lowResourceMode = context.read<SettingsProvider>().lowResourceMode;
+              _navigateToScreen(context, const AboutScreen(), lowResourceMode);
+            },
           ),
         ],
       ),
@@ -439,7 +430,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateToScreen(BuildContext context, Widget screen) {
+  void _navigateToScreen(BuildContext context, Widget screen, bool lowResourceMode) {
+    if (lowResourceMode) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => screen),
+      );
+      return;
+    }
     Navigator.push(
       context,
       PageRouteBuilder(

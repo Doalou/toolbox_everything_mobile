@@ -25,57 +25,100 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      // Respecte le fond global (peut être transparent/amoled/noir)
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const ClampingScrollPhysics(),
         slivers: [
-          // AppBar moderne
-          SliverAppBar(
-            expandedHeight: 100,
-            floating: true,
-            pinned: true,
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primaryContainer.withValues(alpha: 0.3),
-                      colorScheme.secondaryContainer.withValues(alpha: 0.2),
-                    ],
+          // AppBar M3 large dynamique (couleur du titre varie selon le scroll)
+          SliverLayoutBuilder(
+            builder: (context, constraints) {
+              final expanded = constraints.scrollOffset <= 8.0;
+              final cs = Theme.of(context).colorScheme;
+              return SliverAppBar.large(
+                pinned: true,
+                centerTitle: true,
+                backgroundColor: cs.surface,
+                surfaceTintColor: cs.surfaceTint,
+                scrolledUnderElevation: 4,
+                leading: const BackButton(),
+                title: Text(
+                  expanded ? 'Paramètres' : 'Paramètres',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: expanded ? cs.primary : cs.onSurface,
+                      ),
+                ),
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(1),
+                  child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: cs.outlineVariant.withValues(alpha: 0.2),
                   ),
                 ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(60, 20, 20, 0),
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Text(
-                        'Paramètres',
-                        style: Theme.of(context).textTheme.headlineLarge
-                            ?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
+              );
+            },
+          ),
+
+          // Contenu des paramètres
+          // Bandeau d'intro harmonisé Material You (accent dynamique)
+          SliverToBoxAdapter(
+              child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.tune,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Personnalisez votre expérience',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Thèmes, couleurs dynamiques et préférences',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
 
-          // Contenu des paramètres
           SliverPadding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Section Apparence
-                _buildSectionHeader(context, 'Apparence', Icons.palette),
+                _buildSectionHeader(context, 'Apparence', Icons.palette_outlined),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
 
                 // Sélecteur de thème
                 _buildThemeSelector(context, themeProvider),
@@ -85,14 +128,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Carte couleur principale
                 _buildColorCard(context, themeProvider),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
                 // Section Comportement
-                _buildSectionHeader(context, 'Comportement', Icons.tune),
+                _buildSectionHeader(context, 'Comportement', Icons.tune_outlined),
 
                 const SizedBox(height: 12),
 
                 Card(
+                  margin: const EdgeInsets.symmetric(vertical: 6),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -117,13 +161,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // Mode économie de ressources
                 Card(
+                  margin: const EdgeInsets.symmetric(vertical: 6),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 8,
                     ),
                     leading: const Icon(Icons.battery_saver),
-                    title: const Text('Mode économie de ressources'),
+                 title: const Text('Mode économie de ressources'),
                     subtitle: const Text(
                       'Réduit les animations, les ombres et l’usage mémoire pour de meilleures performances',
                     ),
@@ -148,17 +193,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ThemeProvider themeProvider,
   ) {
     return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Matérial You (couleurs dynamiques système)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.palette_outlined),
+              title: const Text('Couleurs dynamiques système (Material You)'),
+              trailing: Switch(
+                value: themeProvider.useDynamicColor,
+                onChanged: (v) => themeProvider.setUseDynamicColor(v),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Thème noir AMOLED (uniquement pertinent en mode sombre)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.nightlight_round),
+              title: const Text('Thème noir AMOLED'),
+              subtitle: const Text('Noir pur pour écrans OLED, économise la batterie'),
+              trailing: Switch(
+                value: themeProvider.useAmoledBlack,
+                onChanged: (v) => themeProvider.setUseAmoledBlack(v),
+              ),
+            ),
+            const SizedBox(height: 12),
             Text(
               'Mode d\'affichage',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
-            SegmentedButton<ThemeMode>(
+            AbsorbPointer(
+              absorbing: themeProvider.useDynamicColor,
+              child: Opacity(
+                opacity: themeProvider.useDynamicColor ? 0.5 : 1.0,
+                child: SegmentedButton<ThemeMode>(
               segments: const [
                 ButtonSegment(
                   value: ThemeMode.light,
@@ -177,9 +250,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
               selected: {themeProvider.themeMode},
-              onSelectionChanged: (newSelection) {
-                themeProvider.setThemeMode(newSelection.first);
-              },
+                onSelectionChanged: themeProvider.useDynamicColor
+                    ? null
+                    : (newSelection) {
+                        themeProvider.setThemeMode(newSelection.first);
+                      },
+                style: ButtonStyle(
+                  visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
+                  padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                  textStyle: WidgetStateProperty.all(
+                    Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                ),
+              ),
             ),
           ],
         ),

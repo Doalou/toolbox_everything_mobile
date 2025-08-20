@@ -478,7 +478,7 @@ $html
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Convertisseur de fichiers'),
         backgroundColor: Colors.transparent,
@@ -509,23 +509,8 @@ $html
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF673AB7).withValues(alpha: 0.1),
-                      const Color(0xFF9C27B0).withValues(alpha: 0.08),
-                      colorScheme.primaryContainer.withValues(alpha: 0.6),
-                    ],
-                  ),
+                  color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF673AB7).withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
                 ),
                 child: Column(
                   children: [

@@ -186,7 +186,8 @@ class _NotesScreenState extends State<NotesScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_isLoading) {
-      return Scaffold(
+  return Scaffold(
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Center(
           child: CircularProgressIndicator(
             color: colorScheme.primary,
@@ -196,7 +197,7 @@ class _NotesScreenState extends State<NotesScreen>
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Bloc-notes temporaire'),
         backgroundColor: Colors.transparent,
@@ -286,22 +287,8 @@ class _NotesScreenState extends State<NotesScreen>
               margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.primaryContainer.withValues(alpha: 0.8),
-                    colorScheme.secondaryContainer.withValues(alpha: 0.6),
-                  ],
-                ),
+                color: colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: Row(
                 children: [
@@ -311,11 +298,7 @@ class _NotesScreenState extends State<NotesScreen>
                       color: colorScheme.primary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      Icons.note_add,
-                      color: colorScheme.primary,
-                      size: 24,
-                    ),
+                    child: Icon(Icons.note_add, color: colorScheme.primary, size: 24),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -324,10 +307,7 @@ class _NotesScreenState extends State<NotesScreen>
                       children: [
                         Text(
                           'Notes temporaires',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onPrimaryContainer,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, color: colorScheme.onPrimaryContainer),
                         ),
                         const SizedBox(height: 4),
                         Row(

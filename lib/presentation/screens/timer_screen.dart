@@ -293,7 +293,7 @@ class _TimerScreenState extends State<TimerScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Minuteur & Chronomètre'),
         backgroundColor: Colors.transparent,
@@ -357,21 +357,7 @@ class _TimerScreenState extends State<TimerScreen> {
             height: 250,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.primaryContainer.withValues(alpha: 0.8),
-                  colorScheme.secondaryContainer.withValues(alpha: 0.6),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              color: colorScheme.primaryContainer,
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -493,22 +479,8 @@ class _TimerScreenState extends State<TimerScreen> {
             height: 200,
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.primaryContainer.withValues(alpha: 0.8),
-                  colorScheme.secondaryContainer.withValues(alpha: 0.6),
-                ],
-              ),
+              color: colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

@@ -5,30 +5,47 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-08-10
+## [1.0.0] - 2025-08-13
 
 ### Ajouté
-- Téléchargements en arrière‑plan avec notifications (progression, succès/échec) et annulation/relance.
+- YouTube Downloader: affichage détaillé de la progression (Mo téléchargés/total), du débit (MB/s) et de l’ETA.
+- Bouton « Ouvrir » proposé après la fin d’un téléchargement.
 - Presets rapides: MP4 720p/1080p, M4A 128/256 kbps.
 - Politique de confidentialité dédiée (`privacy/index.html`).
-- YouTube Downloader: section « Audio seul » distincte, bouton « Ouvrir le dossier », action « Coller l’URL », champ de saisie intégré au header, texte d’aide repositionné.
-- Système: initialisation du service de notifications au démarrage (flutter_local_notifications).
+- Système: initialisation du service de notifications au démarrage (`flutter_local_notifications`).
+- Android: sauvegarde automatique des fichiers téléchargés dans le dossier **Downloads** (MediaStore API 29+), avec fallback pré‑29.
+- Notifications: création explicite du canal `downloads_channel` à l'initialisation.
+- Tracking: enregistrement d’usage des outils (non bloquant) et chargement des favoris au démarrage.
+- Matérial You (Android 12+): option pour activer les couleurs dynamiques système via les paramètres (désactive/grise le choix de thème).
+- QR Code: export PDF et copie de l’image dans le presse‑papiers; UI modernisée.
+- Générateur de MdP: historique auto affiché après 5s sur le même mot de passe.
 
 ### Modifié
-- Uniformisation UI globale: boutons min 52px (Material 3), champs cohérents.
-- Téléchargeur: zone de saisie agrandie, fusion FFmpeg plus robuste (sélection audio/vidéo, noms uniques).
+- Refonte majeure du Téléchargeur YouTube (architecture simplifiée, sans isolate):
+  - Téléchargements vidéo et audio exécutés en parallèle; progression combinée réelle.
+  - Fusion FFmpeg fiable et journalisée (logs remontés en cas d’échec).
+  - Identifiants de notification bornés à 32 bits pour compatibilité Android.
+  - UI/UX modernisée (champ URL, presets, sections claires).
+- Téléchargeur: ajout d’un bandeau d’intro Material You harmonisé; affichage du codec à côté de la taille; support MP3 (conversion) et sortie WEBM en fallback.
+- Paramètres: AppBar.large M3, titre dynamique (primaire au repos, onSurface en scroll), bandeau d’intro, SegmentedButton compact; griser le sélecteur de thème sous Material You.
+- Accueil: fond et bandeau harmonisés sur les couleurs dynamiques (primary/secondary/tertiary/surface).
+ - Accueil: fond et bandeau harmonisés sur les couleurs dynamiques (primary/secondary/tertiary/surface). Entête modernisée et recherche épurée.
+- Thème: intégration M3 expressif consolidée (Buttons/Inputs/Chips/ListTiles/Dialog/BottomSheet/SnackBar/NavBar), recolorisation via DynamicColor si activée.
+- Convertisseur d'unités: refonte UI/UX (bandeau d'intro, catégories en chips, carte de conversion M3, bouton d'inversion des unités, champs avec copier/effacer).
+- Thème des boutons: largeur minimale corrigée (`minimumSize: Size(0, 52)`) pour éviter les contraintes infinies.
+- Uniformisation UI globale et optimisations de démarrage (SharedPreferences initialisées avant `runApp`).
 - Android: ajout de la permission `POST_NOTIFICATIONS` (Android 13+).
-- QR Code: mise en page des boutons avec Wrap pour éviter les débordements.
-- UX/Code: migration de `.withOpacity()` vers `.withValues(alpha: ...)` (Flutter 3.22+).
-- Générateur de MDP: délai d’historique porté à 15s (20 éléments).
- - Optimisations performance: cache images réduit (~50 Mo), vignettes standardisées, throttling des notifications (téléchargements).
- - Mode économie de ressources: désactivation/atténuation des animations et ombres (cards, header, widgets d’état) pour appareils modestes.
+- Téléchargeur: compatibilité Web/Desktop via export conditionnel (stub web) et import universel dans le Provider.
+- Tests: suppression du test widget par défaut (compteur) et ajout d’un smoke test minimal.
 
 ### Corrigé
-- Build Android: stabilité (icône de notifications, dépendances FFmpeg) et erreurs de build résolues.
-- YouTube Downloader: message de fin de téléchargement (nom de fichier) corrigé.
-- Convertisseur binaire: réactivité (suppression listeners redondants) et fiabilité.
-- Lints: imports inutilisés/interpolations/variables non utilisées supprimés.
+- Téléchargeur YouTube: erreurs de layout `BoxConstraints forces an infinite width` (Rows/Wraps) corrigées.
+- Téléchargeur YouTube: crashs liés aux isolates (`BackgroundIsolateBinaryMessenger`, `setMessageHandler`) éliminés en supprimant les isolates.
+- Notifications: erreur « id doit tenir sur 32 bits » corrigée (ID borné) et progression normalisée (0–100).
+- Fin de téléchargement: meilleure robustesse et logs FFmpeg disponibles pour diagnostic.
+- Divers: nettoyage d’imports et corrections lints.
+- Build Web: évite les échecs liés aux imports `dart:io`/FFmpeg sur le Web.
+- Thème: corrections de types `CardThemeData`/`DialogThemeData` et suppression d’interpolations de TextStyle (désactivation animation de thème, recolorisation via copyWith).
 
 ---
 
@@ -46,6 +63,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Boussole: UX inversée – la rose tourne et l’aiguille reste fixe pour une lecture plus naturelle.
 - Convertisseur binaire: corrections de fiabilité (prévention des boucles de listeners) et padding des champs pour éviter le texte collé aux bords.
 - Testeur de connexion: meilleure robustesse de détection (ipapi/ipwhois/ipinfo/ifconfig avec User‑Agent), scroll sans rebond.
+ - Testeur de connexion: affichage simultané des adresses IPv4 et IPv6 avec mise en forme claire et sélectable.
 - Scroll global: suppression des effets d’overscroll/glow.
 - Paramètres: refonte de la page (sections claires, défilement sans rebond, suppression des animations d’entrée) et affichage de la version avec build (ex: 0.2.3+7).
 - QR Code: suppression du bouton “Copier texte”.

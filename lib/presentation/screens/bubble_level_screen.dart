@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter/services.dart';
@@ -14,12 +15,14 @@ class BubbleLevelScreen extends StatefulWidget {
 class BubbleLevelScreenState extends State<BubbleLevelScreen> {
   double x = 0.0;
   double y = 0.0;
+  StreamSubscription<AccelerometerEvent>? _accelerometerSub;
 
   @override
   void initState() {
     super.initState();
     // Appliquer le verrouillage selon les paramètres utilisateur
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final settings = Provider.of<SettingsProvider>(context, listen: false);
       if (settings.lockBubbleLevelPortrait) {
         SystemChrome.setPreferredOrientations(const [
@@ -28,7 +31,8 @@ class BubbleLevelScreenState extends State<BubbleLevelScreen> {
         ]);
       }
     });
-    accelerometerEventStream().listen((AccelerometerEvent event) {
+    _accelerometerSub = accelerometerEventStream().listen((AccelerometerEvent event) {
+      if (!mounted) return;
       setState(() {
         x = event.x;
         y = event.y;
@@ -38,6 +42,7 @@ class BubbleLevelScreenState extends State<BubbleLevelScreen> {
 
   @override
   void dispose() {
+    _accelerometerSub?.cancel();
     // Rétablir les orientations par défaut lorsque l'écran est quitté
     SystemChrome.setPreferredOrientations(const [
       DeviceOrientation.portraitUp,
@@ -51,6 +56,7 @@ class BubbleLevelScreenState extends State<BubbleLevelScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(title: const Text('Niveau à bulle')),
       body: Center(
         child: CustomPaint(

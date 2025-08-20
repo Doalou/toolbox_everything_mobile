@@ -17,6 +17,8 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
   bool _isTesting = false;
   bool _hasInternet = false;
   String _ipAddress = 'Non détecté';
+  String _ipv4 = 'Non détecté';
+  String _ipv6 = 'Non détecté';
   String _location = 'Non détecté';
   String _isp = 'Non détecté';
   double _pingTime = 0.0;
@@ -77,6 +79,8 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
       _isTesting = true;
       _hasInternet = false;
       _ipAddress = 'Test en cours...';
+      _ipv4 = 'Test en cours...';
+      _ipv6 = 'Test en cours...';
       _location = 'Test en cours...';
       _isp = 'Test en cours...';
       _pingTime = 0.0;
@@ -86,9 +90,9 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
 
     try {
       // Test de connectivité (peut retourner plusieurs types simultanés)
-      final results = await Connectivity().checkConnectivity();
-      final connectivityResult = results.isNotEmpty
-          ? results.first
+      final resultsConnectivity = await Connectivity().checkConnectivity();
+      final connectivityResult = resultsConnectivity.isNotEmpty
+          ? resultsConnectivity.first
           : ConnectivityResult.none;
       String connectionType = 'Non connecté';
 
@@ -120,7 +124,13 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
       double pingTime = await _testPing();
 
       // Récupération de l'IP et informations
-      final ipInfo = await _getIpInfo();
+      final ipInfoFuture = _getIpInfo();
+      final ipv4Future = _getIPv4();
+      final ipv6Future = _getIPv6();
+      final ipInfo = await ipInfoFuture;
+      final ipResults = await Future.wait<String>([ipv4Future, ipv6Future]);
+      final ipv4 = ipResults[0];
+      final ipv6 = ipResults[1];
 
       // Test de vitesse de téléchargement
       double downloadSpeed = await _testDownloadSpeed();
@@ -129,7 +139,9 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
         setState(() {
           _isTesting = false;
           _hasInternet = true;
-          _ipAddress = ipInfo['ip'] ?? 'Non détecté';
+          _ipv4 = ipv4;
+          _ipv6 = ipv6;
+          _ipAddress = 'IPv4: $ipv4\nIPv6: $ipv6';
           _location = ipInfo['location'] ?? 'Non détecté';
           _isp = ipInfo['isp'] ?? 'Non détecté';
           _pingTime = pingTime;
@@ -159,6 +171,64 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
         );
       }
     }
+  }
+
+  Future<String> _getIPv4() async {
+    final endpoints = <String>[
+      'https://api.ipify.org',
+      'https://ipv4.icanhazip.com',
+      'https://v4.ident.me',
+    ];
+    for (final url in endpoints) {
+      try {
+        final res = await http
+            .get(Uri.parse(url), headers: {'User-Agent': 'ToolboxEverything/1.0'})
+            .timeout(const Duration(seconds: 6));
+        if (res.statusCode == 200) {
+          final text = res.body.trim();
+          if (_looksLikeIPv4(text)) return text;
+        }
+      } catch (_) {}
+    }
+    return 'Non disponible';
+  }
+
+  Future<String> _getIPv6() async {
+    final endpoints = <String>[
+      'https://api64.ipify.org',
+      'https://ipv6.icanhazip.com',
+      'https://v6.ident.me',
+    ];
+    for (final url in endpoints) {
+      try {
+        final res = await http
+            .get(Uri.parse(url), headers: {'User-Agent': 'ToolboxEverything/1.0'})
+            .timeout(const Duration(seconds: 6));
+        if (res.statusCode == 200) {
+          final text = res.body.trim();
+          if (_looksLikeIPv6(text)) return text;
+        }
+      } catch (_) {}
+    }
+    return 'Non disponible';
+  }
+
+  bool _looksLikeIPv4(String s) {
+    // Simple validation IPv4
+    final parts = s.split('.');
+    if (parts.length != 4) return false;
+    for (final p in parts) {
+      final n = int.tryParse(p);
+      if (n == null || n < 0 || n > 255) return false;
+    }
+    return true;
+  }
+
+  bool _looksLikeIPv6(String s) {
+    // Validation grossière IPv6: présence de ':' et caractères hex
+    if (!s.contains(':')) return false;
+    final hex = RegExp(r'^[0-9a-fA-F:]+$');
+    return hex.hasMatch(s);
   }
 
   Future<double> _testPing() async {
@@ -302,6 +372,7 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Testeur de Connexion'),
         leading: IconButton(
@@ -316,27 +387,19 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // En-tête simplifiée sans animation
+              // En-tête simplifiée (fond plein)
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      colorScheme.primary.withValues(alpha: 0.1),
-                      colorScheme.secondary.withValues(alpha: 0.05),
-                    ],
-                  ),
+                  color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.1),
-                  ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       _hasInternet ? Icons.wifi : Icons.wifi_off,
                       size: 32,
-                      color: _hasInternet ? Colors.green : Colors.red,
+                      color: colorScheme.primary,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -350,14 +413,9 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _hasInternet
-                                ? 'Connecté à Internet'
-                                : 'Non connecté',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: _hasInternet
-                                      ? Colors.green
-                                      : Colors.red,
+                            _hasInternet ? 'Connecté à Internet' : 'Non connecté',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onPrimaryContainer.withValues(alpha: 0.85),
                                   fontWeight: FontWeight.w500,
                                 ),
                           ),
@@ -370,12 +428,54 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
 
               const SizedBox(height: 24),
 
-              // Informations IP
-              _buildInfoCard(
-                'Adresse IP',
-                _ipAddress,
-                Icons.language,
-                Colors.blue,
+              // Informations IP (IPv4 + IPv6 affichées côte à côte)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainer,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.language, color: Colors.blue, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Adresses IP publiques',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildKeyValue('IPv4', _ipv4),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildKeyValue('IPv6', _ipv6),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 16),
@@ -559,6 +659,37 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
               fontWeight: FontWeight.w700,
               color: color,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKeyValue(String key, String value) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outline.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            key,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 6),
+          SelectableText(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),

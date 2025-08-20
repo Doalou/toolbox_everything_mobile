@@ -55,8 +55,7 @@ class QrCodeScreenState extends State<QrCodeScreen>
       final qrPainter = QrPainter(
         data: _qrData,
         version: QrVersions.auto,
-        color: Colors.black,
-        emptyColor: Colors.white,
+        // QrPainter moderne utilise eyeStyle/dataModuleStyle pour les couleurs
         gapless: true,
       );
       final recorder = ui.PictureRecorder();
@@ -95,8 +94,6 @@ class QrCodeScreenState extends State<QrCodeScreen>
       final qrPainter = QrPainter(
         data: _qrData,
         version: QrVersions.auto,
-        color: Colors.black,
-        emptyColor: Colors.white,
         gapless: true,
       );
 
@@ -159,8 +156,6 @@ class QrCodeScreenState extends State<QrCodeScreen>
       final qrPainter = QrPainter(
         data: _qrData,
         version: QrVersions.auto,
-        color: Colors.black,
-        emptyColor: Colors.white,
         gapless: true,
       );
 
@@ -229,6 +224,7 @@ class QrCodeScreenState extends State<QrCodeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Générateur/Lecteur de QR Code'),
         bottom: TabBar(

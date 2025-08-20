@@ -5,7 +5,7 @@ class AppConstants {
   // Informations de l'application
   static const String appName = 'Toolbox Everything';
   static const String appDescription = 'Vos outils numériques essentiels';
-  static const String version = '0.2.4';
+  static const String version = '1.0.0';
   static const String contactEmail = 'contact@doalo.fr';
 
   // Dimensions et espacements

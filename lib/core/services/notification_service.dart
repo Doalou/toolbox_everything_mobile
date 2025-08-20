@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
@@ -20,13 +21,29 @@ class NotificationService {
     );
 
     await _plugin.initialize(initSettings);
-    // Android 13+ nécessite une permission runtime pour les notifications
-    final androidImpl = _plugin
+    // Création explicite du canal de notifications pour assurer la compatibilité
+    final android = _plugin
         .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    await androidImpl?.requestNotificationsPermission();
+            AndroidFlutterLocalNotificationsPlugin>();
+    await android?.createNotificationChannel(const AndroidNotificationChannel(
+      'downloads_channel',
+      'Téléchargements',
+      description: 'Progression des téléchargements',
+      importance: Importance.low,
+    ));
     _initialized = true;
+  }
+
+  /// Demande la permission de notifications si nécessaire (Android 13+).
+  Future<bool> ensurePermission() async {
+    if (Platform.isAndroid) {
+      final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        final granted = await android.requestNotificationsPermission();
+        return granted ?? true;
+      }
+    }
+    return true;
   }
 
   NotificationDetails _progressDetails() {

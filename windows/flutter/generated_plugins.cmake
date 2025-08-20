@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
+  dynamic_color
   irondash_engine_context
   permission_handler_windows
   printing

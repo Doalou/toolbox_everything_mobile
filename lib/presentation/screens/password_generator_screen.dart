@@ -76,7 +76,7 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
       _showHistory = false;
     });
 
-    _historyTimer = Timer(const Duration(seconds: 15), () {
+    _historyTimer = Timer(const Duration(seconds: 5), () {
       if (mounted) {
         setState(() {
           _showHistory = true;
@@ -157,6 +157,7 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Générateur de mot de passe'),
         leading: IconButton(

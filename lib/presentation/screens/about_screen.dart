@@ -9,7 +9,8 @@ class AboutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    return Scaffold(
+  return Scaffold(
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('À propos'),
         leading: IconButton(

@@ -165,13 +165,7 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
     setState(() {});
   }
 
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '${bytes} B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024)
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
+  // Méthode inutilisée supprimée
 
   // Regroupe une chaîne binaire en paquets de 4 bits avec padding à gauche
   String _groupBinaryForDisplay(String bin) {
@@ -194,7 +188,7 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Convertisseur de nombres'),
         backgroundColor: Colors.transparent,
@@ -217,22 +211,8 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.primaryContainer.withValues(alpha: 0.8),
-                    colorScheme.secondaryContainer.withValues(alpha: 0.6),
-                  ],
-                ),
+                color: colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
               ),
               child: Column(
                 children: [
