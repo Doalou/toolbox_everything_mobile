@@ -7,6 +7,8 @@ import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/home_screen.dart';
 import 'package:toolbox_everything_mobile/core/services/notification_service.dart';
+import 'package:toolbox_everything_mobile/core/services/quick_actions_service.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/painting.dart' as painting;
 
 class NoGlowScrollBehavior extends ScrollBehavior {
@@ -30,21 +32,33 @@ class NoGlowScrollBehavior extends ScrollBehavior {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialisation asynchrone des services et préférences
   final prefs = await SharedPreferences.getInstance();
   await NotificationService.instance.initialize();
   // Optimisation mémoire pour appareils low-cost
   painting.imageCache.maximumSize = 100; // nombre max d'images en cache
   painting.imageCache.maximumSizeBytes = 50 << 20; // ~50 Mo
+  // Edge-to-edge et styles barres système
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+  // Quick Actions (app shortcuts)
+  await QuickActionsService.instance.initialize();
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider(prefs)),
+        ChangeNotifierProvider(create: (_) => SettingsProvider(prefs)),
         ChangeNotifierProvider(
-          create: (_) => SettingsProvider(prefs),
+          create: (_) => DownloaderProvider()..initialize(),
         ),
-        ChangeNotifierProvider(create: (_) => DownloaderProvider()..initialize()),
       ],
       child: const MyApp(),
     ),
@@ -80,8 +94,13 @@ class MyApp extends StatelessWidget {
 
             return MaterialApp(
               title: 'Toolbox Everything',
-              theme: lightTheme.copyWith(pageTransitionsTheme: pageTransitionsTheme),
-              darkTheme: darkTheme.copyWith(pageTransitionsTheme: pageTransitionsTheme),
+              navigatorKey: QuickActionsService.navigatorKey,
+              theme: lightTheme.copyWith(
+                pageTransitionsTheme: pageTransitionsTheme,
+              ),
+              darkTheme: darkTheme.copyWith(
+                pageTransitionsTheme: pageTransitionsTheme,
+              ),
               themeMode: themeProvider.themeMode,
               themeAnimationDuration: Duration.zero,
               themeAnimationCurve: Curves.linear,

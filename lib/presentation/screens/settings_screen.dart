@@ -45,9 +45,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: Text(
                   expanded ? 'Paramètres' : 'Paramètres',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: expanded ? cs.primary : cs.onSurface,
-                      ),
+                    fontWeight: FontWeight.w800,
+                    color: expanded ? cs.primary : cs.onSurface,
+                  ),
                 ),
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(1),
@@ -64,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Contenu des paramètres
           // Bandeau d'intro harmonisé Material You (accent dynamique)
           SliverToBoxAdapter(
-              child: Container(
+            child: Container(
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -76,7 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
+                      color: Theme.of(context).colorScheme.surface,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -91,16 +91,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Text(
                           'Personnalisez votre expérience',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimaryContainer,
                               ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Thèmes, couleurs dynamiques et préférences',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer
+                                    .withValues(alpha: 0.7),
                               ),
                         ),
                       ],
@@ -116,7 +123,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Section Apparence
-                _buildSectionHeader(context, 'Apparence', Icons.palette_outlined),
+                _buildSectionHeader(
+                  context,
+                  'Apparence',
+                  Icons.palette_outlined,
+                ),
 
                 const SizedBox(height: 8),
 
@@ -131,7 +142,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
 
                 // Section Comportement
-                _buildSectionHeader(context, 'Comportement', Icons.tune_outlined),
+                _buildSectionHeader(
+                  context,
+                  'Comportement',
+                  Icons.tune_outlined,
+                ),
 
                 const SizedBox(height: 12),
 
@@ -179,6 +194,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
 
+                const SizedBox(height: 12),
+
+                // Haptics réglables
+                Card(
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    leading: const Icon(Icons.vibration),
+                    title: const Text('Vibrations et haptics'),
+                    subtitle: const Text(
+                      'Active ou désactive les retours haptiques de l’interface',
+                    ),
+                    trailing: Switch(
+                      value: settingsProvider.hapticsEnabled,
+                      onChanged: (v) => settingsProvider.setHapticsEnabled(v),
+                    ),
+                  ),
+                ),
+
                 // Section À propos retirée sur demande
               ]),
             ),
@@ -215,7 +252,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.nightlight_round),
               title: const Text('Thème noir AMOLED'),
-              subtitle: const Text('Noir pur pour écrans OLED, économise la batterie'),
+              subtitle: const Text(
+                'Noir pur pour écrans OLED, économise la batterie',
+              ),
               trailing: Switch(
                 value: themeProvider.useAmoledBlack,
                 onChanged: (v) => themeProvider.setUseAmoledBlack(v),
@@ -232,36 +271,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Opacity(
                 opacity: themeProvider.useDynamicColor ? 0.5 : 1.0,
                 child: SegmentedButton<ThemeMode>(
-              segments: const [
-                ButtonSegment(
-                  value: ThemeMode.light,
-                  icon: Icon(Icons.light_mode),
-                  label: Text('Clair'),
-                ),
-                ButtonSegment(
-                  value: ThemeMode.system,
-                  icon: Icon(Icons.brightness_auto),
-                  label: Text('Système'),
-                ),
-                ButtonSegment(
-                  value: ThemeMode.dark,
-                  icon: Icon(Icons.dark_mode),
-                  label: Text('Sombre'),
-                ),
-              ],
-              selected: {themeProvider.themeMode},
-                onSelectionChanged: themeProvider.useDynamicColor
-                    ? null
-                    : (newSelection) {
-                        themeProvider.setThemeMode(newSelection.first);
-                      },
-                style: ButtonStyle(
-                  visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
-                  padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                  textStyle: WidgetStateProperty.all(
-                    Theme.of(context).textTheme.bodyMedium,
+                  segments: const [
+                    ButtonSegment(
+                      value: ThemeMode.light,
+                      icon: Icon(Icons.light_mode),
+                      label: Text('Clair'),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.system,
+                      icon: Icon(Icons.brightness_auto),
+                      label: Text('Système'),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.dark,
+                      icon: Icon(Icons.dark_mode),
+                      label: Text('Sombre'),
+                    ),
+                  ],
+                  selected: {themeProvider.themeMode},
+                  onSelectionChanged: themeProvider.useDynamicColor
+                      ? null
+                      : (newSelection) {
+                          themeProvider.setThemeMode(newSelection.first);
+                        },
+                  style: ButtonStyle(
+                    visualDensity: const VisualDensity(
+                      horizontal: 0,
+                      vertical: -2,
+                    ),
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    textStyle: WidgetStateProperty.all(
+                      Theme.of(context).textTheme.bodyMedium,
+                    ),
                   ),
-                ),
                 ),
               ),
             ),

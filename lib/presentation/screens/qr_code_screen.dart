@@ -12,7 +12,9 @@ import 'package:pdf/widgets.dart' as pw;
 // import 'package:printing/printing.dart';
 
 class QrCodeScreen extends StatefulWidget {
-  const QrCodeScreen({super.key});
+  final String heroTag;
+
+  const QrCodeScreen({super.key, required this.heroTag});
 
   @override
   QrCodeScreenState createState() => QrCodeScreenState();
@@ -226,7 +228,16 @@ class QrCodeScreenState extends State<QrCodeScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Générateur/Lecteur de QR Code'),
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Générateur/Lecteur de QR Code',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Theme.of(context).colorScheme.primary,

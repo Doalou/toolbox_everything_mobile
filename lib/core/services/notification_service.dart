@@ -14,7 +14,7 @@ class NotificationService {
     if (_initialized) return;
 
     const AndroidInitializationSettings androidInitSettings =
-        AndroidInitializationSettings('ic_launcher');
+        AndroidInitializationSettings('ic_notification');
 
     const InitializationSettings initSettings = InitializationSettings(
       android: androidInitSettings,
@@ -24,20 +24,26 @@ class NotificationService {
     // Création explicite du canal de notifications pour assurer la compatibilité
     final android = _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    await android?.createNotificationChannel(const AndroidNotificationChannel(
-      'downloads_channel',
-      'Téléchargements',
-      description: 'Progression des téléchargements',
-      importance: Importance.low,
-    ));
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'downloads_channel',
+        'Téléchargements',
+        description: 'Progression des téléchargements',
+        importance: Importance.low,
+      ),
+    );
     _initialized = true;
   }
 
   /// Demande la permission de notifications si nécessaire (Android 13+).
   Future<bool> ensurePermission() async {
     if (Platform.isAndroid) {
-      final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (android != null) {
         final granted = await android.requestNotificationsPermission();
         return granted ?? true;
@@ -59,6 +65,7 @@ class NotificationService {
           indeterminate: false,
           ongoing: true,
           playSound: false,
+          icon: 'ic_notification',
         );
     return const NotificationDetails(android: androidDetails);
   }
@@ -74,6 +81,7 @@ class NotificationService {
           onlyAlertOnce: true,
           ongoing: false,
           playSound: success,
+          icon: 'ic_notification',
         );
     return NotificationDetails(android: androidDetails);
   }
@@ -107,6 +115,7 @@ class NotificationService {
           playSound: false,
           maxProgress: maxProgress,
           progress: progress,
+          icon: 'ic_notification',
         );
     final details = NotificationDetails(android: androidDetails);
     await _plugin.show(id, title, body, details);

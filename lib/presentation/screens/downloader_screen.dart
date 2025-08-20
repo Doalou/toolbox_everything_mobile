@@ -5,14 +5,25 @@ import 'package:toolbox_everything_mobile/core/providers/downloader_provider.dar
 import 'package:toolbox_everything_mobile/presentation/widgets/downloader_widgets.dart';
 
 class DownloaderScreen extends StatelessWidget {
-  const DownloaderScreen({super.key});
+  final String heroTag;
+
+  const DownloaderScreen({super.key, required this.heroTag});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Téléchargeur YouTube'),
+        title: Hero(
+          tag: heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Téléchargeur YouTube',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
@@ -48,17 +59,13 @@ class DownloaderScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Téléchargeur YouTube',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
+                          style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Collez un lien YouTube pour récupérer la vidéo ou l’audio. Conversion MP3 et fusion vidéo/audio disponibles.',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
+                          style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: Theme.of(context)
                                     .colorScheme
@@ -82,18 +89,18 @@ class DownloaderScreen extends StatelessWidget {
                 // Bandeau persistant d'état de téléchargement (au-dessus du contenu)
                 final Widget downloadBanner =
                     provider.downloadActivity ==
-                            DownloadActivityState.downloading
-                        ? const Padding(
-                            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                            child: DownloadProgressIndicator(),
-                          )
-                        : (provider.downloadActivity ==
-                                DownloadActivityState.completed
-                            ? const Padding(
-                                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                                child: CompletedDownloadCard(),
-                              )
-                            : const SizedBox.shrink());
+                        DownloadActivityState.downloading
+                    ? const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: DownloadProgressIndicator(),
+                      )
+                    : (provider.downloadActivity ==
+                              DownloadActivityState.completed
+                          ? const Padding(
+                              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                              child: CompletedDownloadCard(),
+                            )
+                          : const SizedBox.shrink());
 
                 Widget bodyContent;
                 switch (provider.state) {
@@ -191,15 +198,12 @@ class _UrlInputFieldState extends State<UrlInputField> {
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.paste),
                   onPressed: () async {
-                    final data =
-                        await Clipboard.getData(Clipboard.kTextPlain);
+                    final data = await Clipboard.getData(Clipboard.kTextPlain);
                     if (!mounted) return;
                     final text = data?.text;
                     if (text != null && text.isNotEmpty) {
                       _controller.text = text;
-                      context
-                          .read<DownloaderProvider>()
-                          .fetchVideoInfo(text);
+                      context.read<DownloaderProvider>().fetchVideoInfo(text);
                     }
                   },
                 ),
@@ -208,9 +212,7 @@ class _UrlInputFieldState extends State<UrlInputField> {
                   ? null
                   : (text) {
                       FocusScope.of(context).unfocus();
-                      context
-                          .read<DownloaderProvider>()
-                          .fetchVideoInfo(text);
+                      context.read<DownloaderProvider>().fetchVideoInfo(text);
                     },
             ),
           ),
@@ -221,9 +223,9 @@ class _UrlInputFieldState extends State<UrlInputField> {
                 ? null
                 : () {
                     FocusScope.of(context).unfocus();
-                    context
-                        .read<DownloaderProvider>()
-                        .fetchVideoInfo(_controller.text);
+                    context.read<DownloaderProvider>().fetchVideoInfo(
+                      _controller.text,
+                    );
                   },
             style: IconButton.styleFrom(
               minimumSize: const Size.square(56),

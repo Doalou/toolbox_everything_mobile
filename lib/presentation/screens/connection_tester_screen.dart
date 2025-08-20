@@ -6,7 +6,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 
 class ConnectionTesterScreen extends StatefulWidget {
-  const ConnectionTesterScreen({super.key});
+  final String heroTag;
+
+  const ConnectionTesterScreen({super.key, required this.heroTag});
 
   @override
   State<ConnectionTesterScreen> createState() => _ConnectionTesterScreenState();
@@ -182,7 +184,10 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     for (final url in endpoints) {
       try {
         final res = await http
-            .get(Uri.parse(url), headers: {'User-Agent': 'ToolboxEverything/1.0'})
+            .get(
+              Uri.parse(url),
+              headers: {'User-Agent': 'ToolboxEverything/1.0'},
+            )
             .timeout(const Duration(seconds: 6));
         if (res.statusCode == 200) {
           final text = res.body.trim();
@@ -202,7 +207,10 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     for (final url in endpoints) {
       try {
         final res = await http
-            .get(Uri.parse(url), headers: {'User-Agent': 'ToolboxEverything/1.0'})
+            .get(
+              Uri.parse(url),
+              headers: {'User-Agent': 'ToolboxEverything/1.0'},
+            )
             .timeout(const Duration(seconds: 6));
         if (res.statusCode == 200) {
           final text = res.body.trim();
@@ -374,7 +382,16 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Testeur de Connexion'),
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Testeur de Connexion',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -413,9 +430,13 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _hasInternet ? 'Connecté à Internet' : 'Non connecté',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onPrimaryContainer.withValues(alpha: 0.85),
+                            _hasInternet
+                                ? 'Connecté à Internet'
+                                : 'Non connecté',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: colorScheme.onPrimaryContainer
+                                      .withValues(alpha: 0.85),
                                   fontWeight: FontWeight.w500,
                                 ),
                           ),
@@ -434,7 +455,9 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.1),
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,7 +468,11 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
                         color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.language, color: Colors.blue, size: 20),
+                      child: const Icon(
+                        Icons.language,
+                        color: Colors.blue,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -454,21 +481,20 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
                         children: [
                           Text(
                             'Adresses IP publiques',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ),
                                   fontWeight: FontWeight.w500,
                                 ),
                           ),
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              Expanded(
-                                child: _buildKeyValue('IPv4', _ipv4),
-                              ),
+                              Expanded(child: _buildKeyValue('IPv4', _ipv4)),
                               const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildKeyValue('IPv6', _ipv6),
-                              ),
+                              Expanded(child: _buildKeyValue('IPv6', _ipv6)),
                             ],
                           ),
                         ],
@@ -680,16 +706,16 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
           Text(
             key,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 6),
           SelectableText(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),

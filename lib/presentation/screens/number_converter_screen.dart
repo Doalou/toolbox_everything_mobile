@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 // Animations visuelles retirées
 
 class NumberConverterScreen extends StatefulWidget {
-  const NumberConverterScreen({super.key});
+  final String heroTag;
+
+  const NumberConverterScreen({super.key, required this.heroTag});
 
   @override
   State<NumberConverterScreen> createState() => _NumberConverterScreenState();
@@ -190,7 +192,16 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Convertisseur de nombres'),
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Convertisseur de nombres',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [

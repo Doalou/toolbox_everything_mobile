@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
-
 class HashCalculatorScreen extends StatefulWidget {
-  const HashCalculatorScreen({super.key});
+  final String heroTag;
+
+  const HashCalculatorScreen({super.key, required this.heroTag});
 
   @override
   State<HashCalculatorScreen> createState() => _HashCalculatorScreenState();
@@ -22,25 +23,21 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
 
   late AnimationController _calculateController;
   late Animation<double> _calculateAnimation;
-  
+
   InputType _inputType = InputType.text;
   bool _isCalculating = false;
 
   @override
   void initState() {
     super.initState();
-    
+
     _calculateController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _calculateAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _calculateController,
-      curve: Curves.easeInOut,
-    ));
+    _calculateAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _calculateController, curve: Curves.easeInOut),
+    );
 
     _inputController.addListener(_onInputChanged);
   }
@@ -74,19 +71,23 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
 
     try {
       Uint8List bytes;
-      
+
       if (_inputType == InputType.text) {
         bytes = utf8.encode(_inputController.text);
       } else {
         // Hexadécimal input
-        final cleanHex = _inputController.text.replaceAll(' ', '').replaceAll('0x', '');
+        final cleanHex = _inputController.text
+            .replaceAll(' ', '')
+            .replaceAll('0x', '');
         if (cleanHex.length % 2 != 0) {
           _showError('Format hexadécimal invalide');
           return;
         }
         bytes = Uint8List.fromList(
-          List.generate(cleanHex.length ~/ 2, 
-            (i) => int.parse(cleanHex.substring(i * 2, i * 2 + 2), radix: 16))
+          List.generate(
+            cleanHex.length ~/ 2,
+            (i) => int.parse(cleanHex.substring(i * 2, i * 2 + 2), radix: 16),
+          ),
         );
       }
 
@@ -101,7 +102,6 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
         _resultControllers[HashType.sha512]!.text = sha512Hash.toString();
         _isCalculating = false;
       });
-
     } catch (e) {
       _showError('Erreur lors du calcul: $e');
       setState(() {
@@ -192,16 +192,22 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Calculateur de Hash'),
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Calculateur de Hash',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
             onPressed: _clearAll,
-            icon: Icon(
-              Icons.clear_all,
-              color: colorScheme.primary,
-            ),
+            icon: Icon(Icons.clear_all, color: colorScheme.primary),
             tooltip: 'Effacer tout',
           ),
         ],
@@ -221,11 +227,7 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
               ),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.fingerprint,
-                    size: 48,
-                    color: colorScheme.primary,
-                  ),
+                  Icon(Icons.fingerprint, size: 48, color: colorScheme.primary),
                   const SizedBox(height: 12),
                   Text(
                     'Calculateur de Hash',
@@ -238,7 +240,9 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
                   Text(
                     'MD5 • SHA-256 • SHA-512',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                      color: colorScheme.onPrimaryContainer.withValues(
+                        alpha: 0.7,
+                      ),
                     ),
                   ),
                 ],
@@ -311,20 +315,19 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
                     child: Row(
                       children: [
                         Icon(
-                          _inputType == InputType.text 
-                              ? Icons.text_fields 
+                          _inputType == InputType.text
+                              ? Icons.text_fields
                               : Icons.code,
                           color: colorScheme.primary,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _inputType == InputType.text 
-                              ? 'Texte à hasher' 
+                          _inputType == InputType.text
+                              ? 'Texte à hasher'
                               : 'Données hexadécimales',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const Spacer(),
                         if (_isCalculating)
@@ -343,7 +346,9 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
                     controller: _inputController,
                     maxLines: 4,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontFamily: _inputType == InputType.hex ? 'monospace' : null,
+                      fontFamily: _inputType == InputType.hex
+                          ? 'monospace'
+                          : null,
                     ),
                     decoration: InputDecoration(
                       hintText: _inputType == InputType.text
@@ -352,9 +357,13 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     ),
-                    inputFormatters: _inputType == InputType.hex ? [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f\s]')),
-                    ] : null,
+                    inputFormatters: _inputType == InputType.hex
+                        ? [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[0-9A-Fa-f\s]'),
+                            ),
+                          ]
+                        : null,
                   ),
                 ],
               ),
@@ -401,18 +410,20 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
         color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: result.isNotEmpty 
+          color: result.isNotEmpty
               ? hashColor.withValues(alpha: 0.3)
               : colorScheme.outline.withValues(alpha: 0.1),
           width: result.isNotEmpty ? 2 : 1,
         ),
-        boxShadow: result.isNotEmpty ? [
-          BoxShadow(
-            color: hashColor.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ] : null,
+        boxShadow: result.isNotEmpty
+            ? [
+                BoxShadow(
+                  color: hashColor.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,11 +436,7 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
                   color: hashColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  _getHashIcon(type),
-                  size: 16,
-                  color: hashColor,
-                ),
+                child: Icon(_getHashIcon(type), size: 16, color: hashColor),
               ),
               const SizedBox(width: 12),
               Text(
@@ -443,11 +450,7 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
               if (result.isNotEmpty)
                 IconButton(
                   onPressed: () => _copyHash(type),
-                  icon: Icon(
-                    Icons.content_copy,
-                    size: 18,
-                    color: hashColor,
-                  ),
+                  icon: Icon(Icons.content_copy, size: 18, color: hashColor),
                   tooltip: 'Copier',
                 ),
             ],
@@ -461,10 +464,12 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
               borderRadius: BorderRadius.circular(8),
             ),
             child: SelectableText(
-              result.isNotEmpty ? result : 'Hash ${_getHashName(type)} apparaîtra ici...',
+              result.isNotEmpty
+                  ? result
+                  : 'Hash ${_getHashName(type)} apparaîtra ici...',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontFamily: 'monospace',
-                color: result.isNotEmpty 
+                color: result.isNotEmpty
                     ? colorScheme.onSurface
                     : colorScheme.onSurface.withValues(alpha: 0.5),
               ),
@@ -491,26 +496,20 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.flash_on,
-                color: colorScheme.primary,
-                size: 20,
-              ),
+              Icon(Icons.flash_on, color: colorScheme.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Exemples rapides',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -567,4 +566,5 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
 }
 
 enum HashType { md5, sha256, sha512 }
-enum InputType { text, hex } 
+
+enum InputType { text, hex }

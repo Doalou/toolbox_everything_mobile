@@ -4,7 +4,9 @@ import 'package:toolbox_everything_mobile/core/models/unit_conversion.dart';
 import 'package:toolbox_everything_mobile/core/services/conversion_service.dart';
 
 class UnitConverterScreen extends StatefulWidget {
-  const UnitConverterScreen({super.key});
+  final String heroTag;
+
+  const UnitConverterScreen({super.key, required this.heroTag});
 
   @override
   UnitConverterScreenState createState() => UnitConverterScreenState();
@@ -37,10 +39,20 @@ class UnitConverterScreenState extends State<UnitConverterScreen> {
 
     double? input = double.tryParse(value);
     if (input == null) return;
-    
-    double result = fromTo 
-      ? _conversionService.convert(input, _fromUnit, _toUnit, _selectedCategory)
-      : _conversionService.convert(input, _toUnit, _fromUnit, _selectedCategory);
+
+    double result = fromTo
+        ? _conversionService.convert(
+            input,
+            _fromUnit,
+            _toUnit,
+            _selectedCategory,
+          )
+        : _conversionService.convert(
+            input,
+            _toUnit,
+            _fromUnit,
+            _selectedCategory,
+          );
 
     if (fromTo) {
       _toController.text = result.toStringAsFixed(2);
@@ -66,7 +78,18 @@ class UnitConverterScreenState extends State<UnitConverterScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Convertisseur d\'unités')),
+      appBar: AppBar(
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Convertisseur d\'unités',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
+      ),
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -84,7 +107,10 @@ class UnitConverterScreenState extends State<UnitConverterScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: colorScheme.surface, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      shape: BoxShape.circle,
+                    ),
                     child: Icon(Icons.swap_horiz, color: colorScheme.primary),
                   ),
                   const SizedBox(width: 12),
@@ -94,12 +120,17 @@ class UnitConverterScreenState extends State<UnitConverterScreen> {
                       children: [
                         Text(
                           'Convertissez rapidement vos unités',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Choisissez une catégorie, sélectionnez les unités et entrez une valeur.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8)),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: colorScheme.onPrimaryContainer
+                                    .withValues(alpha: 0.8),
+                              ),
                         ),
                       ],
                     ),
@@ -197,7 +228,9 @@ class UnitConverterScreenState extends State<UnitConverterScreen> {
   }
 
   Widget _buildUnitColumn(bool isFrom) {
-    final TextEditingController controller = isFrom ? _fromController : _toController;
+    final TextEditingController controller = isFrom
+        ? _fromController
+        : _toController;
     final FocusNode node = isFrom ? _fromFocus : _toFocus;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -240,7 +273,10 @@ class UnitConverterScreenState extends State<UnitConverterScreen> {
                     if (text.isNotEmpty) {
                       Clipboard.setData(ClipboardData(text: text));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Copié !'), duration: Duration(seconds: 1)),
+                        const SnackBar(
+                          content: Text('Copié !'),
+                          duration: Duration(seconds: 1),
+                        ),
                       );
                     }
                   },
@@ -261,4 +297,4 @@ class UnitConverterScreenState extends State<UnitConverterScreen> {
       ],
     );
   }
-} 
+}

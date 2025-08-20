@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 
 class BubbleLevelScreen extends StatefulWidget {
-  const BubbleLevelScreen({super.key});
+  final String heroTag;
+
+  const BubbleLevelScreen({super.key, required this.heroTag});
 
   @override
   BubbleLevelScreenState createState() => BubbleLevelScreenState();
@@ -31,7 +33,9 @@ class BubbleLevelScreenState extends State<BubbleLevelScreen> {
         ]);
       }
     });
-    _accelerometerSub = accelerometerEventStream().listen((AccelerometerEvent event) {
+    _accelerometerSub = accelerometerEventStream().listen((
+      AccelerometerEvent event,
+    ) {
       if (!mounted) return;
       setState(() {
         x = event.x;
@@ -57,7 +61,18 @@ class BubbleLevelScreenState extends State<BubbleLevelScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Niveau à bulle')),
+      appBar: AppBar(
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Niveau à bulle',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
+      ),
       body: Center(
         child: CustomPaint(
           size: const Size(200, 200),

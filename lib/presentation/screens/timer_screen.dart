@@ -5,7 +5,9 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TimerScreen extends StatefulWidget {
-  const TimerScreen({super.key});
+  final String heroTag;
+
+  const TimerScreen({super.key, required this.heroTag});
 
   @override
   State<TimerScreen> createState() => _TimerScreenState();
@@ -295,7 +297,16 @@ class _TimerScreenState extends State<TimerScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Minuteur & Chronomètre'),
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Minuteur & Chronomètre',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,

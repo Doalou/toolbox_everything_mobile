@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'dart:math';
 
 class LoremGeneratorScreen extends StatefulWidget {
-  const LoremGeneratorScreen({super.key});
+  final String heroTag;
+
+  const LoremGeneratorScreen({super.key, required this.heroTag});
 
   @override
   State<LoremGeneratorScreen> createState() => _LoremGeneratorScreenState();
@@ -149,7 +151,16 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Générateur Lorem Ipsum'),
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Générateur Lorem Ipsum',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -183,11 +194,10 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
                   const SizedBox(height: 12),
                   Text(
                     'Générateur de texte',
-                    style: Theme.of(context).textTheme.headlineSmall
-                        ?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onPrimaryContainer,
-                        ),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(

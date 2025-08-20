@@ -20,7 +20,9 @@ enum ConversionType {
 }
 
 class FileConverterScreen extends StatefulWidget {
-  const FileConverterScreen({super.key});
+  final String heroTag;
+
+  const FileConverterScreen({super.key, required this.heroTag});
 
   @override
   FileConverterScreenState createState() => FileConverterScreenState();
@@ -33,7 +35,7 @@ class FileConverterScreenState extends State<FileConverterScreen>
 
   late AnimationController _convertController;
   late Animation<double> _convertAnimation;
-  
+
   ConversionType _selectedConversion = ConversionType.jsonToYaml;
   bool _isConverting = false;
   String? _lastConvertedFile;
@@ -41,18 +43,14 @@ class FileConverterScreenState extends State<FileConverterScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _convertController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _convertAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _convertController,
-      curve: Curves.easeOutCubic,
-    ));
+    _convertAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _convertController, curve: Curves.easeOutCubic),
+    );
   }
 
   @override
@@ -74,7 +72,7 @@ class FileConverterScreenState extends State<FileConverterScreen>
 
     try {
       String result = '';
-      
+
       switch (_selectedConversion) {
         case ConversionType.jsonToYaml:
           result = _convertJsonToYaml(_inputController.text);
@@ -162,11 +160,11 @@ class FileConverterScreenState extends State<FileConverterScreen>
   String _toYamlString(dynamic data, {int indent = 0}) {
     String yaml = '';
     String indentStr = '  ' * indent;
-    
+
     if (data is Map) {
       for (var key in data.keys) {
         if (data[key] is Map || data[key] is List) {
-        yaml += '$indentStr$key:\n';
+          yaml += '$indentStr$key:\n';
           yaml += _toYamlString(data[key], indent: indent + 1);
         } else {
           yaml += '$indentStr$key: ${data[key]}\n';
@@ -182,7 +180,7 @@ class FileConverterScreenState extends State<FileConverterScreen>
         }
       }
     }
-    
+
     return yaml;
   }
 
@@ -200,21 +198,21 @@ class FileConverterScreenState extends State<FileConverterScreen>
     try {
       final lines = csvText.trim().split('\n');
       if (lines.isEmpty) throw 'CSV vide';
-      
+
       final headers = lines[0].split(',').map((e) => e.trim()).toList();
       final jsonArray = <Map<String, String>>[];
-      
+
       for (int i = 1; i < lines.length; i++) {
         final values = lines[i].split(',').map((e) => e.trim()).toList();
         final jsonObject = <String, String>{};
-        
+
         for (int j = 0; j < headers.length && j < values.length; j++) {
           jsonObject[headers[j]] = values[j];
         }
-        
+
         jsonArray.add(jsonObject);
       }
-      
+
       const jsonEncoder = JsonEncoder.withIndent('  ');
       return jsonEncoder.convert(jsonArray);
     } catch (e) {
@@ -225,32 +223,34 @@ class FileConverterScreenState extends State<FileConverterScreen>
   String _convertJsonToCsv(String jsonText) {
     try {
       final dynamic jsonData = json.decode(jsonText);
-      
+
       if (jsonData is! List) {
         throw 'Le JSON doit être un tableau d\'objets pour la conversion CSV';
       }
-      
+
       if (jsonData.isEmpty) return '';
-      
+
       final firstObject = jsonData[0];
       if (firstObject is! Map) {
         throw 'Les éléments du tableau doivent être des objets';
       }
-      
+
       final headers = firstObject.keys.toList();
       final csvLines = <String>[];
-      
+
       // En-têtes
       csvLines.add(headers.join(','));
-      
+
       // Données
       for (final item in jsonData) {
         if (item is Map) {
-          final values = headers.map((header) => item[header]?.toString() ?? '').toList();
+          final values = headers
+              .map((header) => item[header]?.toString() ?? '')
+              .toList();
           csvLines.add(values.join(','));
         }
       }
-      
+
       return csvLines.join('\n');
     } catch (e) {
       throw 'Erreur de conversion JSON vers CSV: $e';
@@ -261,14 +261,35 @@ class FileConverterScreenState extends State<FileConverterScreen>
     try {
       // Conversion basique Markdown vers HTML
       String html = markdownText
-          .replaceAllMapped(RegExp(r'^# (.+)$', multiLine: true), (match) => '<h1>${match.group(1)}</h1>')
-          .replaceAllMapped(RegExp(r'^## (.+)$', multiLine: true), (match) => '<h2>${match.group(1)}</h2>')
-          .replaceAllMapped(RegExp(r'^### (.+)$', multiLine: true), (match) => '<h3>${match.group(1)}</h3>')
-          .replaceAllMapped(RegExp(r'\*\*(.+?)\*\*'), (match) => '<strong>${match.group(1)}</strong>')
-          .replaceAllMapped(RegExp(r'\*(.+?)\*'), (match) => '<em>${match.group(1)}</em>')
-          .replaceAllMapped(RegExp(r'`(.+?)`'), (match) => '<code>${match.group(1)}</code>')
-          .replaceAllMapped(RegExp(r'\[(.+?)\]\((.+?)\)'), (match) => '<a href="${match.group(2)}">${match.group(1)}</a>');
-      
+          .replaceAllMapped(
+            RegExp(r'^# (.+)$', multiLine: true),
+            (match) => '<h1>${match.group(1)}</h1>',
+          )
+          .replaceAllMapped(
+            RegExp(r'^## (.+)$', multiLine: true),
+            (match) => '<h2>${match.group(1)}</h2>',
+          )
+          .replaceAllMapped(
+            RegExp(r'^### (.+)$', multiLine: true),
+            (match) => '<h3>${match.group(1)}</h3>',
+          )
+          .replaceAllMapped(
+            RegExp(r'\*\*(.+?)\*\*'),
+            (match) => '<strong>${match.group(1)}</strong>',
+          )
+          .replaceAllMapped(
+            RegExp(r'\*(.+?)\*'),
+            (match) => '<em>${match.group(1)}</em>',
+          )
+          .replaceAllMapped(
+            RegExp(r'`(.+?)`'),
+            (match) => '<code>${match.group(1)}</code>',
+          )
+          .replaceAllMapped(
+            RegExp(r'\[(.+?)\]\((.+?)\)'),
+            (match) => '<a href="${match.group(2)}">${match.group(1)}</a>',
+          );
+
       // Ajouter structure HTML de base
       return '''
 <!DOCTYPE html>
@@ -297,15 +318,42 @@ $html
     try {
       // Conversion basique HTML vers Markdown
       return htmlText
-          .replaceAllMapped(RegExp(r'<h1[^>]*>(.+?)</h1>'), (match) => '# ${match.group(1)}\n')
-          .replaceAllMapped(RegExp(r'<h2[^>]*>(.+?)</h2>'), (match) => '## ${match.group(1)}\n')
-          .replaceAllMapped(RegExp(r'<h3[^>]*>(.+?)</h3>'), (match) => '### ${match.group(1)}\n')
-          .replaceAllMapped(RegExp(r'<strong[^>]*>(.+?)</strong>'), (match) => '**${match.group(1)}**')
-          .replaceAllMapped(RegExp(r'<em[^>]*>(.+?)</em>'), (match) => '*${match.group(1)}*')
-          .replaceAllMapped(RegExp(r'<code[^>]*>(.+?)</code>'), (match) => '`${match.group(1)}`')
-          .replaceAllMapped(RegExp(r'<a[^>]*href="([^"]*)"[^>]*>(.+?)</a>'), (match) => '[${match.group(2)}](${match.group(1)})')
-          .replaceAll(RegExp(r'<[^>]+>'), '') // Supprimer les autres balises HTML
-          .replaceAll(RegExp(r'\n\s*\n\s*\n'), '\n\n'); // Nettoyer les lignes vides
+          .replaceAllMapped(
+            RegExp(r'<h1[^>]*>(.+?)</h1>'),
+            (match) => '# ${match.group(1)}\n',
+          )
+          .replaceAllMapped(
+            RegExp(r'<h2[^>]*>(.+?)</h2>'),
+            (match) => '## ${match.group(1)}\n',
+          )
+          .replaceAllMapped(
+            RegExp(r'<h3[^>]*>(.+?)</h3>'),
+            (match) => '### ${match.group(1)}\n',
+          )
+          .replaceAllMapped(
+            RegExp(r'<strong[^>]*>(.+?)</strong>'),
+            (match) => '**${match.group(1)}**',
+          )
+          .replaceAllMapped(
+            RegExp(r'<em[^>]*>(.+?)</em>'),
+            (match) => '*${match.group(1)}*',
+          )
+          .replaceAllMapped(
+            RegExp(r'<code[^>]*>(.+?)</code>'),
+            (match) => '`${match.group(1)}`',
+          )
+          .replaceAllMapped(
+            RegExp(r'<a[^>]*href="([^"]*)"[^>]*>(.+?)</a>'),
+            (match) => '[${match.group(2)}](${match.group(1)})',
+          )
+          .replaceAll(
+            RegExp(r'<[^>]+>'),
+            '',
+          ) // Supprimer les autres balises HTML
+          .replaceAll(
+            RegExp(r'\n\s*\n\s*\n'),
+            '\n\n',
+          ); // Nettoyer les lignes vides
     } catch (e) {
       throw 'Erreur de conversion HTML vers Markdown: $e';
     }
@@ -314,7 +362,7 @@ $html
   Future<void> _convertTextToPdf(String text) async {
     try {
       final pdf = pw.Document();
-      
+
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
@@ -338,17 +386,16 @@ $html
               pw.Spacer(),
               pw.Text(
                 'Généré le ${DateTime.now().toString().split('.')[0]}',
-                style: pw.TextStyle(
-                  fontSize: 10,
-                  color: PdfColors.grey600,
-                ),
+                style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
               ),
             ];
           },
         ),
       );
-      
-      await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+      );
     } catch (e) {
       throw 'Erreur de génération PDF: $e';
     }
@@ -358,16 +405,16 @@ $html
     try {
       final lines = csvText.trim().split('\n');
       if (lines.isEmpty) throw 'CSV vide';
-      
+
       final headers = lines[0].split(',').map((e) => e.trim()).toList();
       final data = <List<String>>[];
-      
+
       for (int i = 1; i < lines.length; i++) {
         data.add(lines[i].split(',').map((e) => e.trim()).toList());
       }
-      
+
       final pdf = pw.Document();
-      
+
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
@@ -401,8 +448,10 @@ $html
           },
         ),
       );
-      
-      await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+      );
     } catch (e) {
       throw 'Erreur de génération PDF depuis CSV: $e';
     }
@@ -418,7 +467,7 @@ $html
       if (result != null) {
         File file = File(result.files.single.path!);
         String content = await file.readAsString();
-        
+
         setState(() {
           _inputController.text = content;
           _lastConvertedFile = result.files.single.name;
@@ -479,16 +528,22 @@ $html
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Convertisseur de fichiers'),
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Convertisseur de fichiers',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
             onPressed: _clearAll,
-            icon: Icon(
-              Icons.clear_all,
-              color: colorScheme.primary,
-            ),
+            icon: Icon(Icons.clear_all, color: colorScheme.primary),
             tooltip: 'Effacer tout',
           ),
         ],
@@ -551,8 +606,7 @@ $html
             const SizedBox(height: 24),
 
             // Zone de sortie
-            if (_outputController.text.isNotEmpty)
-              _buildOutputSection(),
+            if (_outputController.text.isNotEmpty) _buildOutputSection(),
           ],
         ),
       ),
@@ -561,32 +615,26 @@ $html
 
   Widget _buildConversionSelector() {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-                children: [
-              Icon(
-                Icons.swap_horiz,
-                color: colorScheme.primary,
-                size: 20,
-              ),
+            children: [
+              Icon(Icons.swap_horiz, color: colorScheme.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Type de conversion',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -605,7 +653,10 @@ $html
                 },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? colorScheme.primaryContainer
@@ -617,9 +668,9 @@ $html
                           : colorScheme.outline.withValues(alpha: 0.2),
                     ),
                   ),
-                    child: Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
-                      children: [
+                    children: [
                       Icon(
                         _getConversionIcon(type),
                         size: 16,
@@ -636,9 +687,9 @@ $html
                               ? colorScheme.onPrimaryContainer
                               : colorScheme.onSurface,
                         ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }).toList(),
@@ -650,14 +701,12 @@ $html
 
   Widget _buildInputSection() {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -666,15 +715,11 @@ $html
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(
-                  Icons.input,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
+                Icon(Icons.input, color: colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _lastConvertedFile != null 
+                    _lastConvertedFile != null
                         ? 'Fichier: $_lastConvertedFile'
                         : 'Données d\'entrée',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -684,10 +729,7 @@ $html
                 ),
                 IconButton(
                   onPressed: _pickFile,
-                  icon: Icon(
-                    Icons.file_upload,
-                    color: colorScheme.primary,
-                  ),
+                  icon: Icon(Icons.file_upload, color: colorScheme.primary),
                   tooltip: 'Charger un fichier',
                 ),
               ],
@@ -697,11 +739,11 @@ $html
             height: 200,
             child: TextField(
               controller: _inputController,
-                    maxLines: null,
-                    expands: true,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontFamily: 'monospace',
-              ),
+              maxLines: null,
+              expands: true,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
               decoration: InputDecoration(
                 hintText: _getInputHint(_selectedConversion),
                 border: InputBorder.none,
@@ -716,7 +758,7 @@ $html
 
   Widget _buildConvertButton() {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return AnimatedBuilder(
       animation: _convertAnimation,
       builder: (context, child) {
@@ -754,14 +796,12 @@ $html
 
   Widget _buildOutputSection() {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -770,11 +810,7 @@ $html
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(
-                  Icons.output,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
+                Icon(Icons.output, color: colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -786,15 +822,12 @@ $html
                 ),
                 IconButton(
                   onPressed: _copyOutput,
-                  icon: Icon(
-                    Icons.content_copy,
-                    color: colorScheme.primary,
-                  ),
+                  icon: Icon(Icons.content_copy, color: colorScheme.primary),
                   tooltip: 'Copier',
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
           SizedBox(
             height: 200,
             child: TextField(
@@ -802,9 +835,9 @@ $html
               maxLines: null,
               expands: true,
               readOnly: true,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontFamily: 'monospace',
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -874,4 +907,4 @@ $html
         return 'nom,age,ville\nJean,30,Paris\nMarie,25,Lyon';
     }
   }
-} 
+}

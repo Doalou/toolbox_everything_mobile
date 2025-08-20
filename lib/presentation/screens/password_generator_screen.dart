@@ -6,7 +6,9 @@ import 'dart:math';
 import 'dart:async';
 
 class PasswordGeneratorScreen extends StatefulWidget {
-  const PasswordGeneratorScreen({super.key});
+  final String heroTag;
+
+  const PasswordGeneratorScreen({super.key, required this.heroTag});
 
   @override
   PasswordGeneratorScreenState createState() => PasswordGeneratorScreenState();
@@ -159,7 +161,16 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Générateur de mot de passe'),
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Générateur de mot de passe',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),

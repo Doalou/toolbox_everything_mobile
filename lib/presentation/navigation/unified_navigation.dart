@@ -1,39 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
+import 'package:toolbox_everything_mobile/presentation/widgets/smooth_page.dart';
 
-class UnifiedNavigationRoute<T> extends PageRouteBuilder<T> {
-  UnifiedNavigationRoute({
-    required WidgetBuilder builder,
-    Duration duration = AppConstants.mediumAnimation,
-    Curve curve = AppConstants.defaultAnimationCurve,
-  }) : super(
-          pageBuilder: (context, animation, secondaryAnimation) => builder(context),
-          transitionDuration: duration,
-          reverseTransitionDuration: duration,
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final curved = CurvedAnimation(parent: animation, curve: curve, reverseCurve: curve);
-            return FadeTransition(
-              opacity: curved,
-              child: SlideTransition(
-                position: Tween<Offset>(begin: const Offset(0.06, 0.0), end: Offset.zero).animate(curved),
-                child: child,
-              ),
-            );
-          },
-        );
-}
-
-Future<T?> pushUnified<T>(BuildContext context, Widget page, {required bool lowResourceMode}) {
-  if (lowResourceMode) {
+Future<T?> pushUnified<T>(
+  BuildContext context,
+  Widget page, {
+  bool lowResourceMode = false,
+}) {
+  final platform = Theme.of(context).platform;
+  if (platform == TargetPlatform.android) {
+    // Android: MaterialPageRoute pour Predictive Back, avec animation d'entrée subtile du contenu
     return Navigator.push<T>(
       context,
-      MaterialPageRoute(builder: (_) => page),
+      MaterialPageRoute(builder: (_) => SmoothPage(child: page)),
     );
   }
+  // Autres plateformes: légère transition pour fluidité
   return Navigator.push<T>(
     context,
-    UnifiedNavigationRoute(builder: (_) => page),
+    PageRouteBuilder(
+      transitionDuration: const Duration(milliseconds: 220),
+      reverseTransitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeOutCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.06, 0.0),
+              end: Offset.zero,
+            ).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    ),
   );
 }
-
-

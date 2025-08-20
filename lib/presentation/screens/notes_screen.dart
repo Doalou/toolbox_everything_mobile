@@ -4,7 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
 class NotesScreen extends StatefulWidget {
-  const NotesScreen({super.key});
+  final String heroTag;
+
+  const NotesScreen({super.key, required this.heroTag});
 
   @override
   State<NotesScreen> createState() => _NotesScreenState();
@@ -14,10 +16,10 @@ class _NotesScreenState extends State<NotesScreen>
     with TickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  
+
   late AnimationController _saveController;
   late Animation<double> _saveAnimation;
-  
+
   bool _isLoading = true;
   bool _hasUnsavedChanges = false;
   String _lastSavedText = '';
@@ -27,18 +29,14 @@ class _NotesScreenState extends State<NotesScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _saveController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _saveAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _saveController,
-      curve: Curves.elasticOut,
-    ));
+    _saveAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _saveController, curve: Curves.elasticOut),
+    );
 
     _textController.addListener(_onTextChanged);
     _loadNotes();
@@ -55,11 +53,13 @@ class _NotesScreenState extends State<NotesScreen>
   void _onTextChanged() {
     final text = _textController.text;
     final hasChanges = text != _lastSavedText;
-    
+
     setState(() {
       _hasUnsavedChanges = hasChanges;
       _characterCount = text.length;
-      _wordCount = text.trim().isEmpty ? 0 : text.trim().split(RegExp(r'\s+')).length;
+      _wordCount = text.trim().isEmpty
+          ? 0
+          : text.trim().split(RegExp(r'\s+')).length;
     });
 
     // Auto-save après 2 secondes d'inactivité
@@ -80,12 +80,14 @@ class _NotesScreenState extends State<NotesScreen>
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedText = prefs.getString('temp_notes') ?? '';
-      
+
       setState(() {
         _textController.text = savedText;
         _lastSavedText = savedText;
         _characterCount = savedText.length;
-        _wordCount = savedText.trim().isEmpty ? 0 : savedText.trim().split(RegExp(r'\s+')).length;
+        _wordCount = savedText.trim().isEmpty
+            ? 0
+            : savedText.trim().split(RegExp(r'\s+')).length;
         _isLoading = false;
       });
     } catch (e) {
@@ -99,7 +101,7 @@ class _NotesScreenState extends State<NotesScreen>
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('temp_notes', _textController.text);
-      
+
       setState(() {
         _lastSavedText = _textController.text;
         _hasUnsavedChanges = false;
@@ -143,7 +145,9 @@ class _NotesScreenState extends State<NotesScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Effacer les notes'),
-        content: const Text('Êtes-vous sûr de vouloir effacer toutes vos notes ? Cette action est irréversible.'),
+        content: const Text(
+          'Êtes-vous sûr de vouloir effacer toutes vos notes ? Cette action est irréversible.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -185,12 +189,10 @@ class _NotesScreenState extends State<NotesScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_isLoading) {
-  return Scaffold(
-    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Center(
-          child: CircularProgressIndicator(
-            color: colorScheme.primary,
-          ),
+          child: CircularProgressIndicator(color: colorScheme.primary),
         ),
       );
     }
@@ -198,7 +200,16 @@ class _NotesScreenState extends State<NotesScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Bloc-notes temporaire'),
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Bloc-notes temporaire',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -211,8 +222,8 @@ class _NotesScreenState extends State<NotesScreen>
                   onPressed: _saveNotes,
                   icon: Icon(
                     _hasUnsavedChanges ? Icons.save : Icons.check_circle,
-                    color: _hasUnsavedChanges 
-                        ? colorScheme.primary 
+                    color: _hasUnsavedChanges
+                        ? colorScheme.primary
                         : Colors.green,
                   ),
                   tooltip: 'Sauvegarder',
@@ -222,17 +233,11 @@ class _NotesScreenState extends State<NotesScreen>
           ),
           IconButton(
             onPressed: _copyNotes,
-            icon: Icon(
-              Icons.content_copy,
-              color: colorScheme.primary,
-            ),
+            icon: Icon(Icons.content_copy, color: colorScheme.primary),
             tooltip: 'Copier',
           ),
           PopupMenuButton<String>(
-            icon: Icon(
-              Icons.more_vert,
-              color: colorScheme.primary,
-            ),
+            icon: Icon(Icons.more_vert, color: colorScheme.primary),
             onSelected: (value) {
               switch (value) {
                 case 'clear':
@@ -286,7 +291,11 @@ class _NotesScreenState extends State<NotesScreen>
                     color: colorScheme.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(Icons.note_add, color: colorScheme.primary, size: 24),
+                  child: Icon(
+                    Icons.note_add,
+                    color: colorScheme.primary,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -295,7 +304,10 @@ class _NotesScreenState extends State<NotesScreen>
                     children: [
                       Text(
                         'Notes temporaires',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, color: colorScheme.onPrimaryContainer),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -306,7 +318,10 @@ class _NotesScreenState extends State<NotesScreen>
                           const SizedBox(width: 8),
                           if (_hasUnsavedChanges)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.orange.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
@@ -357,12 +372,12 @@ class _NotesScreenState extends State<NotesScreen>
                 maxLines: null,
                 expands: true,
                 textAlignVertical: TextAlignVertical.top,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  height: 1.6,
-                  fontSize: 16,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(height: 1.6, fontSize: 16),
                 decoration: InputDecoration(
-                  hintText: 'Écrivez vos notes temporaires ici...\n\n• Sauvegarde automatique\n• Persistance entre les sessions\n• Compteur de mots en temps réel',
+                  hintText:
+                      'Écrivez vos notes temporaires ici...\n\n• Sauvegarde automatique\n• Persistance entre les sessions\n• Compteur de mots en temps réel',
                   hintStyle: TextStyle(
                     color: colorScheme.onSurface.withValues(alpha: 0.4),
                     height: 1.6,
@@ -381,7 +396,10 @@ class _NotesScreenState extends State<NotesScreen>
               children: [
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(12),
@@ -396,9 +414,12 @@ class _NotesScreenState extends State<NotesScreen>
                         const SizedBox(width: 8),
                         Text(
                           'Sauvegarde automatique activée',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withValues(alpha: 0.7),
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
                         ),
                       ],
                     ),
@@ -409,10 +430,7 @@ class _NotesScreenState extends State<NotesScreen>
                   heroTag: "notes_edit",
                   onPressed: () => _focusNode.requestFocus(),
                   backgroundColor: colorScheme.primary,
-                  child: Icon(
-                    Icons.edit,
-                    color: colorScheme.onPrimary,
-                  ),
+                  child: Icon(Icons.edit, color: colorScheme.onPrimary),
                 ),
               ],
             ),
@@ -424,7 +442,7 @@ class _NotesScreenState extends State<NotesScreen>
 
   Widget _buildStatChip(String text) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -441,4 +459,4 @@ class _NotesScreenState extends State<NotesScreen>
       ),
     );
   }
-} 
+}

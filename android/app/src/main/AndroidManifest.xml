@@ -11,6 +11,8 @@
         android:label="Toolbox Everything"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_notification"/>
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notification_color"/>
         <provider
             android:name="com.superlist.super_native_extensions.DataProvider"
             android:authorities="com.toolbox.everything.mobile.SuperClipboardDataProvider"

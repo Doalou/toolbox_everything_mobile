@@ -3,7 +3,9 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'dart:math' as math;
 
 class CompassScreen extends StatefulWidget {
-  const CompassScreen({super.key});
+  final String heroTag;
+
+  const CompassScreen({super.key, required this.heroTag});
 
   @override
   CompassScreenState createState() => CompassScreenState();
@@ -14,11 +16,9 @@ class CompassScreenState extends State<CompassScreen>
   double? _heading;
   bool _isCalibrating = true;
 
-
   @override
   void initState() {
     super.initState();
-
 
     // Simuler la calibration
     Future.delayed(const Duration(seconds: 2), () {
@@ -36,14 +36,30 @@ class CompassScreenState extends State<CompassScreen>
   }
 
   String _getDirection(double heading) {
-    if (heading >= 337.5 || heading < 22.5) { return 'Nord'; }
-    if (heading >= 22.5 && heading < 67.5) { return 'Nord-Est'; }
-    if (heading >= 67.5 && heading < 112.5) { return 'Est'; }
-    if (heading >= 112.5 && heading < 157.5) { return 'Sud-Est'; }
-    if (heading >= 157.5 && heading < 202.5) { return 'Sud'; }
-    if (heading >= 202.5 && heading < 247.5) { return 'Sud-Ouest'; }
-    if (heading >= 247.5 && heading < 292.5) { return 'Ouest'; }
-    if (heading >= 292.5 && heading < 337.5) { return 'Nord-Ouest'; }
+    if (heading >= 337.5 || heading < 22.5) {
+      return 'Nord';
+    }
+    if (heading >= 22.5 && heading < 67.5) {
+      return 'Nord-Est';
+    }
+    if (heading >= 67.5 && heading < 112.5) {
+      return 'Est';
+    }
+    if (heading >= 112.5 && heading < 157.5) {
+      return 'Sud-Est';
+    }
+    if (heading >= 157.5 && heading < 202.5) {
+      return 'Sud';
+    }
+    if (heading >= 202.5 && heading < 247.5) {
+      return 'Sud-Ouest';
+    }
+    if (heading >= 247.5 && heading < 292.5) {
+      return 'Ouest';
+    }
+    if (heading >= 292.5 && heading < 337.5) {
+      return 'Nord-Ouest';
+    }
     return 'Inconnu';
   }
 
@@ -66,7 +82,16 @@ class CompassScreenState extends State<CompassScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Boussole'),
+        title: Hero(
+          tag: widget.heroTag,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              'Boussole',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [

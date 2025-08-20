@@ -26,86 +26,80 @@ final List<ToolItem> _tools = [
   ToolItem(
     title: 'Générateur de MDP',
     icon: Icons.password,
-    screenBuilder: () => const PasswordGeneratorScreen(),
-    category: ToolCategory.security,
+    screenBuilder: (heroTag) => PasswordGeneratorScreen(heroTag: heroTag),
+    heroTag: 'password-generator-hero',
   ),
   ToolItem(
     title: 'QR Code',
     icon: Icons.qr_code,
-    screenBuilder: () => const QrCodeScreen(),
-    category: ToolCategory.utilities,
-    animates: false,
+    screenBuilder: (heroTag) => QrCodeScreen(heroTag: heroTag),
+    heroTag: 'qr-code-hero',
   ),
   ToolItem(
     title: 'Convertisseur d\'unités',
     icon: Icons.swap_horiz,
-    screenBuilder: () => const UnitConverterScreen(),
-    category: ToolCategory.conversion,
-    animates: false,
+    screenBuilder: (heroTag) => UnitConverterScreen(heroTag: heroTag),
+    heroTag: 'unit-converter-hero',
   ),
   ToolItem(
     title: 'Convertisseur binaire',
     icon: Icons.transform,
-    screenBuilder: () => const NumberConverterScreen(),
-    category: ToolCategory.conversion,
-    animates: false,
+    screenBuilder: (heroTag) => NumberConverterScreen(heroTag: heroTag),
+    heroTag: 'number-converter-hero',
   ),
   ToolItem(
     title: 'Bloc-notes',
     icon: Icons.note_add,
-    screenBuilder: () => const NotesScreen(),
-    category: ToolCategory.productivity,
-    animates: false,
+    screenBuilder: (heroTag) => NotesScreen(heroTag: heroTag),
+    heroTag: 'notes-hero',
   ),
   ToolItem(
     title: 'Lorem Ipsum',
     icon: Icons.text_snippet,
-    screenBuilder: () => const LoremGeneratorScreen(),
-    category: ToolCategory.productivity,
+    screenBuilder: (heroTag) => LoremGeneratorScreen(heroTag: heroTag),
+    heroTag: 'lorem-ipsum-hero',
   ),
   ToolItem(
     title: 'Calculateur Hash',
     icon: Icons.fingerprint,
-    screenBuilder: () => const HashCalculatorScreen(),
-    category: ToolCategory.security,
-    animates: false,
+    screenBuilder: (heroTag) => HashCalculatorScreen(heroTag: heroTag),
+    heroTag: 'hash-calculator-hero',
   ),
   ToolItem(
     title: 'Minuteur',
     icon: Icons.timer,
-    screenBuilder: () => const TimerScreen(),
-    category: ToolCategory.utilities,
+    screenBuilder: (heroTag) => TimerScreen(heroTag: heroTag),
+    heroTag: 'timer-hero',
   ),
   ToolItem(
     title: 'Boussole',
     icon: Icons.explore,
-    screenBuilder: () => const CompassScreen(),
-    category: ToolCategory.mobile,
+    screenBuilder: (heroTag) => CompassScreen(heroTag: heroTag),
+    heroTag: 'compass-hero',
   ),
   ToolItem(
     title: 'Niveau à bulle',
     icon: Icons.architecture,
-    screenBuilder: () => const BubbleLevelScreen(),
-    category: ToolCategory.mobile,
+    screenBuilder: (heroTag) => BubbleLevelScreen(heroTag: heroTag),
+    heroTag: 'bubble-level-hero',
   ),
   ToolItem(
     title: 'Convertisseur de fichiers',
     icon: Icons.file_copy,
-    screenBuilder: () => const FileConverterScreen(),
-    category: ToolCategory.conversion,
-    animates: false,
+    screenBuilder: (heroTag) => FileConverterScreen(heroTag: heroTag),
+    heroTag: 'file-converter-hero',
   ),
   ToolItem(
     title: 'Téléchargeur',
     icon: Icons.download,
-    screenBuilder: () => const DownloaderScreen(),
-    category: ToolCategory.media,
+    screenBuilder: (heroTag) => DownloaderScreen(heroTag: heroTag),
+    heroTag: 'downloader-hero',
   ),
   ToolItem(
     title: 'Testeur de Connexion',
     icon: Icons.wifi,
-    screenBuilder: () => const ConnectionTesterScreen(),
-    category: ToolCategory.utilities,
+    screenBuilder: (heroTag) => ConnectionTesterScreen(heroTag: heroTag),
+    heroTag: 'connection-tester-hero',
   ),
 ];
 
@@ -116,7 +110,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   late List<ToolItem> filteredTools;
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
@@ -223,7 +218,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               color: colorScheme.surfaceContainer,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: colorScheme.outline.withValues(alpha: 0.2),
+                                color: colorScheme.outline.withValues(
+                                  alpha: 0.2,
+                                ),
                               ),
                             ),
                             child: TextField(
@@ -302,38 +299,43 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final tool = filteredTools[index];
-                    if (!tool.animates) {
-                      return SizedBox.expand(
-                        child: ToolCard(tool: tool),
-                      );
-                    }
-                    
-                    final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-                      CurvedAnimation(
-                        parent: _staggerController,
-                        curve: Interval(
-                          (0.05 * index).clamp(0.0, 1.0),
-                          (0.05 * index + 0.3).clamp(0.0, 1.0),
-                          curve: AppConstants.defaultAnimationCurve,
-                        ),
-                      ),
-                    );
+
+                    final animation = Tween<double>(begin: 0.0, end: 1.0)
+                        .animate(
+                          CurvedAnimation(
+                            parent: _staggerController,
+                            curve: Interval(
+                              (0.05 * index).clamp(0.0, 1.0),
+                              (0.05 * index + 0.3).clamp(0.0, 1.0),
+                              curve: AppConstants.defaultAnimationCurve,
+                            ),
+                          ),
+                        );
 
                     return AnimatedBuilder(
                       animation: animation,
                       builder: (context, child) {
                         return Opacity(
-                          opacity: animation.value,
+                          opacity: tool.animates ? animation.value : 1.0,
                           child: Transform.translate(
-                            offset: Offset(0, 40 * (1 - animation.value)),
+                            offset: Offset(
+                              0,
+                              tool.animates ? 40 * (1 - animation.value) : 0,
+                            ),
                             child: child,
                           ),
                         );
                       },
-                      child: SizedBox.expand(
-                        child: ToolCard(
-                          tool: filteredTools[index],
-                        ),
+                      child: ToolCard(
+                        tool: tool,
+                        onFavoriteToggle: () async {
+                          await UsageStatsService.saveFavorites(
+                            _tools
+                                .where((t) => t.isFavorite)
+                                .map((t) => t.title)
+                                .toList(),
+                          );
+                        },
                       ),
                     );
                   }, childCount: filteredTools.length),
@@ -353,9 +355,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-      ),
+      decoration: BoxDecoration(color: colorScheme.surface),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -425,23 +425,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildActionButton(
-            context,
-            Icons.settings_outlined,
-            () {
-              final lowResourceMode = context.read<SettingsProvider>().lowResourceMode;
-              _navigateToScreen(context, const SettingsScreen(), lowResourceMode);
-            },
-          ),
+          _buildActionButton(context, Icons.settings_outlined, () {
+            final lowResourceMode = context
+                .read<SettingsProvider>()
+                .lowResourceMode;
+            _navigateToScreen(context, const SettingsScreen(), lowResourceMode);
+          }),
           const SizedBox(width: 8),
-          _buildActionButton(
-            context,
-            Icons.info_outline,
-            () {
-              final lowResourceMode = context.read<SettingsProvider>().lowResourceMode;
-              _navigateToScreen(context, const AboutScreen(), lowResourceMode);
-            },
-          ),
+          _buildActionButton(context, Icons.info_outline, () {
+            final lowResourceMode = context
+                .read<SettingsProvider>()
+                .lowResourceMode;
+            _navigateToScreen(context, const AboutScreen(), lowResourceMode);
+          }),
         ],
       ),
     );
@@ -468,8 +464,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  void _navigateToScreen(BuildContext context, Widget screen, bool lowResourceMode) {
+  void _navigateToScreen(
+    BuildContext context,
+    Widget screen,
+    bool lowResourceMode,
+  ) {
     pushUnified(context, screen, lowResourceMode: lowResourceMode);
   }
-
 }
