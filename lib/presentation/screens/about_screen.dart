@@ -5,12 +5,28 @@ import 'package:url_launcher/url_launcher.dart';
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
+  Future<void> _launchUrl(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    if (!await canLaunchUrl(uri)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Impossible d\'ouvrir l\'URL : $url'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+      return;
+    }
+    await launchUrl(uri);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
-  return Scaffold(
-    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    final textTheme = Theme.of(context).textTheme;
+
+    return Scaffold(
       appBar: AppBar(
         title: const Text('À propos'),
         leading: IconButton(
@@ -19,129 +35,208 @@ class AboutScreen extends StatelessWidget {
           tooltip: AppConstants.semanticBackButton,
         ),
       ),
-      body: Center(
-        child: Padding(
+      body: ListView(
+        padding: const EdgeInsets.all(AppConstants.largePadding),
+        children: [
+          // En-tête
+          _buildHeader(context, colorScheme, textTheme),
+          const SizedBox(height: AppConstants.largePadding * 1.5),
+
+          // Description
+          _buildDescriptionCard(context, colorScheme, textTheme),
+          const SizedBox(height: AppConstants.largePadding),
+
+          // Liens utiles
+          _buildLinksCard(context, colorScheme, textTheme),
+          const SizedBox(height: AppConstants.largePadding),
+
+          // Actions
+          _buildActions(context, colorScheme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+    return Column(
+      children: [
+        Container(
           padding: const EdgeInsets.all(AppConstants.largePadding),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icône de l'application
-              Container(
-                padding: const EdgeInsets.all(AppConstants.largePadding),
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primaryContainer,
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.build_circle,
-                  size: AppConstants.extraLargeIconSize,
-                  color: Colors.white,
-                ),
-              ),
-              
-              const SizedBox(height: AppConstants.largePadding),
-              
-              // Nom de l'application
-              Text(
-                AppConstants.appName,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: AppConstants.smallPadding),
-              
-              // Version
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.defaultPadding,
-                  vertical: AppConstants.smallPadding,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
-                ),
-                child: Text(
-                  'Version ${AppConstants.version}',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: AppConstants.largePadding),
-              
-              // Description
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppConstants.largePadding),
-                  child: Column(
-                    children: [
-                      Text(
-                        AppConstants.appDescription,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      
-                      const SizedBox(height: AppConstants.defaultPadding),
-                      
-                      Text(
-                        'Une collection d\'outils pratiques pour développeurs, étudiants et passionnés de technologie. Entièrement offline, gratuit et sécurisé.',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: AppConstants.largePadding),
-              
-              // Contact
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final Uri emailLaunchUri = Uri(
-                    scheme: 'mailto',
-                    path: 'contact@doalo.fr',
-                    query: 'subject=${Uri.encodeComponent('Contact Toolbox Everything')}',
-                  );
-                  if (await canLaunchUrl(emailLaunchUri)) {
-                    await launchUrl(emailLaunchUri);
-                  } else {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Impossible d\'ouvrir une application d\'e-mail.'),
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                      );
-                    }
-                  }
-                },
-                icon: const Icon(Icons.mail_outline),
-                label: const Text('Contact'),
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              colors: [
+                colorScheme.primary,
+                colorScheme.primary.withOpacity(0.6),
+              ],
+              center: Alignment.bottomRight,
+              radius: 1.5,
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
+          child: const Icon(
+            Icons.build_circle,
+            size: AppConstants.extraLargeIconSize,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: AppConstants.largePadding),
+        Text(
+          AppConstants.appName,
+          style: textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.primary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppConstants.smallPadding),
+        Chip(
+          label: Text(
+            'Version ${AppConstants.version}',
+            style: textTheme.labelLarge?.copyWith(
+              color: colorScheme.onSecondaryContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          backgroundColor: colorScheme.secondaryContainer,
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDescriptionCard(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+    return Card(
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.largePadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Votre boîte à outils numérique',
+              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: AppConstants.defaultPadding),
+            Text(
+              'Une collection d\'outils pratiques pour développeurs, étudiants et passionnés de technologie. Entièrement offline, gratuit et sécurisé.',
+              style: textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLinksCard(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+    return Card(
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
+      ),
+      child: Column(
+        children: [
+          _buildLinkTile(
+            context,
+            icon: Icons.shield_outlined,
+            title: 'Politique de confidentialité',
+            onTap: () => _launchUrl(context, AppConstants.privacyPolicyUrl),
+          ),
+          _buildDivider(colorScheme),
+          _buildLinkTile(
+            context,
+            icon: Icons.code_rounded,
+            title: 'Code source (GitHub)',
+            onTap: () => _launchUrl(context, AppConstants.sourceCodeUrl),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLinkTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Icon(icon, color: colorScheme.primary),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      trailing: const Icon(Icons.chevron_right_rounded),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
+      ),
+    );
+  }
+
+  Widget _buildDivider(ColorScheme colorScheme) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      indent: 20,
+      endIndent: 20,
+      color: colorScheme.outline.withOpacity(0.1),
+    );
+  }
+
+  Widget _buildActions(BuildContext context, ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton.icon(
+          onPressed: () async {
+            const String subject = 'Suggestion pour Toolbox Everything';
+            const String body = 'Bonjour, j\'ai une idée d\'outil à suggérer : ...';
+
+            final Uri emailLaunchUri = Uri(
+              scheme: 'mailto',
+              path: AppConstants.contactEmail,
+              query: 'subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}',
+            );
+            _launchUrl(context, emailLaunchUri.toString());
+          },
+          icon: const Icon(Icons.lightbulb_outline),
+          label: const Text('Suggérer un outil'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: AppConstants.defaultPadding),
+            textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(height: AppConstants.defaultPadding),
+        OutlinedButton.icon(
+          onPressed: () async {
+            final Uri emailLaunchUri = Uri(
+              scheme: 'mailto',
+              path: AppConstants.contactEmail,
+              query: 'subject=${Uri.encodeComponent('Contact | Toolbox Everything')}',
+            );
+            _launchUrl(context, emailLaunchUri.toString());
+          },
+          icon: const Icon(Icons.mail_outline),
+          label: const Text('Contacter le support'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: AppConstants.defaultPadding),
+            textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
     );
   }
 } 

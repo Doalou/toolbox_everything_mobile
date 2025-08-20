@@ -4,16 +4,15 @@ import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/core/services/usage_stats_service.dart';
+import 'package:toolbox_everything_mobile/presentation/navigation/unified_navigation.dart';
 
 class ToolCard extends StatefulWidget {
   final ToolItem tool;
-  final int animationDelay;
   final VoidCallback? onFavoriteToggle;
 
   const ToolCard({
     super.key,
     required this.tool,
-    this.animationDelay = 0,
     this.onFavoriteToggle,
   });
 
@@ -85,16 +84,16 @@ class _ToolCardState extends State<ToolCard> {
       button: true,
       child: MouseRegion(
         onEnter: (_) {
-          if (!lowResourceMode) setState(() => _isHovered = true);
+          if (!lowResourceMode && widget.tool.animates) setState(() => _isHovered = true);
         },
         onExit: (_) {
-          if (!lowResourceMode) setState(() => _isHovered = false);
+          if (!lowResourceMode && widget.tool.animates) setState(() => _isHovered = false);
         },
         child: AnimatedContainer(
           duration: lowResourceMode
               ? Duration.zero
               : AppConstants.mediumAnimation,
-          curve: Curves.easeOutCubic,
+          curve: AppConstants.defaultAnimationCurve,
           transform: lowResourceMode
               ? Matrix4.identity()
               : (Matrix4.identity()
@@ -168,6 +167,7 @@ class _ToolCardState extends State<ToolCard> {
                           duration: lowResourceMode
                               ? Duration.zero
                               : AppConstants.mediumAnimation,
+                          curve: AppConstants.defaultAnimationCurve,
                           padding: const EdgeInsets.all(
                             AppConstants.defaultPadding,
                           ),
@@ -208,6 +208,7 @@ class _ToolCardState extends State<ToolCard> {
                             duration: lowResourceMode
                                 ? Duration.zero
                                 : AppConstants.mediumAnimation,
+                            curve: AppConstants.defaultAnimationCurve,
                             child: Icon(
                               widget.tool.icon,
                               size: AppConstants.largeIconSize,
@@ -255,6 +256,7 @@ class _ToolCardState extends State<ToolCard> {
                           duration: lowResourceMode
                               ? Duration.zero
                               : AppConstants.mediumAnimation,
+                          curve: AppConstants.defaultAnimationCurve,
                           height: 4,
                           width: (_isHovered && !lowResourceMode) ? 50 : 25,
                           decoration: BoxDecoration(
@@ -295,6 +297,7 @@ class _ToolCardState extends State<ToolCard> {
                       opacity:
                           _isHovered || widget.tool.isFavorite ? 1.0 : 0.0,
                       duration: AppConstants.mediumAnimation,
+                      curve: AppConstants.defaultAnimationCurve,
                       child: Container(
                         decoration: BoxDecoration(
                              color: colorScheme.surface.withValues(alpha: 0.9),
@@ -351,36 +354,6 @@ class _ToolCardState extends State<ToolCard> {
     // Enregistrer l'usage (non bloquant)
     UsageStatsService.recordToolUsage(widget.tool.title);
 
-    if (lowResourceMode) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => widget.tool.screenBuilder()),
-      );
-      return;
-    }
-
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            widget.tool.screenBuilder(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position:
-                Tween<Offset>(
-                  begin: const Offset(1.0, 0.0),
-                  end: Offset.zero,
-                ).animate(
-                  CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeOutCubic,
-                  ),
-                ),
-            child: FadeTransition(opacity: animation, child: child),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-    );
+    pushUnified(context, widget.tool.screenBuilder(), lowResourceMode: lowResourceMode);
   }
 }

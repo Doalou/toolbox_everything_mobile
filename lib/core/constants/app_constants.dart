@@ -31,6 +31,11 @@ class AppConstants {
   static const Duration shortAnimation = Duration(milliseconds: 200);
   static const Duration mediumAnimation = Duration(milliseconds: 300);
   static const Duration longAnimation = Duration(milliseconds: 500);
+  static const Curve defaultAnimationCurve = Curves.easeInOutCubic;
+
+  // Liens
+  static const String privacyPolicyUrl = 'https://doalo.fr/toolbox-everything/';
+  static const String sourceCodeUrl = 'https://github.com/Doalou/toolbox_everything_mobile';
 
   // Couleurs expressives
   static const List<Color> expressiveColors = [

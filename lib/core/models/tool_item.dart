@@ -15,6 +15,7 @@ class ToolItem {
   final Widget Function() screenBuilder;
   final ToolCategory category;
   bool isFavorite;
+  final bool animates;
 
   ToolItem({
     required this.title,
@@ -22,6 +23,7 @@ class ToolItem {
     required this.screenBuilder,
     required this.category,
     this.isFavorite = false,
+    this.animates = true,
   });
 
   void toggleFavorite() {

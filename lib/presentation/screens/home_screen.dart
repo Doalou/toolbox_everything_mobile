@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:toolbox_everything_mobile/core/models/tool_item.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/password_generator_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/qr_code_screen.dart';
@@ -17,9 +16,11 @@ import 'package:toolbox_everything_mobile/presentation/screens/hash_calculator_s
 import 'package:toolbox_everything_mobile/presentation/screens/timer_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/connection_tester_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/widgets/tool_card.dart';
+import 'package:toolbox_everything_mobile/presentation/navigation/unified_navigation.dart';
 import 'package:toolbox_everything_mobile/core/services/usage_stats_service.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
+import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 
 final List<ToolItem> _tools = [
   ToolItem(
@@ -33,24 +34,28 @@ final List<ToolItem> _tools = [
     icon: Icons.qr_code,
     screenBuilder: () => const QrCodeScreen(),
     category: ToolCategory.utilities,
+    animates: false,
   ),
   ToolItem(
     title: 'Convertisseur d\'unités',
     icon: Icons.swap_horiz,
     screenBuilder: () => const UnitConverterScreen(),
     category: ToolCategory.conversion,
+    animates: false,
   ),
   ToolItem(
     title: 'Convertisseur binaire',
     icon: Icons.transform,
     screenBuilder: () => const NumberConverterScreen(),
     category: ToolCategory.conversion,
+    animates: false,
   ),
   ToolItem(
     title: 'Bloc-notes',
     icon: Icons.note_add,
     screenBuilder: () => const NotesScreen(),
     category: ToolCategory.productivity,
+    animates: false,
   ),
   ToolItem(
     title: 'Lorem Ipsum',
@@ -63,6 +68,7 @@ final List<ToolItem> _tools = [
     icon: Icons.fingerprint,
     screenBuilder: () => const HashCalculatorScreen(),
     category: ToolCategory.security,
+    animates: false,
   ),
   ToolItem(
     title: 'Minuteur',
@@ -87,6 +93,7 @@ final List<ToolItem> _tools = [
     icon: Icons.file_copy,
     screenBuilder: () => const FileConverterScreen(),
     category: ToolCategory.conversion,
+    animates: false,
   ),
   ToolItem(
     title: 'Téléchargeur',
@@ -109,10 +116,11 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late List<ToolItem> filteredTools;
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
+  late AnimationController _staggerController;
 
   @override
   void initState() {
@@ -120,11 +128,17 @@ class _HomeScreenState extends State<HomeScreen> {
     filteredTools = _tools;
     _searchController.addListener(_filterTools);
     _loadFavorites();
+    _staggerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _staggerController.forward();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _staggerController.dispose();
     super.dispose();
   }
 
@@ -138,6 +152,8 @@ class _HomeScreenState extends State<HomeScreen> {
           return tool.title.toLowerCase().contains(query);
         }).toList();
       }
+      _staggerController.reset();
+      _staggerController.forward();
     });
   }
 
@@ -195,39 +211,45 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               // Search Bar
-              if (_isSearching)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: colorScheme.outline.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Rechercher un outil...',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                            },
+              SliverToBoxAdapter(
+                child: AnimatedSize(
+                  duration: AppConstants.mediumAnimation,
+                  curve: AppConstants.defaultAnimationCurve,
+                  child: _isSearching
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainer,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: colorScheme.outline.withValues(alpha: 0.2),
+                              ),
+                            ),
+                            child: TextField(
+                              controller: _searchController,
+                              autofocus: true,
+                              decoration: InputDecoration(
+                                hintText: 'Rechercher un outil...',
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                  },
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
                           ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
+              ),
 
               // Tools Section Header
               SliverToBoxAdapter(
@@ -279,10 +301,39 @@ class _HomeScreenState extends State<HomeScreen> {
                     childAspectRatio: 0.9,
                   ),
                   delegate: SliverChildBuilderDelegate((context, index) {
-                    return SizedBox.expand(
-                      child: ToolCard(
-                        tool: filteredTools[index],
-                        animationDelay: 0, // Disable internal animation
+                    final tool = filteredTools[index];
+                    if (!tool.animates) {
+                      return SizedBox.expand(
+                        child: ToolCard(tool: tool),
+                      );
+                    }
+                    
+                    final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: _staggerController,
+                        curve: Interval(
+                          (0.05 * index).clamp(0.0, 1.0),
+                          (0.05 * index + 0.3).clamp(0.0, 1.0),
+                          curve: AppConstants.defaultAnimationCurve,
+                        ),
+                      ),
+                    );
+
+                    return AnimatedBuilder(
+                      animation: animation,
+                      builder: (context, child) {
+                        return Opacity(
+                          opacity: animation.value,
+                          child: Transform.translate(
+                            offset: Offset(0, 40 * (1 - animation.value)),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: SizedBox.expand(
+                        child: ToolCard(
+                          tool: filteredTools[index],
+                        ),
                       ),
                     );
                   }, childCount: filteredTools.length),
@@ -294,19 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
 
-          // Modern FAB
-          floatingActionButton: FloatingActionButton.extended(
-            heroTag: "home_suggest",
-            onPressed: () => _showSuggestionBottomSheet(context),
-            backgroundColor: colorScheme.primaryContainer,
-            foregroundColor: colorScheme.onPrimaryContainer,
-            elevation: 0,
-            icon: Icon(Icons.lightbulb_outline, size: 20),
-            label: const Text(
-              'Suggérer',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
+          // FAB "Suggérer" retiré; bouton déplacé dans l'écran À propos
         );
       },
     );
@@ -331,7 +370,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   AnimatedContainer(
                     duration: lowResourceMode
                         ? Duration.zero
-                        : const Duration(milliseconds: 1000),
+                        : AppConstants.longAnimation,
+                    curve: AppConstants.defaultAnimationCurve,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: colorScheme.primaryContainer,
@@ -431,159 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToScreen(BuildContext context, Widget screen, bool lowResourceMode) {
-    if (lowResourceMode) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => screen),
-      );
-      return;
-    }
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => screen,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position:
-                Tween<Offset>(
-                  begin: const Offset(1.0, 0.0),
-                  end: Offset.zero,
-                ).animate(
-                  CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeOutCubic,
-                  ),
-                ),
-            child: FadeTransition(opacity: animation, child: child),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
+    pushUnified(context, screen, lowResourceMode: lowResourceMode);
   }
 
-  void _showSuggestionBottomSheet(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.45,
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            // Handle
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12),
-              decoration: BoxDecoration(
-                color: colorScheme.outline.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    // Icon
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.lightbulb_outline,
-                        size: 32,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Title
-                    Text(
-                      'Suggestions d\'outils',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurface,
-                          ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Description
-                    Text(
-                      'Vous avez une idée d\'outil à ajouter ?\nNous sommes à l\'écoute de vos suggestions !',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.7),
-                        height: 1.5,
-                      ),
-                    ),
-
-                    const Spacer(),
-
-                    // Action Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          Navigator.pop(context);
-
-                          const mailto = 'contact@doalo.fr';
-                          const subject = 'Suggestion pour Toolbox Everything';
-                          const body =
-                              'Bonjour, j\'ai une idée d\'outil à suggérer : ...';
-
-                          final Uri emailLaunchUri = Uri(
-                            scheme: 'mailto',
-                            path: mailto,
-                            query:
-                                'subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}',
-                          );
-
-                          if (await canLaunchUrl(emailLaunchUri)) {
-                            await launchUrl(emailLaunchUri);
-                          } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text(
-                                    'Impossible d\'ouvrir une application d\'e-mail.',
-                                  ),
-                                  backgroundColor: colorScheme.error,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        icon: const Icon(Icons.send_rounded),
-                        label: const Text(
-                          'Envoyer une suggestion',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
