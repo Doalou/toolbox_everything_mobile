@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:animate_do/animate_do.dart';
 import 'dart:math';
 
 class LoremGeneratorScreen extends StatefulWidget {
@@ -154,13 +153,10 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          FadeInRight(
-            delay: const Duration(milliseconds: 300),
-            child: IconButton(
-              onPressed: _copyResult,
-              icon: Icon(Icons.content_copy, color: colorScheme.primary),
-              tooltip: 'Copier le texte',
-            ),
+          IconButton(
+            onPressed: _copyResult,
+            icon: Icon(Icons.content_copy, color: colorScheme.primary),
+            tooltip: 'Copier le texte',
           ),
         ],
       ),
@@ -170,95 +166,83 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
         child: Column(
           children: [
             // Header
-            FadeInDown(
-              delay: const Duration(milliseconds: 200),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.text_snippet,
-                      size: 48,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Générateur de texte',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onPrimaryContainer,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Lorem ipsum pour vos maquettes et prototypes',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onPrimaryContainer.withValues(
-                          alpha: 0.7,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.text_snippet,
+                    size: 48,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Générateur de texte',
+                    style: Theme.of(context).textTheme.headlineSmall
+                        ?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onPrimaryContainer,
                         ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lorem ipsum pour vos maquettes et prototypes',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onPrimaryContainer.withValues(
+                        alpha: 0.7,
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
 
             const SizedBox(height: 32),
 
             // Options de génération
-            FadeInUp(
-              delay: const Duration(milliseconds: 400),
-              child: _buildGenerationOptions(),
-            ),
+            _buildGenerationOptions(),
 
             const SizedBox(height: 24),
 
             // Bouton de génération
-            FadeInUp(
-              delay: const Duration(milliseconds: 500),
-              child: AnimatedBuilder(
-                animation: _generateAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: 1 + (_generateAnimation.value * 0.1),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _generateLorem,
-                        icon: Icon(Icons.auto_awesome, size: 20),
-                        label: const Text(
-                          'Générer le texte',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
+            AnimatedBuilder(
+              animation: _generateAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: 1 + (_generateAnimation.value * 0.1),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _generateLorem,
+                      icon: Icon(Icons.auto_awesome, size: 20),
+                      label: const Text(
+                        'Générer le texte',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
                         ),
                       ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                      ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 24),
 
             // Résultat
-            FadeInUp(
-              delay: const Duration(milliseconds: 600),
-              child: _buildResultArea(),
-            ),
+            _buildResultArea(),
           ],
         ),
       ),

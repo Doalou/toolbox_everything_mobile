@@ -197,43 +197,65 @@ class AboutScreen extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context, ColorScheme colorScheme) {
+    final buttonStyle = ButtonStyle(
+      padding: WidgetStateProperty.all(
+        const EdgeInsets.symmetric(
+            vertical: AppConstants.defaultPadding,
+            horizontal: AppConstants.largePadding),
+      ),
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
+        ),
+      ),
+      textStyle: WidgetStateProperty.all(
+        const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      ),
+      elevation: WidgetStateProperty.all(0),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton.icon(
-          onPressed: () async {
+          onPressed: () {
             const String subject = 'Suggestion pour Toolbox Everything';
-            const String body = 'Bonjour, j\'ai une idée d\'outil à suggérer : ...';
+            const String body =
+                'Bonjour, j\'ai une idée d\'outil à suggérer : ...';
 
             final Uri emailLaunchUri = Uri(
               scheme: 'mailto',
               path: AppConstants.contactEmail,
-              query: 'subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}',
+              query:
+                  'subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}',
             );
             _launchUrl(context, emailLaunchUri.toString());
           },
           icon: const Icon(Icons.lightbulb_outline),
           label: const Text('Suggérer un outil'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: AppConstants.defaultPadding),
-            textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          style: buttonStyle.copyWith(
+            backgroundColor: WidgetStateProperty.all(colorScheme.primary),
+            foregroundColor: WidgetStateProperty.all(colorScheme.onPrimary),
           ),
         ),
-        const SizedBox(height: AppConstants.defaultPadding),
+        const SizedBox(height: 12),
         OutlinedButton.icon(
-          onPressed: () async {
+          onPressed: () {
             final Uri emailLaunchUri = Uri(
               scheme: 'mailto',
               path: AppConstants.contactEmail,
-              query: 'subject=${Uri.encodeComponent('Contact | Toolbox Everything')}',
+              query:
+                  'subject=${Uri.encodeComponent('Contact | Toolbox Everything')}',
             );
             _launchUrl(context, emailLaunchUri.toString());
           },
           icon: const Icon(Icons.mail_outline),
           label: const Text('Contacter le support'),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: AppConstants.defaultPadding),
-            textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          style: buttonStyle.copyWith(
+            side: WidgetStateProperty.all(
+              BorderSide(color: colorScheme.primary, width: 1.5),
+            ),
+            foregroundColor: WidgetStateProperty.all(colorScheme.primary),
           ),
         ),
       ],

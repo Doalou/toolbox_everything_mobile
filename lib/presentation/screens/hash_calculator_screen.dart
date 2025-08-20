@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:animate_do/animate_do.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
@@ -197,16 +196,13 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          FadeInRight(
-            delay: const Duration(milliseconds: 300),
-            child: IconButton(
-              onPressed: _clearAll,
-              icon: Icon(
-                Icons.clear_all,
-                color: colorScheme.primary,
-              ),
-              tooltip: 'Effacer tout',
+          IconButton(
+            onPressed: _clearAll,
+            icon: Icon(
+              Icons.clear_all,
+              color: colorScheme.primary,
             ),
+            tooltip: 'Effacer tout',
           ),
         ],
       ),
@@ -216,160 +212,151 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
         child: Column(
           children: [
             // Header
-            FadeInDown(
-              delay: const Duration(milliseconds: 200),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.fingerprint,
-                      size: 48,
-                      color: colorScheme.primary,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.fingerprint,
+                    size: 48,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Calculateur de Hash',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onPrimaryContainer,
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Calculateur de Hash',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'MD5 • SHA-256 • SHA-512',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'MD5 • SHA-256 • SHA-512',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
 
             const SizedBox(height: 32),
 
             // Type d'entrée
-            FadeInUp(
-              delay: const Duration(milliseconds: 400),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.1),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.1),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Type d\'entrée',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Type d\'entrée',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                  const SizedBox(height: 12),
+                  SegmentedButton<InputType>(
+                    segments: const [
+                      ButtonSegment(
+                        value: InputType.text,
+                        icon: Icon(Icons.text_fields, size: 16),
+                        label: Text('Texte'),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    SegmentedButton<InputType>(
-                      segments: const [
-                        ButtonSegment(
-                          value: InputType.text,
-                          icon: Icon(Icons.text_fields, size: 16),
-                          label: Text('Texte'),
-                        ),
-                        ButtonSegment(
-                          value: InputType.hex,
-                          icon: Icon(Icons.code, size: 16),
-                          label: Text('Hexadécimal'),
-                        ),
-                      ],
-                      selected: {_inputType},
-                      onSelectionChanged: (newSelection) {
-                        setState(() {
-                          _inputType = newSelection.first;
-                        });
-                        _onInputChanged();
-                      },
-                    ),
-                  ],
-                ),
+                      ButtonSegment(
+                        value: InputType.hex,
+                        icon: Icon(Icons.code, size: 16),
+                        label: Text('Hexadécimal'),
+                      ),
+                    ],
+                    selected: {_inputType},
+                    onSelectionChanged: (newSelection) {
+                      setState(() {
+                        _inputType = newSelection.first;
+                      });
+                      _onInputChanged();
+                    },
+                  ),
+                ],
               ),
             ),
 
             const SizedBox(height: 24),
 
             // Zone de saisie
-            FadeInUp(
-              delay: const Duration(milliseconds: 500),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.1),
+            Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.1),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _inputType == InputType.text 
+                              ? Icons.text_fields 
+                              : Icons.code,
+                          color: colorScheme.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _inputType == InputType.text 
+                              ? 'Texte à hasher' 
+                              : 'Données hexadécimales',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (_isCalculating)
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _inputType == InputType.text 
-                                ? Icons.text_fields 
-                                : Icons.code,
-                            color: colorScheme.primary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _inputType == InputType.text 
-                                ? 'Texte à hasher' 
-                                : 'Données hexadécimales',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const Spacer(),
-                          if (_isCalculating)
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                        ],
-                      ),
+                  TextField(
+                    controller: _inputController,
+                    maxLines: 4,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontFamily: _inputType == InputType.hex ? 'monospace' : null,
                     ),
-                    TextField(
-                      controller: _inputController,
-                      maxLines: 4,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontFamily: _inputType == InputType.hex ? 'monospace' : null,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: _inputType == InputType.text
-                            ? 'Saisissez votre texte ici...'
-                            : 'Saisissez vos données en hexadécimal (ex: 48656C6C6F)',
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      ),
-                      inputFormatters: _inputType == InputType.hex ? [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f\s]')),
-                      ] : null,
+                    decoration: InputDecoration(
+                      hintText: _inputType == InputType.text
+                          ? 'Saisissez votre texte ici...'
+                          : 'Saisissez vos données en hexadécimal (ex: 48656C6C6F)',
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     ),
-                  ],
-                ),
+                    inputFormatters: _inputType == InputType.hex ? [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Fa-f\s]')),
+                    ] : null,
+                  ),
+                ],
               ),
             ),
 
@@ -383,13 +370,9 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
                   scale: 1 + (_calculateAnimation.value * 0.02),
                   child: Column(
                     children: HashType.values.map((type) {
-                      final delay = 600 + (HashType.values.indexOf(type) * 100);
-                      return FadeInUp(
-                        delay: Duration(milliseconds: delay),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          child: _buildHashResult(type),
-                        ),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: _buildHashResult(type),
                       );
                     }).toList(),
                   ),
@@ -400,10 +383,7 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
             const SizedBox(height: 24),
 
             // Exemples rapides
-            FadeInUp(
-              delay: const Duration(milliseconds: 900),
-              child: _buildQuickExamples(),
-            ),
+            _buildQuickExamples(),
           ],
         ),
       ),

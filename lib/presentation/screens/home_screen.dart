@@ -344,8 +344,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
           ),
-
-          // FAB "Suggérer" retiré; bouton déplacé dans l'écran À propos
         );
       },
     );

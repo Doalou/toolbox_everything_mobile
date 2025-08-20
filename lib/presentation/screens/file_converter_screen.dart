@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:animate_do/animate_do.dart';
 import 'package:yaml/yaml.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pdf/pdf.dart';
@@ -484,16 +483,13 @@ $html
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          FadeInRight(
-            delay: const Duration(milliseconds: 300),
-            child: IconButton(
-              onPressed: _clearAll,
-              icon: Icon(
-                Icons.clear_all,
-                color: colorScheme.primary,
-              ),
-              tooltip: 'Effacer tout',
+          IconButton(
+            onPressed: _clearAll,
+            icon: Icon(
+              Icons.clear_all,
+              color: colorScheme.primary,
             ),
+            tooltip: 'Effacer tout',
           ),
         ],
       ),
@@ -503,75 +499,60 @@ $html
         child: Column(
           children: [
             // Header moderne
-            FadeInDown(
-              delay: const Duration(milliseconds: 200),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.transform,
-                      size: 48,
-                      color: const Color(0xFF673AB7),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.transform,
+                    size: 48,
+                    color: const Color(0xFF673AB7),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Convertisseur de fichiers',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Convertisseur de fichiers',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Convertissez entre différents formats de fichiers',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Convertissez entre différents formats de fichiers',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
 
             const SizedBox(height: 32),
 
             // Sélecteur de type de conversion
-            FadeInUp(
-              delay: const Duration(milliseconds: 400),
-              child: _buildConversionSelector(),
-            ),
+            _buildConversionSelector(),
 
             const SizedBox(height: 24),
 
             // Zone d'entrée
-            FadeInUp(
-              delay: const Duration(milliseconds: 500),
-              child: _buildInputSection(),
-            ),
+            _buildInputSection(),
 
             const SizedBox(height: 24),
 
             // Bouton de conversion
-            FadeInUp(
-              delay: const Duration(milliseconds: 600),
-              child: _buildConvertButton(),
-            ),
+            _buildConvertButton(),
 
             const SizedBox(height: 24),
 
             // Zone de sortie
             if (_outputController.text.isNotEmpty)
-              FadeInUp(
-                delay: const Duration(milliseconds: 700),
-                child: _buildOutputSection(),
-              ),
+              _buildOutputSection(),
           ],
         ),
       ),

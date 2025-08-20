@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
-import 'package:animate_do/animate_do.dart';
 import 'dart:math' as math;
 
 class CompassScreen extends StatefulWidget {
@@ -71,24 +70,21 @@ class CompassScreenState extends State<CompassScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          FadeInRight(
-            delay: const Duration(milliseconds: 300),
-            child: IconButton(
-              onPressed: () {
-                setState(() {
-                  _isCalibrating = true;
-                });
-                Future.delayed(const Duration(seconds: 2), () {
-                  if (mounted) {
-                    setState(() {
-                      _isCalibrating = false;
-                    });
-                  }
-                });
-              },
-              icon: Icon(Icons.refresh, color: colorScheme.primary),
-              tooltip: 'Recalibrer',
-            ),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isCalibrating = true;
+              });
+              Future.delayed(const Duration(seconds: 2), () {
+                if (mounted) {
+                  setState(() {
+                    _isCalibrating = false;
+                  });
+                }
+              });
+            },
+            icon: Icon(Icons.refresh, color: colorScheme.primary),
+            tooltip: 'Recalibrer',
           ),
         ],
       ),
@@ -128,83 +124,71 @@ class CompassScreenState extends State<CompassScreen>
       child: Column(
         children: [
           // Header
-          FadeInDown(
-            delay: const Duration(milliseconds: 200),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: directionColor.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.explore, size: 32, color: directionColor),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: directionColor.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 16),
+                  child: Icon(Icons.explore, size: 32, color: directionColor),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Boussole numérique',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (_isCalibrating)
                   Text(
-                    'Boussole numérique',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
+                    'Calibration en cours...',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: directionColor,
+                      fontWeight: FontWeight.w600,
                     ),
+                  )
+                else
+                  Text(
+                    'Pointez votre appareil vers la direction souhaitée',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
-                  if (_isCalibrating)
-                    Text(
-                      'Calibration en cours...',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: directionColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )
-                  else
-                    Text(
-                      'Pointez votre appareil vers la direction souhaitée',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                ],
-              ),
+              ],
             ),
           ),
 
           const SizedBox(height: 40),
 
           // Boussole principale
-          FadeInUp(
-            delay: const Duration(milliseconds: 400),
-            child: _buildCompassRose(direction, directionColor),
-          ),
+          _buildCompassRose(direction, directionColor),
 
           const SizedBox(height: 40),
 
           // Informations détaillées
-          FadeInUp(
-            delay: const Duration(milliseconds: 600),
-            child: _buildDirectionInfo(
-              direction,
-              directionName,
-              directionColor,
-              colorScheme,
-            ),
+          _buildDirectionInfo(
+            direction,
+            directionName,
+            directionColor,
+            colorScheme,
           ),
 
           const SizedBox(height: 24),
 
           // Coordonnées et conseils
-          FadeInUp(
-            delay: const Duration(milliseconds: 800),
-            child: _buildAdditionalInfo(direction, colorScheme),
-          ),
+          _buildAdditionalInfo(direction, colorScheme),
         ],
       ),
     );
