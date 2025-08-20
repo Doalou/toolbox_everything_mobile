@@ -168,7 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       vertical: 8,
                     ),
                     leading: const Icon(Icons.battery_saver),
-                 title: const Text('Mode économie de ressources'),
+                    title: const Text('Mode économie de ressources'),
                     subtitle: const Text(
                       'Réduit les animations, les ombres et l’usage mémoire pour de meilleures performances',
                     ),

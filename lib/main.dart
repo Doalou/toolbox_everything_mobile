@@ -34,7 +34,6 @@ Future<void> main() async {
   // Initialisation asynchrone des services et préférences
   final prefs = await SharedPreferences.getInstance();
   await NotificationService.instance.initialize();
-
   // Optimisation mémoire pour appareils low-cost
   painting.imageCache.maximumSize = 100; // nombre max d'images en cache
   painting.imageCache.maximumSizeBytes = 50 << 20; // ~50 Mo

@@ -35,6 +35,11 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Thème des boutons: largeur minimale corrigée (`minimumSize: Size(0, 52)`) pour éviter les contraintes infinies.
 - Uniformisation UI globale et optimisations de démarrage (SharedPreferences initialisées avant `runApp`).
 - Android: ajout de la permission `POST_NOTIFICATIONS` (Android 13+).
+- QR Code: mise en page des boutons avec Wrap pour éviter les débordements.
+- UX/Code: migration de `.withOpacity()` vers `.withValues(alpha: ...)` (Flutter 3.22+).
+- Générateur de MDP: délai d’historique porté à 15s (20 éléments).
+- Optimisations performance: cache images réduit (~50 Mo), vignettes standardisées, throttling des notifications (téléchargements).
+- Mode économie de ressources: désactivation/atténuation des animations et ombres (cards, header, widgets d’état) pour appareils modestes.
 - Téléchargeur: compatibilité Web/Desktop via export conditionnel (stub web) et import universel dans le Provider.
 - Tests: suppression du test widget par défaut (compteur) et ajout d’un smoke test minimal.
 
