@@ -19,7 +19,6 @@ jobs:
     - name: 📥 Checkout du code
       uses: actions/checkout@v4
       with:
-        repository: Doalou/toolbox_everything_mobile
         fetch-depth: 0  # Récupère l'historique complet pour GIT_COMMIT
     
     - name: ☕ Setup Java 17
@@ -31,14 +30,14 @@ jobs:
     - name: 🐦 Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.0'
+        flutter-version: '3.24.5'
         channel: 'stable'
         cache: true
     
     - name: 📱 Setup Android NDK
       run: |
         echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/27.3.13750724" >> $GITHUB_ENV
-        $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.3.13750724"
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.3.13750724" || echo "NDK déjà installé"
     
     - name: 🔧 Configure l'environnement reproductible
       run: |
@@ -60,17 +59,16 @@ jobs:
     - name: 🏗️ Premier build reproductible
       run: |
         echo "🔨 Premier build en cours..."
-        cd toolbox_everything_mobile
         flutter clean
         flutter pub get
         flutter build apk --release --split-per-abi
         
         # Sauvegarde des artefacts
-        mkdir -p ../reproducible_builds/build1
-        cp build/app/outputs/flutter-apk/*.apk ../reproducible_builds/build1/
+        mkdir -p reproducible_builds/build1
+        cp build/app/outputs/flutter-apk/*.apk reproducible_builds/build1/
         
         # Calcul des checksums
-        cd ../reproducible_builds/build1
+        cd reproducible_builds/build1
         sha256sum *.apk > checksums_build1.txt
         echo "✅ Premier build terminé"
     
@@ -80,39 +78,37 @@ jobs:
     - name: 🏗️ Deuxième build reproductible
       run: |
         echo "🔨 Deuxième build en cours..."
-        cd toolbox_everything_mobile
         flutter clean
         flutter pub get
         flutter build apk --release --split-per-abi
         
         # Sauvegarde des artefacts
-        mkdir -p ../reproducible_builds/build2
-        cp build/app/outputs/flutter-apk/*.apk ../reproducible_builds/build2/
+        mkdir -p reproducible_builds/build2
+        cp build/app/outputs/flutter-apk/*.apk reproducible_builds/build2/
         
         # Calcul des checksums
-        cd ../reproducible_builds/build2
+        cd reproducible_builds/build2
         sha256sum *.apk > checksums_build2.txt
         echo "✅ Deuxième build terminé"
     
     - name: 🔍 Vérification de la reproductibilité
       run: |
-        cd reproducible_builds
         
         echo "📊 Comparaison des builds..."
         echo "=========================="
         
         # Comparaison des checksums
-        if diff -u build1/checksums_build1.txt build2/checksums_build2.txt; then
+        if diff -u reproducible_builds/build1/checksums_build1.txt reproducible_builds/build2/checksums_build2.txt; then
           echo "✅ SUCCÈS : Les builds sont identiques !"
           echo "🎉 Configuration reproductible validée."
           echo "reproducible=true" >> $GITHUB_OUTPUT
         else
           echo "❌ ÉCHEC : Les builds diffèrent"
           echo "Build 1 checksums:"
-          cat build1/checksums_build1.txt
+          cat reproducible_builds/build1/checksums_build1.txt
           echo ""
           echo "Build 2 checksums:"
-          cat build2/checksums_build2.txt
+          cat reproducible_builds/build2/checksums_build2.txt
           echo "reproducible=false" >> $GITHUB_OUTPUT
           exit 1
         fi
@@ -121,10 +117,10 @@ jobs:
         echo ""
         echo "📏 Comparaison des tailles :"
         echo "============================"
-        for apk in build1/*.apk; do
+        for apk in reproducible_builds/build1/*.apk; do
           filename=$(basename "$apk")
-          size1=$(stat -c%s "build1/$filename")
-          size2=$(stat -c%s "build2/$filename")
+          size1=$(stat -c%s "reproducible_builds/build1/$filename")
+          size2=$(stat -c%s "reproducible_builds/build2/$filename")
           size_diff=$((size2 - size1))
           
           printf "📱 %-40s\n" "$filename"

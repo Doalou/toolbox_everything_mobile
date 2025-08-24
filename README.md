@@ -1,5 +1,10 @@
 # 🧰 Toolbox Everything Mobile
 
+[![Reproducible Builds](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/reproducible_build_check.yml/badge.svg)](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/reproducible_build_check.yml)
+[![Test Build](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/test_build.yml/badge.svg)](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/test_build.yml)
+[![Flutter](https://img.shields.io/badge/Flutter-3.24.5-blue.svg)](https://flutter.dev/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 **Version 1.0.0** - Votre boîte à outils numérique complète et moderne
 
 Une application Flutter élégante qui regroupe tous vos outils numériques essentiels en une seule application. Conçue avec Material Design 3 et optimisée pour une expérience utilisateur exceptionnelle.
