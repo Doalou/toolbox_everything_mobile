@@ -41,10 +41,6 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
-        
-        // Reproducible builds: fix build config values (epoch ms)
-        buildConfigField("long", "BUILD_TIME", "${rootProject.extra["buildTimeEpochMs"]}")
-        buildConfigField("String", "BUILD_COMMIT", "\"${System.getenv("GIT_COMMIT") ?: "unknown"}\"")
     }
 
     signingConfigs {
@@ -63,40 +59,6 @@ android {
             // Apply signing configuration only if key.properties exists
             if (keyPropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
-            }
-            
-            // Reproducible builds configuration
-            isMinifyEnabled = false
-            isShrinkResources = false
-            isDebuggable = false
-            
-            // Fix timestamps and ordering for reproducible APKs
-            packagingOptions {
-                doNotStrip("**/**.so")
-                resources {
-                    excludes += listOf(
-                        "META-INF/DEPENDENCIES",
-                        "META-INF/LICENSE*",
-                        "META-INF/NOTICE*",
-                        "META-INF/*.SF",
-                        "META-INF/*.DSA",
-                        "META-INF/*.RSA"
-                    )
-                }
-            }
-        }
-        
-        debug {
-            // Same reproducible configuration for debug builds
-            packagingOptions {
-                doNotStrip("**/**.so")
-                resources {
-                    excludes += listOf(
-                        "META-INF/DEPENDENCIES",
-                        "META-INF/LICENSE*",
-                        "META-INF/NOTICE*"
-                    )
-                }
             }
         }
     }

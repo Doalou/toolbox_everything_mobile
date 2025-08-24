@@ -8,11 +8,6 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [1.0.0] - 2025-08-24
 
 ### Ajouté
-- **🔒 Reproducible Builds** : Intégration complète d'un système de builds reproductibles garantissant des binaires identiques pour le même code source.
-  - Configuration Gradle déterministe avec timestamps fixes et ordre de fichiers contrôlé
-  - Scripts de vérification automatique (PowerShell/Bash) pour valider la reproductibilité
-  - Workflow GitHub Actions pour vérification continue des builds reproductibles
-  - Documentation complète dans `docs/REPRODUCIBLE_BUILDS.md`
 - **Support du Predictive Back Gesture** : Intégration complète de la navigation gestuelle prédictive d'Android 16+ pour une expérience fluide.
 - **Interface adaptative et centrée** : La grille d'outils s'adapte automatiquement à toutes les tailles d'écran avec un centrage intelligent.
 - **Correctifs de responsivité** : Résolution complète des problèmes de débordement (overflow) et de positionnement aléatoire dans les cartes d'outils.
