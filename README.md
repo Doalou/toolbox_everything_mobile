@@ -6,6 +6,18 @@ Une application Flutter élégante qui regroupe tous vos outils numériques esse
 
 ## 🆕 Dernières mises à jour (v1.0.0)
 
+### 🔒 **Reproducible Builds**
+- **Builds reproductibles** garantissant des binaires identiques pour le même code source
+- **Configuration Gradle déterministe** avec timestamps fixes et ordre de fichiers contrôlé
+- **Scripts de vérification** automatique (PowerShell/Bash) pour valider la reproductibilité
+- **GitHub Actions** avec vérification continue des builds reproductibles
+- **Documentation complète** dans `docs/REPRODUCIBLE_BUILDS.md`
+
+### 🎮 **Navigation gestuelle moderne**
+- **Support Predictive Back Gesture** pour Android 16+ avec aperçu fluide
+- **Interface adaptative** s'ajustant automatiquement à toutes les tailles d'écran
+- **Correctifs responsivité** : Élimination des débordements et positionnement cohérent
+
 ### 🔧 Corrections techniques
 - **Téléchargeur de médias** : Correction du plugin obsolète `open_file_plus` → `open_file: ^3.5.10`
 - **Compatibilité Android** : Résolution des erreurs de compilation liées à l'API Flutter moderne
@@ -84,7 +96,7 @@ Une application Flutter élégante qui regroupe tous vos outils numériques esse
 
 1. **Cloner le projet**
 ```bash
-git clone <repository-url>
+git clone https://github.com/Doalou/toolbox_everything_mobile.git
 cd toolbox_everything_mobile
 ```
 
@@ -178,6 +190,29 @@ lib/
 
 ## 🛠️ Scripts de développement
 
+### 🔒 Reproducible Builds
+```bash
+# Vérification de la reproductibilité (Windows)
+.\scripts\reproducible_build.ps1 --compare
+
+# Build debug reproductible
+.\scripts\reproducible_build.ps1 --compare --BuildType debug
+
+# Nettoyage des builds
+.\scripts\reproducible_build.ps1 --clean
+```
+
+```bash
+# Vérification de la reproductibilité (Linux/macOS)
+./scripts/reproducible_build.sh --compare
+
+# Build debug reproductible
+./scripts/reproducible_build.sh --compare --build-type=debug
+
+# Nettoyage des builds
+./scripts/reproducible_build.sh --clean
+```
+
 ### Analyse du code
 ```bash
 # Analyse statique
@@ -203,10 +238,14 @@ flutter drive --target=test_driver/app.dart
 
 #### Android
 ```bash
-# APK Debug
+# APK Debug reproductible
+export SOURCE_DATE_EPOCH=1704067200  # Fixe la date de build
+export GIT_COMMIT=$(git rev-parse HEAD)
 flutter build apk --debug
 
-# APK Release
+# APK Release reproductible
+export SOURCE_DATE_EPOCH=1704067200
+export GIT_COMMIT=$(git rev-parse HEAD)
 flutter build apk --release
 
 # App Bundle (Google Play)
@@ -255,6 +294,7 @@ flutter build web --release
 - **Code splitting** automatique
 
 ### Sécurité
+- **🔒 Builds reproductibles** : Garantie que le binaire correspond exactement au code source
 - **Chiffrement local** des données sensibles
 - **Validation** stricte des entrées utilisateur
 - **Protection** contre les injections
@@ -296,6 +336,21 @@ flutter clean
 flutter pub get
 cd android && ./gradlew clean && cd ..
 flutter run
+```
+
+#### Reproducible Builds non reproductibles
+```bash
+# Vérifier les variables d'environnement
+echo $SOURCE_DATE_EPOCH
+echo $GIT_COMMIT
+
+# Nettoyage complet
+.\scripts\reproducible_build.ps1 --clean
+flutter clean
+cd android && .\gradlew clean && cd ..
+
+# Test de reproductibilité
+.\scripts\reproducible_build.ps1 --compare
 ```
 
 #### Permissions iOS

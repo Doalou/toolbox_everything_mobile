@@ -19,6 +19,7 @@ jobs:
     - name: 📥 Checkout du code
       uses: actions/checkout@v4
       with:
+        repository: Doalou/toolbox_everything_mobile
         fetch-depth: 0  # Récupère l'historique complet pour GIT_COMMIT
     
     - name: ☕ Setup Java 17
