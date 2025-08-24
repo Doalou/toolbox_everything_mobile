@@ -113,8 +113,8 @@ class ThemeProvider with ChangeNotifier {
     final v = mode == ThemeMode.light
         ? 'light'
         : mode == ThemeMode.dark
-            ? 'dark'
-            : 'system';
+        ? 'dark'
+        : 'system';
     await p.setString(_prefThemeMode, v);
   }
 
@@ -129,7 +129,13 @@ class ThemeProvider with ChangeNotifier {
       brightness: brightness,
       dynamicSchemeVariant: DynamicSchemeVariant.expressive,
     );
+    return createThemeFromScheme(colorScheme, brightness);
+  }
 
+  ThemeData createThemeFromScheme(
+    ColorScheme colorScheme,
+    Brightness brightness,
+  ) {
     final bool isDark = brightness == Brightness.dark;
     final bool amoled = isDark && _useAmoledBlack;
 
@@ -142,7 +148,10 @@ class ThemeProvider with ChangeNotifier {
       visualDensity: VisualDensity.standard,
 
       // Typography moderne et lisible
-      textTheme: _createModernTextTheme(colorScheme, brightness == Brightness.dark),
+      textTheme: _createModernTextTheme(
+        colorScheme,
+        brightness == Brightness.dark,
+      ),
 
       // AppBar M3
       appBarTheme: AppBarTheme(
@@ -153,7 +162,8 @@ class ThemeProvider with ChangeNotifier {
         scrolledUnderElevation: 4,
         centerTitle: false,
         systemOverlayStyle: brightness == Brightness.dark
-            ? SystemUiOverlayStyle.light // icônes claires sur status bar sombre
+            ? SystemUiOverlayStyle
+                  .light // icônes claires sur status bar sombre
             : SystemUiOverlayStyle.dark, // icônes sombres sur status bar claire
         titleTextStyle: TextStyle(
           fontSize: 22,
@@ -178,7 +188,9 @@ class ThemeProvider with ChangeNotifier {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderRadius: BorderRadius.circular(
+              AppConstants.defaultBorderRadius,
+            ),
           ),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
@@ -188,7 +200,9 @@ class ThemeProvider with ChangeNotifier {
           elevation: AppConstants.buttonElevation,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderRadius: BorderRadius.circular(
+              AppConstants.defaultBorderRadius,
+            ),
           ),
           minimumSize: const Size.fromHeight(48),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
@@ -197,7 +211,9 @@ class ThemeProvider with ChangeNotifier {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderRadius: BorderRadius.circular(
+              AppConstants.defaultBorderRadius,
+            ),
           ),
           side: BorderSide(color: colorScheme.outline),
           minimumSize: const Size(0, 48),
@@ -217,9 +233,15 @@ class ThemeProvider with ChangeNotifier {
       // SegmentedButton M3
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
-          padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+          padding: WidgetStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
           shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius)),
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(
+                AppConstants.defaultBorderRadius,
+              ),
+            ),
           ),
         ),
       ),
@@ -227,7 +249,9 @@ class ThemeProvider with ChangeNotifier {
       // IconButtons
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
 
@@ -249,7 +273,9 @@ class ThemeProvider with ChangeNotifier {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
-          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.3),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
@@ -259,7 +285,9 @@ class ThemeProvider with ChangeNotifier {
           horizontal: AppConstants.largePadding,
           vertical: AppConstants.defaultPadding,
         ),
-        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+        hintStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+        ),
       ),
 
       // BottomSheet & Dialogs
@@ -267,7 +295,9 @@ class ThemeProvider with ChangeNotifier {
         backgroundColor: amoled ? Colors.black : colorScheme.surface,
         surfaceTintColor: colorScheme.surfaceTint,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppConstants.largePadding)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppConstants.largePadding),
+          ),
         ),
         elevation: 0,
       ),
@@ -282,8 +312,13 @@ class ThemeProvider with ChangeNotifier {
       // SnackBar
       snackBarTheme: SnackBarThemeData(
         backgroundColor: colorScheme.inverseSurface,
-        contentTextStyle: TextStyle(color: colorScheme.onInverseSurface, fontWeight: FontWeight.w500),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.smallBorderRadius)),
+        contentTextStyle: TextStyle(
+          color: colorScheme.onInverseSurface,
+          fontWeight: FontWeight.w500,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.smallBorderRadius),
+        ),
         behavior: SnackBarBehavior.floating,
       ),
 
@@ -296,8 +331,15 @@ class ThemeProvider with ChangeNotifier {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.smallBorderRadius),
         ),
-        titleTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colorScheme.onSurface),
-        subtitleTextStyle: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+        titleTextStyle: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: colorScheme.onSurface,
+        ),
+        subtitleTextStyle: TextStyle(
+          fontSize: 14,
+          color: colorScheme.onSurfaceVariant,
+        ),
       ),
       dividerTheme: DividerThemeData(
         color: colorScheme.outlineVariant.withValues(alpha: 0.2),
@@ -308,8 +350,13 @@ class ThemeProvider with ChangeNotifier {
       // Chips
       chipTheme: ChipThemeData(
         backgroundColor: colorScheme.surfaceContainerLow,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.smallBorderRadius)),
-        labelStyle: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w500),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.smallBorderRadius),
+        ),
+        labelStyle: TextStyle(
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.w500,
+        ),
       ),
 
       // NavigationBar (si utilisé)

@@ -16,7 +16,7 @@ if (keyPropertiesFile.exists()) {
 
 android {
     namespace = "com.toolbox.everything.mobile"
-    compileSdk = 35 // Android 15 pour compatibilité plugins
+    compileSdk = 36 // Android 15 pour compatibilité plugins
     ndkVersion = "27.3.13750724" // Version NDK spécifiée
 
     compileOptions {
@@ -35,12 +35,16 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24 // Requis par ffmpeg_kit_flutter_new
-        targetSdk = 35 // Android 15 pour compatibilité plugins
+        targetSdk = 36 // Android 15 pour compatibilité plugins
         // La ligne ci-dessous est redondante car compileSdk est déjà défini au niveau supérieur
         // compileSdk = 35 // Android 15
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        
+        // Reproducible builds: fix build config values
+        buildConfigField("long", "BUILD_TIME", "${rootProject.ext["buildTime"]}")
+        buildConfigField("String", "BUILD_COMMIT", "\"${System.getenv("GIT_COMMIT") ?: "unknown"}\"")
     }
 
     signingConfigs {
@@ -60,6 +64,40 @@ android {
             if (keyPropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            
+            // Reproducible builds configuration
+            isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = false
+            
+            // Fix timestamps and ordering for reproducible APKs
+            packagingOptions {
+                doNotStrip("**/**.so")
+                resources {
+                    excludes += listOf(
+                        "META-INF/DEPENDENCIES",
+                        "META-INF/LICENSE*",
+                        "META-INF/NOTICE*",
+                        "META-INF/*.SF",
+                        "META-INF/*.DSA",
+                        "META-INF/*.RSA"
+                    )
+                }
+            }
+        }
+        
+        debug {
+            // Same reproducible configuration for debug builds
+            packagingOptions {
+                doNotStrip("**/**.so")
+                resources {
+                    excludes += listOf(
+                        "META-INF/DEPENDENCIES",
+                        "META-INF/LICENSE*",
+                        "META-INF/NOTICE*"
+                    )
+                }
+            }
         }
     }
 }
@@ -70,4 +108,7 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Assure la compatibilité avec le geste retour prédictif (AndroidX Activity 1.8+)
+    implementation("androidx.activity:activity-ktx:1.9.2")
+    implementation("androidx.appcompat:appcompat:1.7.0")
 }

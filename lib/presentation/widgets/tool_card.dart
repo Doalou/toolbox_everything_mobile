@@ -44,28 +44,41 @@ class _ToolCardState extends State<ToolCard> {
           onTap: () => _navigateToTool(context),
           child: Padding(
             padding: const EdgeInsets.all(AppConstants.defaultPadding),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Icon(
-                  widget.tool.icon,
-                  size: AppConstants.largeIconSize,
-                  color: colorScheme.primary,
-                ),
-                const SizedBox(height: AppConstants.defaultPadding),
-                Text(
-                  widget.tool.title,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                    height: 1.3,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final double w = c.maxWidth;
+                final double iconSize = (w * 0.28).clamp(24.0, 40.0);
+                final double spacing = w < 180
+                    ? AppConstants.smallPadding
+                    : AppConstants.defaultPadding;
+                final double titleSize = (w * 0.09).clamp(12.0, 16.0);
+
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      widget.tool.icon,
+                      size: iconSize,
+                      color: colorScheme.primary,
+                    ),
+                    SizedBox(height: spacing),
+                    Text(
+                      widget.tool.title,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                        height: 1.3,
+                        fontSize: titleSize,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -73,29 +86,46 @@ class _ToolCardState extends State<ToolCard> {
     }
 
     // Version complète avec animations pour les appareils performants
-    final cardColor = AppConstants.expressiveColors.getColorByText(
-      widget.tool.title,
-    );
+    final cardColor = widget.tool.cardColor;
 
+    final bool isAndroid = Theme.of(context).platform == TargetPlatform.android;
     return Semantics(
       label: 'Outil ${widget.tool.title}',
       hint: 'Appuyez pour ouvrir ${widget.tool.title}',
       button: true,
       child: Hero(
         tag: widget.tool.heroTag,
-        flightShuttleBuilder:
-            (
-              BuildContext flightContext,
-              Animation<double> animation,
-              HeroFlightDirection flightDirection,
-              BuildContext fromHeroContext,
-              BuildContext toHeroContext,
-            ) {
-              return Material(
-                type: MaterialType.transparency,
-                child: toHeroContext.widget,
-              );
-            },
+        transitionOnUserGestures: !isAndroid,
+        flightShuttleBuilder: isAndroid
+            ? null
+            : (
+                flightContext,
+                animation,
+                flightDirection,
+                fromHeroContext,
+                toHeroContext,
+              ) {
+                final isPush = flightDirection == HeroFlightDirection.push;
+                final fromWidget = (fromHeroContext.widget as Hero).child;
+                final toWidget = (toHeroContext.widget as Hero).child;
+
+                return AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, child) {
+                    final val = isPush
+                        ? Curves.easeInOut.transform(animation.value)
+                        : Curves.easeInOut.transform(1 - animation.value);
+
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Opacity(opacity: 1 - val, child: fromWidget),
+                        Opacity(opacity: val, child: toWidget),
+                      ],
+                    );
+                  },
+                );
+              },
         child: MouseRegion(
           onEnter: (_) {
             if (!lowResourceMode && widget.tool.animates) {
@@ -177,130 +207,170 @@ class _ToolCardState extends State<ToolCard> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(AppConstants.largePadding),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Icon Container avec plus de caractère
-                          AnimatedContainer(
-                            duration: lowResourceMode
-                                ? Duration.zero
-                                : AppConstants.mediumAnimation,
-                            curve: AppConstants.defaultAnimationCurve,
-                            padding: const EdgeInsets.all(
-                              AppConstants.defaultPadding,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: (_isHovered && !lowResourceMode)
-                                  ? RadialGradient(
-                                      center: Alignment.center,
-                                      colors: [
-                                        cardColor.withOpacity(0.8),
-                                        cardColor.withOpacity(0.6),
-                                      ],
-                                    )
-                                  : RadialGradient(
-                                      center: Alignment.center,
-                                      colors: [
-                                        colorScheme.primaryContainer,
-                                        colorScheme.primaryContainer
-                                            .withOpacity(0.8),
-                                      ],
-                                    ),
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.defaultBorderRadius,
-                              ),
-                              boxShadow: (_isHovered && !lowResourceMode)
-                                  ? [
-                                      BoxShadow(
-                                        color: cardColor.withOpacity(0.3),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: AnimatedRotation(
-                              turns: (_isHovered && !lowResourceMode)
-                                  ? 0.05
-                                  : 0.0,
-                              duration: lowResourceMode
-                                  ? Duration.zero
-                                  : AppConstants.mediumAnimation,
-                              curve: AppConstants.defaultAnimationCurve,
-                              child: Icon(
-                                widget.tool.icon,
-                                size: AppConstants.largeIconSize,
-                                color: _isHovered
-                                    ? Colors.white
-                                    : colorScheme.onPrimaryContainer,
-                                semanticLabel: 'Icône ${widget.tool.title}',
-                              ),
-                            ),
-                          ),
+                      child: LayoutBuilder(
+                        builder: (context, c) {
+                          final double w = c.maxWidth;
+                          final double scale = (w / 220.0).clamp(0.85, 1.15);
+                          final double iconPadding =
+                              (AppConstants.defaultPadding * scale).clamp(
+                                10.0,
+                                16.0,
+                              );
+                          final double iconSize =
+                              (AppConstants.largeIconSize * scale).clamp(
+                                28.0,
+                                44.0,
+                              );
+                          final double titleSize = (14.0 * scale).clamp(
+                            12.0,
+                            16.0,
+                          );
+                          final double spacingLarge =
+                              (AppConstants.defaultPadding * scale).clamp(
+                                8.0,
+                                16.0,
+                              );
+                          final double indicatorWidth =
+                              (_isHovered && !lowResourceMode)
+                              ? (44.0 * scale).clamp(28.0, 56.0)
+                              : (24.0 * scale).clamp(18.0, 34.0);
 
-                          const SizedBox(height: AppConstants.defaultPadding),
+                          final column = Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Icon Container avec plus de caractère
+                              AnimatedContainer(
+                                duration: lowResourceMode
+                                    ? Duration.zero
+                                    : AppConstants.mediumAnimation,
+                                curve: AppConstants.defaultAnimationCurve,
+                                padding: EdgeInsets.all(iconPadding),
+                                decoration: BoxDecoration(
+                                  gradient: (_isHovered && !lowResourceMode)
+                                      ? RadialGradient(
+                                          center: Alignment.center,
+                                          colors: [
+                                            cardColor.withOpacity(0.8),
+                                            cardColor.withOpacity(0.6),
+                                          ],
+                                        )
+                                      : RadialGradient(
+                                          center: Alignment.center,
+                                          colors: [
+                                            colorScheme.primaryContainer,
+                                            colorScheme.primaryContainer
+                                                .withOpacity(0.8),
+                                          ],
+                                        ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppConstants.defaultBorderRadius,
+                                  ),
+                                  boxShadow: (_isHovered && !lowResourceMode)
+                                      ? [
+                                          BoxShadow(
+                                            color: cardColor.withOpacity(0.3),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: AnimatedRotation(
+                                  turns: (_isHovered && !lowResourceMode)
+                                      ? 0.05
+                                      : 0.0,
+                                  duration: lowResourceMode
+                                      ? Duration.zero
+                                      : AppConstants.mediumAnimation,
+                                  curve: AppConstants.defaultAnimationCurve,
+                                  child: Icon(
+                                    widget.tool.icon,
+                                    size: iconSize,
+                                    color: _isHovered
+                                        ? Colors.white
+                                        : colorScheme.onPrimaryContainer,
+                                    semanticLabel: 'Icône ${widget.tool.title}',
+                                  ),
+                                ),
+                              ),
 
-                          // Title
-                          Align(
+                              SizedBox(height: spacingLarge),
+
+                              // Title
+                              Align(
+                                alignment: Alignment.center,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppConstants.smallPadding,
+                                  ),
+                                  child: Text(
+                                    widget.tool.title,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: colorScheme.onSurface,
+                                          height: 1.3,
+                                          fontSize: titleSize,
+                                        ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+
+                              SizedBox(height: AppConstants.smallPadding),
+
+                              // Interaction indicator plus attrayant
+                              AnimatedContainer(
+                                duration: lowResourceMode
+                                    ? Duration.zero
+                                    : AppConstants.mediumAnimation,
+                                curve: AppConstants.defaultAnimationCurve,
+                                height: 4,
+                                width: indicatorWidth,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: (_isHovered && !lowResourceMode)
+                                        ? [
+                                            cardColor,
+                                            cardColor.withValues(alpha: 0.6),
+                                          ]
+                                        : [
+                                            colorScheme.primary.withValues(
+                                              alpha: 0.4,
+                                            ),
+                                            colorScheme.primary.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                          ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(2),
+                                  boxShadow: (_isHovered && !lowResourceMode)
+                                      ? [
+                                          BoxShadow(
+                                            color: cardColor.withValues(
+                                              alpha: 0.4,
+                                            ),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          );
+
+                          return FittedBox(
+                            fit: BoxFit.scaleDown,
                             alignment: Alignment.center,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppConstants.smallPadding,
-                              ),
-                              child: Text(
-                                widget.tool.title,
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                      height: 1.3,
-                                    ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: AppConstants.smallPadding),
-
-                          // Interaction indicator plus attrayant
-                          AnimatedContainer(
-                            duration: lowResourceMode
-                                ? Duration.zero
-                                : AppConstants.mediumAnimation,
-                            curve: AppConstants.defaultAnimationCurve,
-                            height: 4,
-                            width: (_isHovered && !lowResourceMode) ? 50 : 25,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: (_isHovered && !lowResourceMode)
-                                    ? [
-                                        cardColor,
-                                        cardColor.withValues(alpha: 0.6),
-                                      ]
-                                    : [
-                                        colorScheme.primary.withValues(
-                                          alpha: 0.4,
-                                        ),
-                                        colorScheme.primary.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                      ],
-                              ),
-                              borderRadius: BorderRadius.circular(2),
-                              boxShadow: (_isHovered && !lowResourceMode)
-                                  ? [
-                                      BoxShadow(
-                                        color: cardColor.withValues(alpha: 0.4),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                          ),
-                        ],
+                            child: column,
+                          );
+                        },
                       ),
                     ),
 
@@ -369,17 +439,15 @@ class _ToolCardState extends State<ToolCard> {
 
   void _navigateToTool(BuildContext context) {
     HapticsService.perform(context, HapticType.selection);
-    final bool lowResourceMode = context
-        .read<SettingsProvider>()
-        .lowResourceMode;
-
     // Enregistrer l'usage (non bloquant)
     UsageStatsService.recordToolUsage(widget.tool.title);
 
-    pushUnified(
-      context,
-      widget.tool.screenBuilder(widget.tool.heroTag),
-      lowResourceMode: lowResourceMode,
+    Navigator.of(context).push(
+      unifiedNavigation(
+        context,
+        widget.tool.screenBuilder(widget.tool.heroTag),
+        isAndroid: Theme.of(context).platform == TargetPlatform.android,
+      ),
     );
   }
 }

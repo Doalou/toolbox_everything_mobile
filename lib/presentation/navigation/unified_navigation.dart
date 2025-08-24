@@ -1,23 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/presentation/widgets/smooth_page.dart';
+import 'package:toolbox_everything_mobile/presentation/screens/unit_converter_screen.dart';
 
-Future<T?> pushUnified<T>(
+Route<dynamic> unifiedNavigation(
   BuildContext context,
   Widget page, {
-  bool lowResourceMode = false,
+  bool isAndroid = false,
 }) {
-  final platform = Theme.of(context).platform;
-  if (platform == TargetPlatform.android) {
-    // Android: MaterialPageRoute pour Predictive Back, avec animation d'entrée subtile du contenu
-    return Navigator.push<T>(
-      context,
-      MaterialPageRoute(builder: (_) => SmoothPage(child: page)),
-    );
-  }
-  // Autres plateformes: légère transition pour fluidité
-  return Navigator.push<T>(
-    context,
-    PageRouteBuilder(
+  if (isAndroid) {
+    // Utiliser MaterialPageRoute pour une intégration parfaite du Predictive Back Gesture
+    return MaterialPageRoute(builder: (context) => page);
+  } else {
+    // Transition personnalisée pour les autres plateformes
+    return PageRouteBuilder(
       transitionDuration: const Duration(milliseconds: 220),
       reverseTransitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (context, animation, secondaryAnimation) => page,
@@ -38,6 +32,6 @@ Future<T?> pushUnified<T>(
           ),
         );
       },
-    ),
-  );
+    );
+  }
 }

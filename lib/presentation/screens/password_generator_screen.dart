@@ -159,7 +159,6 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Hero(
           tag: widget.heroTag,
@@ -171,271 +170,22 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
             ),
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-          tooltip: AppConstants.semanticBackButton,
-        ),
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppConstants.largePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Zone d'affichage du mot de passe
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.defaultPadding,
-                  vertical: AppConstants.largePadding,
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SelectableText(
-                            _password,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontFamily: 'monospace',
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        Semantics(
-                          label: AppConstants.semanticCopyButton,
-                          child: IconButton(
-                            icon: const Icon(Icons.copy),
-                            onPressed: _copyToClipboard,
-                            tooltip: AppConstants.semanticCopyButton,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_strengthIndicator.isNotEmpty) ...[
-                      const SizedBox(height: AppConstants.defaultPadding),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.security,
-                            color: _strengthColor,
-                            size: AppConstants.smallIconSize,
-                          ),
-                          const SizedBox(width: AppConstants.smallPadding),
-                          Text(
-                            'Force: $_strengthIndicator',
-                            style: TextStyle(
-                              color: _strengthColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-
+            _buildPasswordField(context, colorScheme),
             const SizedBox(height: AppConstants.largePadding),
-
-            // Historique des mots de passe
             if (_showHistory && _passwordHistory.isNotEmpty) ...[
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppConstants.defaultPadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.history,
-                            color: colorScheme.primary,
-                            size: AppConstants.smallIconSize,
-                          ),
-                          const SizedBox(width: AppConstants.smallPadding),
-                          Text(
-                            'Historique (${_passwordHistory.length} derniers)',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppConstants.defaultPadding),
-                      Container(
-                        height: 120,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _passwordHistory.length,
-                          itemBuilder: (context, index) {
-                            final password = _passwordHistory[index];
-                            return Container(
-                              width: 200,
-                              margin: const EdgeInsets.only(
-                                right: AppConstants.smallPadding,
-                              ),
-                              padding: const EdgeInsets.all(
-                                AppConstants.smallPadding,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainer,
-                                borderRadius: BorderRadius.circular(
-                                  AppConstants.smallBorderRadius,
-                                ),
-                                border: Border.all(
-                                  color: colorScheme.outline.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          password,
-                                          style: const TextStyle(
-                                            fontFamily: 'monospace',
-                                            fontSize: 12,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () =>
-                                            _copyPasswordFromHistory(password),
-                                        icon: const Icon(Icons.copy, size: 16),
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                      ),
-                                    ],
-                                  ),
-                                  const Spacer(),
-                                  Text(
-                                    '${password.length} caractères',
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: colorScheme.onSurface
-                                              .withValues(alpha: 0.7),
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildHistorySection(context, colorScheme),
               const SizedBox(height: AppConstants.largePadding),
             ],
-
-            // Contrôles de configuration
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Longueur
-                    Text(
-                      'Longueur: ${_length.toInt()} caractères',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.smallPadding),
-                    Semantics(
-                      label: 'Curseur de longueur du mot de passe',
-                      value: '${_length.toInt()} caractères',
-                      child: Slider(
-                        value: _length,
-                        min: AppConstants.minPasswordLength.toDouble(),
-                        max: AppConstants.maxPasswordLength.toDouble(),
-                        divisions:
-                            AppConstants.maxPasswordLength -
-                            AppConstants.minPasswordLength,
-                        label: _length.toInt().toString(),
-                        onChanged: (value) {
-                          setState(() {
-                            _length = value;
-                          });
-                          _generatePassword();
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: AppConstants.largePadding),
-
-                    // Options de caractères
-                    Text(
-                      'Types de caractères',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.defaultPadding),
-
-                    CheckboxListTile(
-                      title: const Text('Majuscules (A-Z)'),
-                      subtitle: const Text('ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
-                      value: _includeUppercase,
-                      onChanged: (value) {
-                        setState(() {
-                          _includeUppercase = value!;
-                        });
-                        _generatePassword();
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Minuscules (a-z)'),
-                      subtitle: const Text('abcdefghijklmnopqrstuvwxyz'),
-                      value: _includeLowercase,
-                      onChanged: (value) {
-                        setState(() {
-                          _includeLowercase = value!;
-                        });
-                        _generatePassword();
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Nombres (0-9)'),
-                      subtitle: const Text('0123456789'),
-                      value: _includeNumbers,
-                      onChanged: (value) {
-                        setState(() {
-                          _includeNumbers = value!;
-                        });
-                        _generatePassword();
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text('Symboles (!@#\$%)'),
-                      subtitle: const Text('!@#\$%^&*()'),
-                      value: _includeSymbols,
-                      onChanged: (value) {
-                        setState(() {
-                          _includeSymbols = value!;
-                        });
-                        _generatePassword();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
+            _buildControlsSection(context),
             const SizedBox(height: AppConstants.largePadding),
-
-            // Bouton de génération
             ElevatedButton.icon(
               onPressed: _generatePassword,
               icon: const Icon(Icons.refresh),
@@ -449,6 +199,247 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // Helper method for the password field card
+  Widget _buildPasswordField(BuildContext context, ColorScheme colorScheme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.defaultPadding,
+          vertical: AppConstants.largePadding,
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    _password,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Semantics(
+                  label: AppConstants.semanticCopyButton,
+                  child: IconButton(
+                    icon: const Icon(Icons.copy),
+                    onPressed: _copyToClipboard,
+                    tooltip: AppConstants.semanticCopyButton,
+                  ),
+                ),
+              ],
+            ),
+            if (_strengthIndicator.isNotEmpty) ...[
+              const SizedBox(height: AppConstants.defaultPadding),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.security,
+                    color: _strengthColor,
+                    size: AppConstants.smallIconSize,
+                  ),
+                  const SizedBox(width: AppConstants.smallPadding),
+                  Text(
+                    'Force: $_strengthIndicator',
+                    style: TextStyle(
+                      color: _strengthColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper method for the history section
+  Widget _buildHistorySection(BuildContext context, ColorScheme colorScheme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.history,
+                  color: colorScheme.primary,
+                  size: AppConstants.smallIconSize,
+                ),
+                const SizedBox(width: AppConstants.smallPadding),
+                Text(
+                  'Historique (${_passwordHistory.length} derniers)',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppConstants.defaultPadding),
+            SizedBox(
+              height: 120,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _passwordHistory.length,
+                itemBuilder: (context, index) {
+                  final password = _passwordHistory[index];
+                  return Container(
+                    width: 200,
+                    margin: const EdgeInsets.only(
+                      right: AppConstants.smallPadding,
+                    ),
+                    padding: const EdgeInsets.all(AppConstants.smallPadding),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainer,
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.smallBorderRadius,
+                      ),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                password,
+                                style: const TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () =>
+                                  _copyPasswordFromHistory(password),
+                              icon: const Icon(Icons.copy, size: 16),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${password.length} caractères',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper method for the controls section
+  Widget _buildControlsSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Longueur
+        Text(
+          'Longueur: ${_length.toInt()} caractères',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: AppConstants.smallPadding),
+        Semantics(
+          label: 'Curseur de longueur du mot de passe',
+          value: '${_length.toInt()} caractères',
+          child: Slider(
+            value: _length,
+            min: AppConstants.minPasswordLength.toDouble(),
+            max: AppConstants.maxPasswordLength.toDouble(),
+            divisions:
+                AppConstants.maxPasswordLength - AppConstants.minPasswordLength,
+            label: _length.toInt().toString(),
+            onChanged: (value) {
+              setState(() {
+                _length = value;
+              });
+              _generatePassword();
+            },
+          ),
+        ),
+        const SizedBox(height: AppConstants.largePadding),
+        // Options de caractères
+        Text(
+          'Types de caractères',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: AppConstants.defaultPadding),
+        CheckboxListTile(
+          title: const Text('Majuscules (A-Z)'),
+          subtitle: const Text('ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+          value: _includeUppercase,
+          onChanged: (value) {
+            setState(() {
+              _includeUppercase = value!;
+            });
+            _generatePassword();
+          },
+        ),
+        CheckboxListTile(
+          title: const Text('Minuscules (a-z)'),
+          subtitle: const Text('abcdefghijklmnopqrstuvwxyz'),
+          value: _includeLowercase,
+          onChanged: (value) {
+            setState(() {
+              _includeLowercase = value!;
+            });
+            _generatePassword();
+          },
+        ),
+        CheckboxListTile(
+          title: const Text('Nombres (0-9)'),
+          subtitle: const Text('0123456789'),
+          value: _includeNumbers,
+          onChanged: (value) {
+            setState(() {
+              _includeNumbers = value!;
+            });
+            _generatePassword();
+          },
+        ),
+        CheckboxListTile(
+          title: const Text('Symboles (!@#\$%)'),
+          subtitle: const Text('!@#\$%^&*()'),
+          value: _includeSymbols,
+          onChanged: (value) {
+            setState(() {
+              _includeSymbols = value!;
+            });
+            _generatePassword();
+          },
+        ),
+      ],
     );
   }
 }

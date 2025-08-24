@@ -30,96 +30,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: CustomScrollView(
         physics: const ClampingScrollPhysics(),
         slivers: [
-          // AppBar M3 large dynamique (couleur du titre varie selon le scroll)
-          SliverLayoutBuilder(
-            builder: (context, constraints) {
-              final expanded = constraints.scrollOffset <= 8.0;
-              final cs = Theme.of(context).colorScheme;
-              return SliverAppBar.large(
-                pinned: true,
-                centerTitle: true,
-                backgroundColor: cs.surface,
-                surfaceTintColor: cs.surfaceTint,
-                scrolledUnderElevation: 4,
-                leading: const BackButton(),
-                title: Text(
-                  expanded ? 'Paramètres' : 'Paramètres',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: expanded ? cs.primary : cs.onSurface,
+          // Nouvel AppBar moderne et extensible
+          SliverAppBar.large(
+            pinned: true,
+            leading: const BackButton(),
+            centerTitle: false,
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.pin,
+              title: const Text('Paramètres'),
+              titlePadding: const EdgeInsets.only(left: 72, bottom: 16),
+              background: Container(
+                color: colorScheme.surface,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 24, bottom: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.settings,
+                          color: colorScheme.onPrimaryContainer,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Gérez l\'apparence et le comportement',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(1),
-                  child: Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: cs.outlineVariant.withValues(alpha: 0.2),
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // Contenu des paramètres
-          // Bandeau d'intro harmonisé Material You (accent dynamique)
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.tune,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Personnalisez votre expérience',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimaryContainer,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Thèmes, couleurs dynamiques et préférences',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer
-                                    .withValues(alpha: 0.7),
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
 
+          // Contenu des paramètres
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Section Apparence
@@ -270,42 +226,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
               absorbing: themeProvider.useDynamicColor,
               child: Opacity(
                 opacity: themeProvider.useDynamicColor ? 0.5 : 1.0,
-                child: SegmentedButton<ThemeMode>(
-                  segments: const [
-                    ButtonSegment(
-                      value: ThemeMode.light,
-                      icon: Icon(Icons.light_mode),
-                      label: Text('Clair'),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.system,
-                      icon: Icon(Icons.brightness_auto),
-                      label: Text('Système'),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.dark,
-                      icon: Icon(Icons.dark_mode),
-                      label: Text('Sombre'),
-                    ),
-                  ],
-                  selected: {themeProvider.themeMode},
-                  onSelectionChanged: themeProvider.useDynamicColor
-                      ? null
-                      : (newSelection) {
-                          themeProvider.setThemeMode(newSelection.first);
-                        },
-                  style: ButtonStyle(
-                    visualDensity: const VisualDensity(
-                      horizontal: 0,
-                      vertical: -2,
-                    ),
-                    padding: WidgetStateProperty.all(
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                    textStyle: WidgetStateProperty.all(
-                      Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final bool compact = constraints.maxWidth < 360;
+                    final EdgeInsetsGeometry segPadding = EdgeInsets.symmetric(
+                      horizontal: compact ? 8 : 12,
+                      vertical: compact ? 6 : 8,
+                    );
+                    return MediaQuery(
+                      data: MediaQuery.of(
+                        context,
+                      ).copyWith(textScaleFactor: 1.0),
+                      child: SegmentedButton<ThemeMode>(
+                        segments: [
+                          const ButtonSegment(
+                            value: ThemeMode.light,
+                            icon: Icon(Icons.light_mode),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Clair',
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ),
+                          ),
+                          const ButtonSegment(
+                            value: ThemeMode.system,
+                            icon: Icon(Icons.brightness_auto),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Système',
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ),
+                          ),
+                          const ButtonSegment(
+                            value: ThemeMode.dark,
+                            icon: Icon(Icons.dark_mode),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Sombre',
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ),
+                          ),
+                        ],
+                        selected: {themeProvider.themeMode},
+                        onSelectionChanged: themeProvider.useDynamicColor
+                            ? null
+                            : (newSelection) {
+                                themeProvider.setThemeMode(newSelection.first);
+                              },
+                        style: ButtonStyle(
+                          visualDensity: const VisualDensity(
+                            horizontal: 0,
+                            vertical: -2,
+                          ),
+                          padding: WidgetStateProperty.all(segPadding),
+                          textStyle: WidgetStateProperty.all(
+                            Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

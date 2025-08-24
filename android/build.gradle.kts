@@ -1,8 +1,16 @@
 import org.gradle.api.tasks.compile.JavaCompile
+import java.text.SimpleDateFormat
+import java.util.*
 // Déplacez la résolution de dépôts dans settings.gradle.kts (dependencyResolutionManagement)
 
 val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
 rootProject.layout.buildDirectory.value(newBuildDir)
+
+// Reproducible builds: Fix build timestamp
+val buildTime = System.getenv("SOURCE_DATE_EPOCH")?.toLongOrNull()?.let { Date(it * 1000) }
+    ?: SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2024-01-01 00:00:00")
+
+ext["buildTime"] = buildTime
 
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
@@ -22,7 +30,20 @@ subprojects {
     tasks.withType<JavaCompile>().configureEach {
         sourceCompatibility = JavaVersion.VERSION_17.toString()
         targetCompatibility = JavaVersion.VERSION_17.toString()
-        // Pour supprimer explicitement l'avertissement lié aux options obsolètes :
-        // options.compilerArgs.add("-Xlint:-options")
+        // Reproducible builds: deterministic compiler arguments
+        options.compilerArgs.addAll(listOf(
+            "-Xlint:-options",
+            "-XDuseUnsharedTable=true"
+        ))
+        // Fix file ordering for reproducible builds
+        options.isIncremental = false
+    }
+    
+    // Ensure reproducible JAR/AAR archives
+    tasks.withType<AbstractArchiveTask>().configureEach {
+        isPreserveFileTimestamps = false
+        isReproducibleFileOrder = true
+        dirMode = 493 // 0755 in octal
+        fileMode = 420 // 0644 in octal
     }
 }

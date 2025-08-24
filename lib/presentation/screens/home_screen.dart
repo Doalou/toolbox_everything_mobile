@@ -127,7 +127,14 @@ class _HomeScreenState extends State<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
-    _staggerController.forward();
+    final bool lowResourceMode = context
+        .read<SettingsProvider>()
+        .lowResourceMode;
+
+    // Si le mode économie de ressources est actif, on ne lance pas l'animation.
+    if (!lowResourceMode) {
+      _staggerController.forward();
+    }
   }
 
   @override
@@ -147,8 +154,12 @@ class _HomeScreenState extends State<HomeScreen>
           return tool.title.toLowerCase().contains(query);
         }).toList();
       }
-      _staggerController.reset();
-      _staggerController.forward();
+      // On ne relance l'animation que si le mode économie n'est pas actif
+      final lowResourceMode = context.read<SettingsProvider>().lowResourceMode;
+      if (!lowResourceMode) {
+        _staggerController.reset();
+        _staggerController.forward();
+      }
     });
   }
 
@@ -180,12 +191,33 @@ class _HomeScreenState extends State<HomeScreen>
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Responsive grid calculation based on available width
-        int crossAxisCount = 2;
-        if (constraints.maxWidth > 600) crossAxisCount = 3;
-        if (constraints.maxWidth > 900) crossAxisCount = 4;
+        // Largeur max de contenu pour centrer la grille sur grands écrans
+        const double maxContentWidth = 1100;
+        const double baseHorizontalPadding = 20;
+        final double horizontalPadding = constraints.maxWidth > maxContentWidth
+            ? (constraints.maxWidth - maxContentWidth) / 2
+            : baseHorizontalPadding;
+
+        // Cible de largeur de carte pour ajuster automatiquement le nombre de colonnes
+        final double targetTileWidth = constraints.maxWidth < 380
+            ? 150
+            : constraints.maxWidth < 480
+            ? 170
+            : constraints.maxWidth < 720
+            ? 190
+            : constraints.maxWidth < 1100
+            ? 220
+            : 240;
+
+        // Ratio largeur/hauteur des cartes pour un rendu harmonieux
+        final double childAspectRatio = constraints.maxWidth < 400
+            ? 0.95
+            : constraints.maxWidth < 900
+            ? 0.9
+            : 0.95;
 
         return Scaffold(
+          resizeToAvoidBottomInset: true,
           // si dynamique, on laisse le fond géré globalement (peut être noir AMOLED)
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: CustomScrollView(
@@ -287,15 +319,15 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
 
-              // Tools Grid - Uniform and Responsive
+              // Tools Grid - Centrée et Responsive
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: targetTileWidth,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.9,
+                    childAspectRatio: childAspectRatio,
                   ),
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final tool = filteredTools[index];
@@ -311,6 +343,21 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                         );
+
+                    // Pas d'animation si le mode économie est actif
+                    if (lowResourceMode) {
+                      return ToolCard(
+                        tool: tool,
+                        onFavoriteToggle: () async {
+                          await UsageStatsService.saveFavorites(
+                            _tools
+                                .where((t) => t.isFavorite)
+                                .map((t) => t.title)
+                                .toList(),
+                          );
+                        },
+                      );
+                    }
 
                     return AnimatedBuilder(
                       animation: animation,
@@ -469,6 +516,12 @@ class _HomeScreenState extends State<HomeScreen>
     Widget screen,
     bool lowResourceMode,
   ) {
-    pushUnified(context, screen, lowResourceMode: lowResourceMode);
+    Navigator.of(context).push(
+      unifiedNavigation(
+        context,
+        screen,
+        isAndroid: Theme.of(context).platform == TargetPlatform.android,
+      ),
+    );
   }
 }
