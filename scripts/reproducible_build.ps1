@@ -83,7 +83,7 @@ function Start-ReproducibleBuild {
         
         # Calcul des hashes
         $HashFile = Join-Path $BuildDir "checksums.txt"
-        Get-ChildItem $BuildDir -Filter "*.apk" | ForEach-Object {
+        Get-ChildItem $BuildDir -Filter "*.apk" | Sort-Object Name | ForEach-Object {
             $hash = Get-FileHash $_.FullName -Algorithm SHA256
             "$($hash.Hash)  $($_.Name)" | Out-File $HashFile -Append -Encoding UTF8
         }

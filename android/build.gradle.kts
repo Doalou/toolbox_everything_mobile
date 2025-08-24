@@ -6,11 +6,13 @@ import java.util.*
 val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
 rootProject.layout.buildDirectory.value(newBuildDir)
 
-// Reproducible builds: Fix build timestamp
-val buildTime = System.getenv("SOURCE_DATE_EPOCH")?.toLongOrNull()?.let { Date(it * 1000) }
-    ?: SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2024-01-01 00:00:00")
+// Reproducible builds: Fix build timestamp (epoch ms)
+val buildTimeEpochMs: Long = System.getenv("SOURCE_DATE_EPOCH")
+    ?.toLongOrNull()
+    ?.times(1000)
+    ?: SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2024-01-01 00:00:00").time
 
-ext["buildTime"] = buildTime
+extra["buildTimeEpochMs"] = buildTimeEpochMs
 
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)

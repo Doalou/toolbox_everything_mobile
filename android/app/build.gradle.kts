@@ -42,8 +42,8 @@ android {
         versionName = flutter.versionName
         multiDexEnabled = true
         
-        // Reproducible builds: fix build config values
-        buildConfigField("long", "BUILD_TIME", "${rootProject.ext["buildTime"]}")
+        // Reproducible builds: fix build config values (epoch ms)
+        buildConfigField("long", "BUILD_TIME", "${rootProject.extra["buildTimeEpochMs"]}")
         buildConfigField("String", "BUILD_COMMIT", "\"${System.getenv("GIT_COMMIT") ?: "unknown"}\"")
     }
 

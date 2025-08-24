@@ -113,7 +113,7 @@ perform_build() {
         
         # Calcul des hashes
         local hash_file="$build_dir/checksums.txt"
-        find "$build_dir" -name "*.apk" -type f | while read -r file; do
+        find "$build_dir" -name "*.apk" -type f | sort | while read -r file; do
             sha256sum "$file" >> "$hash_file"
         done
         

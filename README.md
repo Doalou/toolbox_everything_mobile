@@ -92,8 +92,8 @@ Une application Flutter élégante qui regroupe tous vos outils numériques esse
 ## 🚀 Installation
 
 ### Prérequis
-- Flutter SDK 3.8.1+
-- Dart 3.0+
+- Flutter SDK 3.24+
+- Dart 3.5+
 - Android Studio / VS Code
 - Git
 
