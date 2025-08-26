@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:toolbox_everything_mobile/core/models/tool_item.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
@@ -42,43 +43,39 @@ class _ToolCardState extends State<ToolCard> {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => _navigateToTool(context),
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.defaultPadding),
-            child: LayoutBuilder(
-              builder: (context, c) {
-                final double w = c.maxWidth;
-                final double iconSize = (w * 0.28).clamp(24.0, 40.0);
-                final double spacing = w < 180
-                    ? AppConstants.smallPadding
-                    : AppConstants.defaultPadding;
-                final double titleSize = (w * 0.09).clamp(12.0, 16.0);
-
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      widget.tool.icon,
-                      size: iconSize,
-                      color: colorScheme.primary,
-                    ),
-                    SizedBox(height: spacing),
-                    Text(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppConstants.defaultPadding),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    widget.tool.icon,
+                    size: AppConstants.largeIconSize,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(height: AppConstants.defaultPadding),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 220),
+                    child: AutoSizeText(
                       widget.tool.title,
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      minFontSize: 12,
+                      stepGranularity: 0.5,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface,
                         height: 1.3,
-                        fontSize: titleSize,
+                        fontSize: 14.0,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                );
-              },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -204,36 +201,28 @@ class _ToolCardState extends State<ToolCard> {
                 highlightColor: colorScheme.primary.withValues(alpha: 0.05),
                 onTap: () => _navigateToTool(context),
                 child: Stack(
+                  alignment: Alignment.center,
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(AppConstants.largePadding),
                       child: LayoutBuilder(
                         builder: (context, c) {
-                          final double w = c.maxWidth;
-                          final double scale = (w / 220.0).clamp(0.85, 1.15);
-                          final double iconPadding =
-                              (AppConstants.defaultPadding * scale).clamp(
-                                10.0,
-                                16.0,
-                              );
-                          final double iconSize =
-                              (AppConstants.largeIconSize * scale).clamp(
-                                28.0,
-                                44.0,
-                              );
-                          final double titleSize = (14.0 * scale).clamp(
-                            12.0,
-                            16.0,
-                          );
-                          final double spacingLarge =
-                              (AppConstants.defaultPadding * scale).clamp(
-                                8.0,
-                                16.0,
-                              );
+                          // Tailles fixes et centrage, FittedBox gère la réduction si nécessaire
+                          final double maxH = c.maxHeight;
+                          final bool compact = maxH <= 120;
+                          final double iconPadding = compact
+                              ? 12.0
+                              : AppConstants.defaultPadding;
+                          const double iconSize = AppConstants.largeIconSize;
+                          final double titleSize = compact ? 13.0 : 14.0;
+                          final double spacingLarge = compact
+                              ? 8.0
+                              : AppConstants.defaultPadding;
+                          final double indicatorHeight = compact ? 3.0 : 4.0;
                           final double indicatorWidth =
                               (_isHovered && !lowResourceMode)
-                              ? (44.0 * scale).clamp(28.0, 56.0)
-                              : (24.0 * scale).clamp(18.0, 34.0);
+                              ? (compact ? 40.0 : 44.0)
+                              : (compact ? 20.0 : 24.0);
 
                           final column = Column(
                             mainAxisSize: MainAxisSize.min,
@@ -304,20 +293,27 @@ class _ToolCardState extends State<ToolCard> {
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: AppConstants.smallPadding,
                                   ),
-                                  child: Text(
-                                    widget.tool.title,
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: colorScheme.onSurface,
-                                          height: 1.3,
-                                          fontSize: titleSize,
-                                        ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 220,
+                                    ),
+                                    child: AutoSizeText(
+                                      widget.tool.title,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      minFontSize: compact ? 11 : 12,
+                                      stepGranularity: 0.5,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.onSurface,
+                                            height: 1.3,
+                                            fontSize: titleSize,
+                                          ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -330,7 +326,7 @@ class _ToolCardState extends State<ToolCard> {
                                     ? Duration.zero
                                     : AppConstants.mediumAnimation,
                                 curve: AppConstants.defaultAnimationCurve,
-                                height: 4,
+                                height: indicatorHeight,
                                 width: indicatorWidth,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
@@ -365,11 +361,7 @@ class _ToolCardState extends State<ToolCard> {
                             ],
                           );
 
-                          return FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.center,
-                            child: column,
-                          );
+                          return column;
                         },
                       ),
                     ),

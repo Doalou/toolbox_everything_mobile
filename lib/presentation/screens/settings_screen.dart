@@ -34,11 +34,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SliverAppBar.large(
             pinned: true,
             leading: const BackButton(),
+            leadingWidth: 68,
             centerTitle: false,
             flexibleSpace: FlexibleSpaceBar(
               collapseMode: CollapseMode.pin,
-              title: const Text('Paramètres'),
-              titlePadding: const EdgeInsets.only(left: 72, bottom: 16),
+              // Masquer le titre quand on est en haut pour éviter le doublon avec le header
+              title: const _CollapsingTitle(),
+              titlePadding: const EdgeInsets.only(left: 92, bottom: 16),
               background: Container(
                 color: colorScheme.surface,
                 child: Padding(
@@ -47,19 +49,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.settings,
-                          color: colorScheme.onPrimaryContainer,
-                          size: 28,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.settings,
+                              color: colorScheme.onPrimaryContainer,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            'Paramètres',
+                            style: Theme.of(context).textTheme.headlineLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: colorScheme.onSurface,
+                                ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                       Text(
                         'Gérez l\'apparence et le comportement',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -576,6 +592,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         );
+      },
+    );
+  }
+}
+
+class _CollapsingTitle extends StatelessWidget {
+  const _CollapsingTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final settings = context
+            .dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+        if (settings == null) {
+          return const SizedBox.shrink();
+        }
+        final double delta = settings.currentExtent - settings.minExtent;
+        final bool collapsed = delta <= 8;
+        return collapsed ? const Text('Paramètres') : const SizedBox.shrink();
       },
     );
   }

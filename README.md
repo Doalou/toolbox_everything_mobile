@@ -84,7 +84,7 @@ Une application Flutter élégante qui regroupe tous vos outils numériques esse
 
 1. **Cloner le projet**
 ```bash
-git clone <repository-url>
+git clone https://github.com/Doalou/toolbox_everything_mobile.git
 cd toolbox_everything_mobile
 ```
 
@@ -154,27 +154,29 @@ lib/
 
 ## 📦 Dépendances principales
 
-### Interface & Design
-- `flutter` - Framework UI
-- `provider` - Gestion d'état
-- `animate_do` - Animations
-- `shimmer` - Effets de chargement
+### Interface & État
+- **`provider`** - Gestion d'état
+- **`dynamic_color`** - Couleurs dynamiques (Material You)
+- **`animate_do`** & **`flutter_staggered_animations`** - Animations
+- **`shimmer`** & **`lottie`** - Effets visuels et de chargement
+- **`auto_size_text`** - Texte responsive
 
 ### Fonctionnalités
-- `qr_flutter` - Génération QR codes
-- `mobile_scanner` - Scanner QR codes
-- `flutter_compass` - Boussole
-- `sensors_plus` - Capteurs
-- `crypto` - Cryptographie
-- `yaml` - Conversion YAML
-- `youtube_explode_dart` - Téléchargement YouTube
+- **`qr_flutter`** & **`mobile_scanner`** - QR Codes
+- **`flutter_compass`** & **`sensors_plus`** - Capteurs (boussole, niveau)
+- **`crypto`** - Cryptographie (hash)
+- **`youtube_explode_dart`** - Téléchargement YouTube
+- **`ffmpeg_kit_flutter_new`** - Traitement média
+- **`pdf`** & **`printing`** - Génération de documents
 
 ### Utilitaires
-- `clipboard` - Presse-papier
-- `file_picker` - Sélection de fichiers
-- `path_provider` - Chemins système
-- `shared_preferences` - Stockage local
-- `url_launcher` - Ouverture URLs
+- **`url_launcher`** - Ouverture d'URL
+- **`shared_preferences`** - Stockage local simple
+- **`path_provider`** & **`file_picker`** - Gestion de fichiers
+- **`permission_handler`** - Permissions natives
+- **`clipboard`** & **`super_clipboard`** - Gestion du presse-papiers
+- **`flutter_local_notifications`** - Notifications locales
+- **`connectivity_plus`** - Vérification de la connectivité
 
 ## 🛠️ Scripts de développement
 
@@ -315,7 +317,7 @@ flutter pub upgrade --major-versions
 
 ## 📄 License
 
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+Ce projet est sous licence MIT.
 
 ## 🤝 Contribution
 

@@ -7,18 +7,31 @@ class AboutScreen extends StatelessWidget {
 
   Future<void> _launchUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
-    if (!await canLaunchUrl(uri)) {
-      if (context.mounted) {
+
+    try {
+      final bool launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Impossible d\'ouvrir l\'URL : $url'),
+            content: Text('Impossible d\'ouvrir le lien : $url'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
-      return;
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de l\'ouverture : $url'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
-    await launchUrl(uri);
   }
 
   @override
@@ -57,7 +70,11 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildHeader(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return Column(
       children: [
         Container(
@@ -111,7 +128,11 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDescriptionCard(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildDescriptionCard(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return Card(
       elevation: 0,
       color: colorScheme.surfaceContainerLow,
@@ -125,7 +146,9 @@ class AboutScreen extends StatelessWidget {
           children: [
             Text(
               'Votre boîte à outils numérique',
-              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: AppConstants.defaultPadding),
             Text(
@@ -141,7 +164,11 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLinksCard(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildLinksCard(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return Card(
       elevation: 0,
       color: colorScheme.surfaceContainerLow,
@@ -200,8 +227,9 @@ class AboutScreen extends StatelessWidget {
     final buttonStyle = ButtonStyle(
       padding: WidgetStateProperty.all(
         const EdgeInsets.symmetric(
-            vertical: AppConstants.defaultPadding,
-            horizontal: AppConstants.largePadding),
+          vertical: AppConstants.defaultPadding,
+          horizontal: AppConstants.largePadding,
+        ),
       ),
       shape: WidgetStateProperty.all(
         RoundedRectangleBorder(
@@ -261,4 +289,4 @@ class AboutScreen extends StatelessWidget {
       ],
     );
   }
-} 
+}

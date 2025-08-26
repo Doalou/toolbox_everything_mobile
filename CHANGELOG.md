@@ -5,7 +5,7 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-08-24
+## [1.0.0] - 2025-08-25
 
 ### Ajouté
 - **Support du Predictive Back Gesture** : Intégration complète de la navigation gestuelle prédictive d'Android 16+ pour une expérience fluide.
@@ -36,7 +36,9 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Modifié
 - **Compatibilité Android 16** : Migration de `FlutterFragmentActivity` vers `FlutterActivity` pour une meilleure compatibilité avec le Predictive Back Gesture.
 - **Optimisation des animations Hero** : Désactivation conditionnelle sur Android pour éviter les conflits avec la navigation gestuelle prédictive.
-- **Interface des paramètres améliorée** : Correctif du positionnement du titre lors du défilement et prévention du troncage des labels sur petits écrans.
+- **Interface des paramètres améliorée** :
+  - Titre "Paramètres" masqué en haut (pas de doublon avec le header) et affiché uniquement lors du collapse.
+  - Prévention du troncage des labels (Clair/Système/Sombre) sur petits écrans.
 - **Amélioration de l'interface du téléchargeur** : Le champ de saisie de l'URL est plus grand et le texte d'aide a été déplacé pour une meilleure ergonomie.
 - **Uniformisation des boutons** : Tous les boutons de l'application ont désormais une hauteur minimale de 52px pour une meilleure accessibilité et cohérence.
 - **Optimisation des performances de l'interface** : Réduction de la qualité des miniatures et limitation du cache d'images pour économiser la mémoire.
@@ -64,6 +66,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Tests: suppression du test widget par défaut (compteur) et ajout d’un smoke test minimal.
 
 ### Corrigé
+- **Accueil (cartes)** : Contenu parfaitement centré et typographies uniformisées (icône taille fixe, titre en 14px, FittedBox pour l'adaptation).
 - **Architecture responsive complète** : Élimination de tous les débordements (RenderFlex overflow) grâce à l'utilisation de FittedBox et LayoutBuilder adaptatifs.
 - **Stabilisation du Predictive Back** : Résolution des problèmes de fonctionnement intermittent du geste de retour prédictif.
 - **Centrage et adaptabilité** : Correction du positionnement "aléatoire" des éléments dans les cartes, avec un alignement cohérent sur toutes les tailles d'écran.

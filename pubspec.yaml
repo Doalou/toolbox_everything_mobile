@@ -69,6 +69,7 @@ dependencies:
   ffmpeg_kit_flutter_new: ^3.1.0
   dynamic_color: ^1.7.0
   quick_actions: ^1.0.7
+  auto_size_text: ^3.0.0
 
 dev_dependencies:
   flutter_test:
