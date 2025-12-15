@@ -83,7 +83,7 @@ class AboutScreen extends StatelessWidget {
             gradient: RadialGradient(
               colors: [
                 colorScheme.primary,
-                colorScheme.primary.withOpacity(0.6),
+                colorScheme.primary.withValues(alpha: 0.6),
               ],
               center: Alignment.bottomRight,
               radius: 1.5,
@@ -91,7 +91,7 @@ class AboutScreen extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: colorScheme.primary.withOpacity(0.3),
+                color: colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -219,7 +219,7 @@ class AboutScreen extends StatelessWidget {
       thickness: 1,
       indent: 20,
       endIndent: 20,
-      color: colorScheme.outline.withOpacity(0.1),
+      color: colorScheme.outline.withValues(alpha: 0.1),
     );
   }
 

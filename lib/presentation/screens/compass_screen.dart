@@ -13,7 +13,6 @@ class CompassScreen extends StatefulWidget {
 
 class CompassScreenState extends State<CompassScreen>
     with TickerProviderStateMixin {
-  double? _heading;
   bool _isCalibrating = true;
 
   @override
@@ -30,10 +29,6 @@ class CompassScreenState extends State<CompassScreen>
     });
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   String _getDirection(double heading) {
     if (heading >= 337.5 || heading < 22.5) {
@@ -64,14 +59,18 @@ class CompassScreenState extends State<CompassScreen>
   }
 
   Color _getDirectionColor(double heading) {
-    if (heading >= 337.5 || heading < 22.5)
+    if (heading >= 337.5 || heading < 22.5) {
       return const Color(0xFFE53E3E); // Nord - Rouge
-    if (heading >= 67.5 && heading < 112.5)
+    }
+    if (heading >= 67.5 && heading < 112.5) {
       return const Color(0xFFFF9500); // Est - Orange
-    if (heading >= 157.5 && heading < 202.5)
+    }
+    if (heading >= 157.5 && heading < 202.5) {
       return const Color(0xFF38A169); // Sud - Vert
-    if (heading >= 247.5 && heading < 292.5)
+    }
+    if (heading >= 247.5 && heading < 292.5) {
       return const Color(0xFF3182CE); // Ouest - Bleu
+    }
     return const Color(0xFF805AD5); // Directions intermédiaires - Violet
   }
 
@@ -130,8 +129,6 @@ class CompassScreenState extends State<CompassScreen>
             return _buildUnsupportedView();
           }
 
-          // Mettre à jour la direction
-          _heading = direction;
 
           return _buildCompassView(direction, colorScheme);
         },

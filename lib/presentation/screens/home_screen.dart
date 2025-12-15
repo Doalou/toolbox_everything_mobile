@@ -15,6 +15,8 @@ import 'package:toolbox_everything_mobile/presentation/screens/lorem_generator_s
 import 'package:toolbox_everything_mobile/presentation/screens/hash_calculator_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/timer_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/connection_tester_screen.dart';
+import 'package:toolbox_everything_mobile/presentation/screens/color_picker_screen.dart';
+import 'package:toolbox_everything_mobile/presentation/screens/text_encoder_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/widgets/tool_card.dart';
 import 'package:toolbox_everything_mobile/presentation/navigation/unified_navigation.dart';
 import 'package:toolbox_everything_mobile/core/services/usage_stats_service.dart';
@@ -64,6 +66,18 @@ final List<ToolItem> _tools = [
     icon: Icons.fingerprint,
     screenBuilder: (heroTag) => HashCalculatorScreen(heroTag: heroTag),
     heroTag: 'hash-calculator-hero',
+  ),
+  ToolItem(
+    title: 'Encodeur / Décodeur',
+    icon: Icons.code,
+    screenBuilder: (heroTag) => TextEncoderScreen(heroTag: heroTag),
+    heroTag: 'text-encoder-hero',
+  ),
+  ToolItem(
+    title: 'Sélecteur Couleurs',
+    icon: Icons.palette,
+    screenBuilder: (heroTag) => ColorPickerScreen(heroTag: heroTag),
+    heroTag: 'color-picker-hero',
   ),
   ToolItem(
     title: 'Minuteur',
@@ -127,9 +141,8 @@ class _HomeScreenState extends State<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
-    final bool lowResourceMode = context
-        .read<SettingsProvider>()
-        .lowResourceMode;
+    final bool lowResourceMode =
+        context.read<SettingsProvider>().lowResourceMode;
 
     // Si le mode économie de ressources est actif, on ne lance pas l'animation.
     if (!lowResourceMode) {
@@ -202,19 +215,19 @@ class _HomeScreenState extends State<HomeScreen>
         final double targetTileWidth = constraints.maxWidth < 380
             ? 150
             : constraints.maxWidth < 480
-            ? 170
-            : constraints.maxWidth < 720
-            ? 190
-            : constraints.maxWidth < 1100
-            ? 220
-            : 240;
+                ? 170
+                : constraints.maxWidth < 720
+                    ? 190
+                    : constraints.maxWidth < 1100
+                        ? 220
+                        : 240;
 
         // Ratio largeur/hauteur des cartes pour un rendu harmonieux
         final double childAspectRatio = constraints.maxWidth < 400
             ? 0.95
             : constraints.maxWidth < 900
-            ? 0.9
-            : 0.95;
+                ? 0.9
+                : 0.95;
 
         return Scaffold(
           resizeToAvoidBottomInset: true,
@@ -297,7 +310,9 @@ class _HomeScreenState extends State<HomeScreen>
                           _isSearching
                               ? 'Résultats (${filteredTools.length})'
                               : 'Vos outils',
-                          style: Theme.of(context).textTheme.headlineSmall
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: colorScheme.onSurface,
@@ -310,9 +325,8 @@ class _HomeScreenState extends State<HomeScreen>
                           _isSearching ? Icons.close : Icons.search,
                           color: colorScheme.primary,
                         ),
-                        tooltip: _isSearching
-                            ? 'Fermer la recherche'
-                            : 'Rechercher',
+                        tooltip:
+                            _isSearching ? 'Fermer la recherche' : 'Rechercher',
                       ),
                     ],
                   ),
@@ -332,17 +346,17 @@ class _HomeScreenState extends State<HomeScreen>
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final tool = filteredTools[index];
 
-                    final animation = Tween<double>(begin: 0.0, end: 1.0)
-                        .animate(
-                          CurvedAnimation(
-                            parent: _staggerController,
-                            curve: Interval(
-                              (0.05 * index).clamp(0.0, 1.0),
-                              (0.05 * index + 0.3).clamp(0.0, 1.0),
-                              curve: AppConstants.defaultAnimationCurve,
-                            ),
-                          ),
-                        );
+                    final animation =
+                        Tween<double>(begin: 0.0, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: _staggerController,
+                        curve: Interval(
+                          (0.05 * index).clamp(0.0, 1.0),
+                          (0.05 * index + 0.3).clamp(0.0, 1.0),
+                          curve: AppConstants.defaultAnimationCurve,
+                        ),
+                      ),
+                    );
 
                     // Pas d'animation si le mode économie est actif
                     if (lowResourceMode) {
@@ -436,7 +450,9 @@ class _HomeScreenState extends State<HomeScreen>
                       children: [
                         Text(
                           'Toolbox Everything',
-                          style: Theme.of(context).textTheme.headlineMedium
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
                               ?.copyWith(
                                 color: colorScheme.primary,
                                 fontWeight: FontWeight.w800,
@@ -446,13 +462,13 @@ class _HomeScreenState extends State<HomeScreen>
                         const SizedBox(height: 4),
                         Text(
                           'Vos outils numériques essentiels',
-                          style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(
-                                color: colorScheme.onSurface.withValues(
-                                  alpha: 0.7,
-                                ),
-                                fontWeight: FontWeight.w500,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.onSurface.withValues(
+                                      alpha: 0.7,
+                                    ),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                         ),
                       ],
                     ),
@@ -473,16 +489,14 @@ class _HomeScreenState extends State<HomeScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildActionButton(context, Icons.settings_outlined, () {
-            final lowResourceMode = context
-                .read<SettingsProvider>()
-                .lowResourceMode;
+            final lowResourceMode =
+                context.read<SettingsProvider>().lowResourceMode;
             _navigateToScreen(context, const SettingsScreen(), lowResourceMode);
           }),
           const SizedBox(width: 8),
           _buildActionButton(context, Icons.info_outline, () {
-            final lowResourceMode = context
-                .read<SettingsProvider>()
-                .lowResourceMode;
+            final lowResourceMode =
+                context.read<SettingsProvider>().lowResourceMode;
             _navigateToScreen(context, const AboutScreen(), lowResourceMode);
           }),
         ],

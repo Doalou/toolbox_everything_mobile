@@ -5,6 +5,42 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-12-15
+
+### Ajouté
+- **Sélecteur de couleurs avancé** : Nouvel outil avec roue chromatique, export HEX/RGB/RGBA/HSL, et historique des 12 dernières couleurs (persistant).
+- **Encodeur/Décodeur** : Nouvel outil supportant Base64, URL, HTML entities et Hexadécimal avec toggle instantané encode ↔ decode.
+
+### Modifié
+- **Migration Flutter 3.38 / Dart 3.10** : SDK constraint mis à jour de `^3.8.1` vers `^3.10.0`.
+- **Mise à jour majeure des dépendances** :
+  - `clipboard` 2.0.2 → 3.0.8
+  - `fluttertoast` 8.2.12 → 9.0.0
+  - `youtube_explode_dart` 2.5.1 → 3.0.5
+  - `sensors_plus` 6.1.1 → 7.0.0
+  - `package_info_plus` 8.0.0 → 9.0.0
+  - `connectivity_plus` 6.0.5 → 7.0.0
+  - `ffmpeg_kit_flutter_new` 3.1.0 → 4.1.0
+  - `file_picker` 10.2.0 → 10.3.7
+  - `collection` 1.18.0 → 1.19.1
+  - `crypto` 3.0.5 → 3.0.7
+  - `shared_preferences` 2.3.4 → 2.5.3
+  - `printing` 5.13.5 → 5.14.2
+  - `http` 1.2.0 → 1.4.0
+  - `dynamic_color` 1.7.0 → 1.8.1
+
+### Corrigé
+- **Modernisation du code Flutter 3.x** :
+  - Migration de `color.value` vers `color.toARGB32()` (API dépréciée).
+  - Migration de `withOpacity()` vers `withValues(alpha:)` pour une meilleure précision.
+  - Migration de `textScaleFactor` vers `textScaler` (API dépréciée depuis Flutter 3.12).
+  - Suppression des imports, variables et champs inutilisés.
+  - Ajout de `final` aux champs immuables (`_stopwatch`, `_laps`).
+  - Ajout d'accolades aux structures conditionnelles (`if` statements).
+- **Réduction des warnings** : Passage de 32 issues à 3 infos (0 erreur, 0 warning).
+
+---
+
 ## [1.0.0] - 2025-08-25
 
 ### Ajouté

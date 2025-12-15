@@ -142,8 +142,8 @@ class _ToolCardState extends State<ToolCard> {
             transform: lowResourceMode
                 ? Matrix4.identity()
                 : (Matrix4.identity()
-                    ..translate(0.0, _isHovered ? -4.0 : 0.0)
-                    ..scale(_isHovered ? 1.02 : 1.0)),
+                    ..setTranslationRaw(0.0, _isHovered ? -4.0 : 0.0, 0.0)
+                    ..scale(_isHovered ? 1.02 : 1.0, _isHovered ? 1.02 : 1.0)),
             decoration: BoxDecoration(
               gradient: (_isHovered && !lowResourceMode)
                   ? LinearGradient(
@@ -240,8 +240,8 @@ class _ToolCardState extends State<ToolCard> {
                                       ? RadialGradient(
                                           center: Alignment.center,
                                           colors: [
-                                            cardColor.withOpacity(0.8),
-                                            cardColor.withOpacity(0.6),
+                                            cardColor.withValues(alpha: 0.8),
+                                            cardColor.withValues(alpha: 0.6),
                                           ],
                                         )
                                       : RadialGradient(
@@ -249,7 +249,7 @@ class _ToolCardState extends State<ToolCard> {
                                           colors: [
                                             colorScheme.primaryContainer,
                                             colorScheme.primaryContainer
-                                                .withOpacity(0.8),
+                                                .withValues(alpha: 0.8),
                                           ],
                                         ),
                                   borderRadius: BorderRadius.circular(
@@ -258,7 +258,9 @@ class _ToolCardState extends State<ToolCard> {
                                   boxShadow: (_isHovered && !lowResourceMode)
                                       ? [
                                           BoxShadow(
-                                            color: cardColor.withOpacity(0.3),
+                                            color: cardColor.withValues(
+                                              alpha: 0.3,
+                                            ),
                                             blurRadius: 12,
                                             offset: const Offset(0, 4),
                                           ),

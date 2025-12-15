@@ -757,7 +757,6 @@ $html
   }
 
   Widget _buildConvertButton() {
-    final colorScheme = Theme.of(context).colorScheme;
 
     return AnimatedBuilder(
       animation: _convertAnimation,

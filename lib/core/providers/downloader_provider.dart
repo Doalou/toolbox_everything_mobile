@@ -10,20 +10,10 @@ import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:toolbox_everything_mobile/core/services/downloads_saver.dart';
 
-enum DownloaderState {
-  initial,
-  loading,
-  success,
-  error,
-}
+enum DownloaderState { initial, loading, success, error }
 
 /// État de l'activité de téléchargement, indépendant de la recherche/manifest
-enum DownloadActivityState {
-  idle,
-  downloading,
-  completed,
-  error,
-}
+enum DownloadActivityState { idle, downloading, completed, error }
 
 class DownloaderProvider with ChangeNotifier {
   final YoutubeExplode _yt = YoutubeExplode();
@@ -54,12 +44,14 @@ class DownloaderProvider with ChangeNotifier {
     notifyListeners();
     _savePrefs();
   }
+
   void setPreferMp4Output(bool value) {
     if (_preferMp4Output == value) return;
     _preferMp4Output = value;
     notifyListeners();
     _savePrefs();
   }
+
   static const String _prefsKeyShowMkv = 'downloader_show_mkv';
   static const String _prefsKeyPreferMp4 = 'downloader_prefer_mp4';
 
@@ -76,7 +68,10 @@ class DownloaderProvider with ChangeNotifier {
   String _ensureUniquePath(String path) {
     if (!File(path).existsSync()) return path;
     final directory = path.substring(0, path.lastIndexOf('/'));
-    final filename = path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.'));
+    final filename = path.substring(
+      path.lastIndexOf('/') + 1,
+      path.lastIndexOf('.'),
+    );
     final extension = path.substring(path.lastIndexOf('.'));
     int i = 1;
     while (File('$directory/$filename($i)$extension').existsSync()) {
@@ -116,6 +111,7 @@ class DownloaderProvider with ChangeNotifier {
     await sink.close();
     onReceive(totalBytes, totalBytes);
   }
+
   Future<void> _savePrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -126,10 +122,7 @@ class DownloaderProvider with ChangeNotifier {
 
   List<StreamInfo> get videoDownloadOptions {
     // Liste combinée
-    final List<StreamInfo> combined = [
-      ..._muxedStreams,
-      ..._videoOnlyStreams,
-    ];
+    final List<StreamInfo> combined = [..._muxedStreams, ..._videoOnlyStreams];
     // Tri par qualité décroissante, en priorisant les muxed pour une même qualité
     combined.sort((a, b) {
       int qa = 0;
@@ -180,14 +173,17 @@ class DownloaderProvider with ChangeNotifier {
       : '${(_bytesTotal / (1024 * 1024)).toStringAsFixed(2)} MB';
   String get speedText {
     if (_downloadStart == null) return '— MB/s';
-    final secs = DateTime.now().difference(_downloadStart!).inMilliseconds / 1000.0;
+    final secs =
+        DateTime.now().difference(_downloadStart!).inMilliseconds / 1000.0;
     if (secs <= 0) return '— MB/s';
     final mbPerSec = (_bytesReceived / secs) / (1024 * 1024);
     return mbPerSec.isFinite ? '${mbPerSec.toStringAsFixed(2)} MB/s' : '— MB/s';
   }
+
   String get etaText {
     if (_bytesTotal <= 0 || _downloadStart == null) return 'ETA —:—';
-    final secs = DateTime.now().difference(_downloadStart!).inMilliseconds / 1000.0;
+    final secs =
+        DateTime.now().difference(_downloadStart!).inMilliseconds / 1000.0;
     if (secs <= 0) return 'ETA —:—';
     final bytesPerSec = _bytesReceived / secs;
     if (bytesPerSec <= 0) return 'ETA —:—';
@@ -207,7 +203,8 @@ class DownloaderProvider with ChangeNotifier {
   DownloadActivityState _downloadActivity = DownloadActivityState.idle;
   DownloadActivityState get downloadActivity => _downloadActivity;
   bool get hasDownloadStatus =>
-      _downloadActivity != DownloadActivityState.idle || _lastOutputPath != null;
+      _downloadActivity != DownloadActivityState.idle ||
+      _lastOutputPath != null;
 
   Future<void> fetchVideoInfo(String url) async {
     if (url.trim().isEmpty) return;
@@ -226,7 +223,7 @@ class DownloaderProvider with ChangeNotifier {
       _muxedStreams = manifest.muxed.sortByVideoQuality();
       _audioStreams = manifest.audioOnly.sortByBitrate();
       _videoOnlyStreams = manifest.videoOnly.sortByVideoQuality();
-      
+
       _state = DownloaderState.success;
     } catch (e) {
       _state = DownloaderState.error;
@@ -260,13 +257,15 @@ class DownloaderProvider with ChangeNotifier {
             : (_videoOnlyStreams.isNotEmpty ? _videoOnlyStreams.first : null);
 
         // Si on préfère MP4, éviter un résultat MKV en rebasculant vers meilleur muxed
-        if (_preferMp4Output && stream is VideoOnlyStreamInfo && !willResultInMp4(stream)) {
+        if (_preferMp4Output &&
+            stream is VideoOnlyStreamInfo &&
+            !willResultInMp4(stream)) {
           if (_muxedStreams.isNotEmpty) {
             stream = _muxedStreams.first;
           }
         }
         break;
-      
+
       case '128k':
       case '256k':
         final bitrate = (preset == '128k') ? 128 : 256;
@@ -274,7 +273,7 @@ class DownloaderProvider with ChangeNotifier {
         stream = _audioStreams
             .where((s) => (s.bitrate.kiloBitsPerSecond - bitrate).abs() < 20)
             .firstOrNull;
-        
+
         // Fallback: Meilleur audio disponible
         if (stream == null && _audioStreams.isNotEmpty) {
           stream = _audioStreams.first;
@@ -286,7 +285,8 @@ class DownloaderProvider with ChangeNotifier {
       startDownload(stream);
     } else {
       _state = DownloaderState.error;
-      _errorMessage = "Aucun flux correspondant n'a pu être trouvé pour ce préréglage.";
+      _errorMessage =
+          "Aucun flux correspondant n'a pu être trouvé pour ce préréglage.";
       notifyListeners();
     }
   }
@@ -305,7 +305,10 @@ class DownloaderProvider with ChangeNotifier {
     }
   }
 
-  Future<void> startDownload(StreamInfo streamInfo, {AudioOnlyStreamInfo? preferredAudio}) async {
+  Future<void> startDownload(
+    StreamInfo streamInfo, {
+    AudioOnlyStreamInfo? preferredAudio,
+  }) async {
     if (_video == null) return;
 
     _downloadActivity = DownloadActivityState.downloading;
@@ -313,7 +316,8 @@ class DownloaderProvider with ChangeNotifier {
     _currentDownloadTitle = _video!.title;
     notifyListeners();
 
-    _notificationId = DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF; // ID 32-bit
+    _notificationId =
+        DateTime.now().millisecondsSinceEpoch & 0x7FFFFFFF; // ID 32-bit
 
     // S'assurer que les permissions de notification sont accordées (Android 13+)
     try {
@@ -327,7 +331,8 @@ class DownloaderProvider with ChangeNotifier {
 
     try {
       // Si vidéo seule, sélectionner automatiquement la meilleure piste audio disponible pour fusionner
-      final AudioOnlyStreamInfo? companionAudio = streamInfo is VideoOnlyStreamInfo
+      final AudioOnlyStreamInfo? companionAudio =
+          streamInfo is VideoOnlyStreamInfo
           ? (preferredAudio ?? _pickBestAudioFor(streamInfo))
           : null;
 
@@ -420,7 +425,9 @@ class DownloaderProvider with ChangeNotifier {
       final sanitizedTitle = _video!.title
           .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
           .replaceAll(RegExp(r'\s+'), '_');
-      final tempIn = _ensureUniquePath('${downloadsDir.path}/${sanitizedTitle}_src.${source.container.name}');
+      final tempIn = _ensureUniquePath(
+        '${downloadsDir.path}/${sanitizedTitle}_src.${source.container.name}',
+      );
 
       await NotificationService.instance.startProgress(
         _notificationId!,
@@ -437,11 +444,14 @@ class DownloaderProvider with ChangeNotifier {
           cancelToken: _cancelToken!,
           onReceive: (received, total) {
             _updateProgressUI(received, total);
-            final percent = (received * 100 ~/ (total == 0 ? 1 : total)).clamp(0, 100);
-          NotificationService.instance.updateProgress(
+            final percent = (received * 100 ~/ (total == 0 ? 1 : total)).clamp(
+              0,
+              100,
+            );
+            NotificationService.instance.updateProgress(
               _notificationId!,
               title: 'Téléchargement $percent%',
-            body: '${_bytesToMBText(received)} / ${_bytesToMBText(total)} MB',
+              body: '${_bytesToMBText(received)} / ${_bytesToMBText(total)} MB',
               progress: percent,
               maxProgress: 100,
             );
@@ -456,7 +466,9 @@ class DownloaderProvider with ChangeNotifier {
       }
 
       // 2) Convertir en MP3 via FFmpegKit
-      final tempOut = _ensureUniquePath('${downloadsDir.path}/${sanitizedTitle}.mp3');
+      final tempOut = _ensureUniquePath(
+        '${downloadsDir.path}/$sanitizedTitle.mp3',
+      );
       await NotificationService.instance.updateProgress(
         _notificationId!,
         title: 'Conversion MP3...',
@@ -465,7 +477,9 @@ class DownloaderProvider with ChangeNotifier {
         maxProgress: 100,
       );
 
-      final session = await FFmpegKit.execute('-y -hide_banner -loglevel info -i "$tempIn" -vn -c:a libmp3lame -q:a 2 "$tempOut"');
+      final session = await FFmpegKit.execute(
+        '-y -hide_banner -loglevel info -i "$tempIn" -vn -c:a libmp3lame -q:a 2 "$tempOut"',
+      );
       final returnCode = await session.getReturnCode();
       if (!ReturnCode.isSuccess(returnCode)) {
         final logs = await session.getAllLogs();
@@ -481,7 +495,7 @@ class DownloaderProvider with ChangeNotifier {
       // 3) Déplacer vers Téléchargements et terminer
       final savedPath = await DownloadsSaver.saveFileToDownloads(
         tempOut,
-        displayName: '${sanitizedTitle}.mp3',
+        displayName: '$sanitizedTitle.mp3',
       );
 
       _lastOutputPath = savedPath;
@@ -517,6 +531,7 @@ class DownloaderProvider with ChangeNotifier {
       }
       return 2;
     }
+
     candidates.sort((a, b) {
       final pa = pref(a);
       final pb = pref(b);
@@ -541,8 +556,6 @@ class DownloaderProvider with ChangeNotifier {
       return ext == 'm4a' || ext == 'aac' || ext == 'mp4';
     });
   }
-
-  
 
   void cancelDownload() {
     _cancelToken?.cancel();

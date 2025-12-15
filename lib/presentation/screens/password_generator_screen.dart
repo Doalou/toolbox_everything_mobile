@@ -101,8 +101,9 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
   }
 
   String get _strengthIndicator {
-    if (_password.isEmpty || _password == 'Sélectionnez au moins une option')
+    if (_password.isEmpty || _password == 'Sélectionnez au moins une option') {
       return '';
+    }
 
     int score = 0;
     if (_password.length >= 8) score++;

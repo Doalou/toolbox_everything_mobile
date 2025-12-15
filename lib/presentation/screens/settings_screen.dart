@@ -252,7 +252,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return MediaQuery(
                       data: MediaQuery.of(
                         context,
-                      ).copyWith(textScaleFactor: 1.0),
+                      ).copyWith(textScaler: TextScaler.linear(1.0)),
                       child: SegmentedButton<ThemeMode>(
                         segments: [
                           const ButtonSegment(

@@ -18,7 +18,6 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     with TickerProviderStateMixin {
   bool _isTesting = false;
   bool _hasInternet = false;
-  String _ipAddress = 'Non détecté';
   String _ipv4 = 'Non détecté';
   String _ipv6 = 'Non détecté';
   String _location = 'Non détecté';
@@ -80,7 +79,6 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     setState(() {
       _isTesting = true;
       _hasInternet = false;
-      _ipAddress = 'Test en cours...';
       _ipv4 = 'Test en cours...';
       _ipv6 = 'Test en cours...';
       _location = 'Test en cours...';
@@ -143,7 +141,6 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
           _hasInternet = true;
           _ipv4 = ipv4;
           _ipv6 = ipv6;
-          _ipAddress = 'IPv4: $ipv4\nIPv6: $ipv6';
           _location = ipInfo['location'] ?? 'Non détecté';
           _isp = ipInfo['isp'] ?? 'Non détecté';
           _pingTime = pingTime;
@@ -156,7 +153,6 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
         setState(() {
           _isTesting = false;
           _hasInternet = false;
-          _ipAddress = 'Erreur de connexion';
           _location = 'Non disponible';
           _isp = 'Non disponible';
           _pingTime = 0.0;

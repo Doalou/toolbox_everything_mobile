@@ -16,9 +16,9 @@ class VideoInfoCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: 0,
-       shape: RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-         side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -29,7 +29,7 @@ class VideoInfoCard extends StatelessWidget {
               video.thumbnails.highResUrl,
               height: 180,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, e, st) => Container(
                 height: 180,
                 color: colorScheme.surfaceContainer,
                 alignment: Alignment.center,
@@ -70,7 +70,6 @@ class DownloadOptions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DownloaderProvider>();
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -132,8 +131,11 @@ class DownloadOptions extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 trailing: Switch.adaptive(
-                  value: context.select((DownloaderProvider p) => p.showMkvOutputs),
-                  onChanged: (v) => context.read<DownloaderProvider>().setShowMkvOutputs(v),
+                  value: context.select(
+                    (DownloaderProvider p) => p.showMkvOutputs,
+                  ),
+                  onChanged: (v) =>
+                      context.read<DownloaderProvider>().setShowMkvOutputs(v),
                 ),
               ),
               Padding(
@@ -147,8 +149,12 @@ class DownloadOptions extends StatelessWidget {
                         children: [
                           FilterChip(
                             label: const Text('Préférer MP4'),
-                            selected: context.select((DownloaderProvider p) => p.preferMp4Output),
-                            onSelected: (v) => context.read<DownloaderProvider>().setPreferMp4Output(v),
+                            selected: context.select(
+                              (DownloaderProvider p) => p.preferMp4Output,
+                            ),
+                            onSelected: (v) => context
+                                .read<DownloaderProvider>()
+                                .setPreferMp4Output(v),
                           ),
                           const FilterChip(
                             label: Text('Fusion FFmpeg activée'),
@@ -188,6 +194,7 @@ class DownloadOptions extends StatelessWidget {
     if (lower.contains('mp3') || lower.contains('lame')) return 'MP3';
     return raw.isEmpty ? 'codec?' : raw;
   }
+
   Widget _buildStreamCard(
     BuildContext context, {
     required String title,
@@ -198,9 +205,9 @@ class DownloadOptions extends StatelessWidget {
 
     return Card(
       elevation: 0,
-       shape: RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-         side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
       ),
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ExpansionTile(
@@ -217,21 +224,29 @@ class DownloadOptions extends StatelessWidget {
               // Some versions expose codec info on the stream object
               // ignore: unnecessary_cast
               final dynamic anyStream = stream as dynamic;
-              codecLabel = (anyStream.videoCodec?.toString() ?? anyStream.codec?.toString());
+              codecLabel =
+                  (anyStream.videoCodec?.toString() ??
+                  anyStream.codec?.toString());
             } catch (_) {
               codecLabel = null;
             }
             if (stream is VideoOnlyStreamInfo) {
               trailingIcon = Tooltip(
                 message: 'Fusion requise avec une piste audio',
-                child: Icon(Icons.merge_type, size: 20, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                child: Icon(
+                  Icons.merge_type,
+                  size: 20,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                ),
               );
             }
           } else if (stream is AudioOnlyStreamInfo) {
             quality = '${(stream.bitrate.kiloBitsPerSecond).round()}kbps';
             try {
               final dynamic anyStream = stream as dynamic;
-              codecLabel = (anyStream.audioCodec?.toString() ?? anyStream.codec?.toString());
+              codecLabel =
+                  (anyStream.audioCodec?.toString() ??
+                  anyStream.codec?.toString());
             } catch (_) {
               codecLabel = null;
             }
@@ -240,27 +255,39 @@ class DownloadOptions extends StatelessWidget {
           return InkWell(
             onTap: () async {
               final provider = context.read<DownloaderProvider>();
-          // Sur Web, le provider lèvera une erreur via le stub
+              // Sur Web, le provider lèvera une erreur via le stub
               if (stream is VideoOnlyStreamInfo) {
                 // Si vidéo seule, proposer un sélecteur de piste audio
-                final audio = await _pickAudioStream(context, provider.audioStreams);
+                final audio = await _pickAudioStream(
+                  context,
+                  provider.audioStreams,
+                );
                 if (audio != null) {
                   // ignore: use_build_context_synchronously
-                  await provider.startMergedDownload(video: stream, audio: audio);
+                  await provider.startMergedDownload(
+                    video: stream,
+                    audio: audio,
+                  );
                 }
               } else {
                 await provider.startDownload(stream);
               }
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 12.0,
+              ),
               child: Row(
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(quality, style: const TextStyle(fontWeight: FontWeight.w500)),
+                        Text(
+                          quality,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           '${stream.container.name.toUpperCase()} • ${(codecLabel ?? 'codec?')} • ${(stream.size.totalMegaBytes).toStringAsFixed(2)} MB',
@@ -295,9 +322,9 @@ class DownloadOptions extends StatelessWidget {
     // Ajoute une option MP3 virtuelle: on convertira l'audio choisi en MP3 via FFmpeg
     return Card(
       elevation: 0,
-       shape: RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-         side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
       ),
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ExpansionTile(
@@ -308,7 +335,8 @@ class DownloadOptions extends StatelessWidget {
             final codecLabel = () {
               try {
                 final dynamic any = a as dynamic;
-                final raw = (any.audioCodec?.toString() ?? any.codec?.toString() ?? '');
+                final raw =
+                    (any.audioCodec?.toString() ?? any.codec?.toString() ?? '');
                 return _shortAudioCodec(raw);
               } catch (_) {
                 return 'codec?';
@@ -319,14 +347,20 @@ class DownloadOptions extends StatelessWidget {
                 await context.read<DownloaderProvider>().startDownload(a);
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 12.0,
+                ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('${a.bitrate.kiloBitsPerSecond.round()} kbps', style: const TextStyle(fontWeight: FontWeight.w500)),
+                          Text(
+                            '${a.bitrate.kiloBitsPerSecond.round()} kbps',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
                           const SizedBox(height: 2),
                           Text(
                             '${a.container.name.toUpperCase()} • $codecLabel • ${(a.size.totalMegaBytes).toStringAsFixed(2)} MB',
@@ -346,7 +380,9 @@ class DownloadOptions extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.library_music),
             title: const Text('Exporter en MP3'),
-            subtitle: const Text('Convertit la meilleure piste audio en MP3 via FFmpeg'),
+            subtitle: const Text(
+              'Convertit la meilleure piste audio en MP3 via FFmpeg',
+            ),
             onTap: () async {
               final provider = context.read<DownloaderProvider>();
               if (streams.isEmpty) return;
@@ -385,10 +421,13 @@ class DownloadOptions extends StatelessWidget {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: audios.length,
-                  separatorBuilder: (_, __) => Divider(color: colorScheme.outlineVariant.withValues(alpha: 0.2)),
+                  separatorBuilder: (_, i) => Divider(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.2),
+                  ),
                   itemBuilder: (_, index) {
                     final a = audios[index];
-                    final label = '${a.container.name.toUpperCase()} • ${a.bitrate.kiloBitsPerSecond.round()} kbps • ${(a.size.totalMegaBytes).toStringAsFixed(2)} MB';
+                    final label =
+                        '${a.container.name.toUpperCase()} • ${a.bitrate.kiloBitsPerSecond.round()} kbps • ${(a.size.totalMegaBytes).toStringAsFixed(2)} MB';
                     return ListTile(
                       leading: const Icon(Icons.audiotrack),
                       title: Text(label),
@@ -412,14 +451,16 @@ class DownloadProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DownloaderProvider>();
-    
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
-       shape: RoundedRectangleBorder(
-         borderRadius: BorderRadius.circular(12),
-         side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
-       ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -459,7 +500,8 @@ class DownloadProgressIndicator extends StatelessWidget {
                 Text('${(provider.progress * 100).toStringAsFixed(0)}%'),
                 const SizedBox(width: 8),
                 TextButton.icon(
-                  onPressed: () => context.read<DownloaderProvider>().cancelDownload(),
+                  onPressed: () =>
+                      context.read<DownloaderProvider>().cancelDownload(),
                   icon: const Icon(Icons.cancel),
                   label: const Text('Annuler'),
                   style: TextButton.styleFrom(
@@ -488,10 +530,10 @@ class CompletedDownloadCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-       shape: RoundedRectangleBorder(
-         borderRadius: BorderRadius.circular(16),
-         side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
-       ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: LayoutBuilder(
@@ -548,7 +590,8 @@ class CompletedDownloadCard extends StatelessWidget {
                         label: const Text('Ouvrir'),
                       ),
                       OutlinedButton.icon(
-                        onPressed: () => context.read<DownloaderProvider>().clear(),
+                        onPressed: () =>
+                            context.read<DownloaderProvider>().clear(),
                         icon: const Icon(Icons.close),
                         label: const Text('Fermer'),
                       ),

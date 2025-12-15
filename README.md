@@ -1,25 +1,23 @@
 # 🧰 Toolbox Everything Mobile
 
-**Version 1.0.0** - Votre boîte à outils numérique complète et moderne
+**Version 1.1.0** - Votre boîte à outils numérique complète et moderne
 
 Une application Flutter élégante qui regroupe tous vos outils numériques essentiels en une seule application. Conçue avec Material Design 3 et optimisée pour une expérience utilisateur exceptionnelle.
 
-## 🆕 Dernières mises à jour (v1.0.0)
+## 🆕 Dernières mises à jour (v1.1.0)
+
+### ✨ Nouvelles fonctionnalités
+- **🎨 Sélecteur de couleurs** : Roue chromatique, export HEX/RGB/RGBA/HSL, historique persistant des couleurs
+- **🔐 Encodeur/Décodeur** : Base64, URL, HTML entities, Hexadécimal avec toggle encode ↔ decode
+
+### 🚀 Migration Flutter 3.38 / Dart 3.10
+- SDK mis à jour vers Dart 3.10.0
+- Modernisation du code Flutter (nouvelles APIs, dépréciations corrigées)
 
 ### 🔧 Corrections techniques
 - **Téléchargeur de médias** : Correction du plugin obsolète `open_file_plus` → `open_file: ^3.5.10`
 - **Compatibilité Android** : Résolution des erreurs de compilation liées à l'API Flutter moderne
 - **Build Web** : évite les échecs liés aux imports `dart:io`/FFmpeg sur le Web via un stub conditionnel
-
-### 🎨 Améliorations interface
-- **Design épuré** : Suppression des éléments distractifs (Quick Stats, badges)
-- **Interface plus propre** : Navigation directe vers les outils
-- **Performance optimisée** : Code plus léger et interface plus fluide
-
-### 📥 Téléchargements (Android)
-- Sauvegarde automatique des fichiers dans le dossier **Downloads** (MediaStore API 29+), fallback pré‑29
-- Création explicite du canal de notifications `downloads_channel`
-- Affichage détaillé de la progression (Mo/total, MB/s, ETA)
 
 ## ✨ Fonctionnalités
 
@@ -27,12 +25,14 @@ Une application Flutter élégante qui regroupe tous vos outils numériques esse
 - **Générateur de mots de passe** avec indicateur de force et options avancées
 - **Calculateur de hash** (MD5, SHA256, SHA512) pour texte et hexadécimal
 - **Générateur QR Code** avec scanner intégré
+- **Encodeur/Décodeur** Base64, URL, HTML, Hexadécimal
 
 ### 🔧 Utilitaires
 - **Convertisseur d'unités** (longueur, poids, température, données)
 - **Convertisseur de nombres** (binaire, décimal, hexadécimal, octal)
 - **Convertisseur de fichiers** (JSON ↔ YAML, CSV, XML)
 - **Téléchargeur YouTube** avec support audio et vidéo
+- **Sélecteur de couleurs** avec export HEX/RGB/RGBA/HSL
 
 ### 📱 Outils mobiles
 - **Boussole** avec interface moderne et direction précise

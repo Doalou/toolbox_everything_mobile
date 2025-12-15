@@ -26,9 +26,9 @@ class _TimerScreenState extends State<TimerScreen> {
   int? _timerEndEpochMs; // pour restauration/background
 
   // Stopwatch variables
-  Stopwatch _stopwatch = Stopwatch();
+  final Stopwatch _stopwatch = Stopwatch();
   String _stopwatchDisplay = '00:00:00';
-  List<String> _laps = [];
+  final List<String> _laps = [];
   int _stopwatchBaseMs = 0; // accumulation quand l'écran est quitté
   int? _stopwatchStartEpochMs; // pour restauration
 
@@ -292,7 +292,6 @@ class _TimerScreenState extends State<TimerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

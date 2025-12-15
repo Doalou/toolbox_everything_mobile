@@ -236,7 +236,7 @@ class UnitConverterScreenState extends State<UnitConverterScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DropdownButtonFormField<Unit>(
-          value: isFrom ? _fromUnit : _toUnit,
+          initialValue: isFrom ? _fromUnit : _toUnit,
           items: _selectedCategory.units.map((unit) {
             return DropdownMenuItem(value: unit, child: Text(unit.name));
           }).toList(),
