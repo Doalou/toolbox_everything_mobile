@@ -22,14 +22,12 @@ class DownloadsSaver {
       // Pré-Android 10: requiert la permission WRITE_EXTERNAL_STORAGE
       // Sur les versions récentes, cette permission est ignorée, l'appel est no-op.
       await Permission.storage.request();
-      final String? saved = await _channel.invokeMethod<String>(
-        'saveToDownloads',
-        {
-          'sourcePath': sourcePath,
-          'displayName': displayName,
-          'mimeType': mimeType ?? _guessMimeType(displayName),
-        },
-      );
+      final String? saved = await _channel
+          .invokeMethod<String>('saveToDownloads', {
+            'sourcePath': sourcePath,
+            'displayName': displayName,
+            'mimeType': mimeType ?? _guessMimeType(displayName),
+          });
       if (deleteOriginal) {
         try {
           final file = File(sourcePath);
@@ -45,7 +43,10 @@ class DownloadsSaver {
     }
   }
 
-  static Future<void> openSaved(String savedPathOrUri, {String? mimeType}) async {
+  static Future<void> openSaved(
+    String savedPathOrUri, {
+    String? mimeType,
+  }) async {
     // Android: si c'est une URI content://, demander au canal d'ouvrir
     if (Platform.isAndroid && savedPathOrUri.startsWith('content://')) {
       try {
@@ -75,5 +76,3 @@ class DownloadsSaver {
     return 'application/octet-stream';
   }
 }
-
-

@@ -459,7 +459,7 @@ $html
 
   Future<void> _pickFile() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['txt', 'json', 'yaml', 'yml', 'csv', 'md', 'html'],
       );
@@ -757,7 +757,6 @@ $html
   }
 
   Widget _buildConvertButton() {
-
     return AnimatedBuilder(
       animation: _convertAnimation,
       builder: (context, child) {

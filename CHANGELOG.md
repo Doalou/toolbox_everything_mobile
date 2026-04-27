@@ -5,7 +5,87 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2025-12-15
+## [0.3.0] - 2026-04-27
+
+> Refonte UI majeure autour de **Material 3 Expressive**.
+> L'application cible désormais **uniquement Android et iOS**.
+
+### Ajouté
+
+- **Design system Material 3 Expressive** isolé dans `lib/core/design/` :
+  - `expressive_motion.dart` — tokens de durée et courbes (springs, emphasized, effects).
+  - `expressive_shapes.dart` — système de formes (rayons, formes asymétriques signature M3E, pill, dialog, bottom sheet).
+  - `expressive_tokens.dart` — espacements, élévations, palette `ExpressivePalette` plus saturée.
+  - `app_theme.dart` — `buildExpressiveTheme()`, builder pur de `ThemeData` (testable).
+- **6 nouveaux outils Essentiels**, tous offline / locaux :
+  - **JSON Formatter** (formater / minifier, indent 2 ou 4).
+  - **UUID v4** (génération en lot 1–100, validation, copie groupée).
+  - **Timestamp** (epoch s/ms ↔ ISO 8601 / local / UTC, horloge live).
+  - **JWT Decoder** (header / payload / signature, sans vérif. crypto, alerte d'expiration).
+  - **Regex tester** (multi-ligne, sensibilité casse, dot-all, jusqu'à 50 matchs affichés).
+  - **Diff texte** (LCS classique, ajouts / suppressions, surlignage).
+- **Widgets partagés** dans `lib/shared/widgets/` :
+  - `ExpressiveCard` (+ variante `hero` à coins asymétriques).
+  - `ExpressiveActionButton` (bouton pill avec spring sur la pression).
+  - `ExpressiveSectionHeader`, `StatusBadge` (Local, Offline, Bêta, Permission…), `StatusBanner`.
+  - `ExpressiveToolCard` — nouvelle carte d'outil avec spring + icône en bulle pill colorée.
+- **Feature flags** dans `lib/core/feature_flags/app_feature_flags.dart`
+  (toggles store-friendly pour le téléchargeur YouTube, FFmpeg, capteurs, outils expérimentaux…).
+- **Catalogue d'outils centralisé** (`lib/core/tool_catalog.dart`) avec catégories
+  (Capteurs, Convertisseurs, Essentiels, Média, Réseau, Productivité), sous-titres, tags.
+- **Tests unitaires** pour les 6 nouveaux services (`test/services/`, 33 cas).
+
+### Modifié
+
+- **Dashboard refondu** (`home_screen.dart`) :
+  - `SliverAppBar.large` avec fond expressif léger et titre épuré.
+  - Haut d'accueil simplifié autour de `Toolbox Everything`, avec `Toolbox`
+    en dégradé `#5c6ff4` → `#e870c2`.
+  - Bandeau favoris horizontal scrollable.
+  - Sections groupées par catégorie avec en-têtes expressifs.
+  - `SearchBar` Material 3 native (pill).
+  - Stagger d'apparition basé sur les courbes M3 Expressive (`emphasizedDecelerate`).
+- **Téléchargeur YouTube** : écran reconstruit autour d'un flux guidé
+  (analyse d'URL, états vides/erreur/progression, actions rapides, préférences
+  de sortie et sections audio/vidéo détaillées).
+- **Identité visuelle** : nouveaux assets Toolbox Everything pour l'icône launcher,
+  le splash screen avec wordmark et la bannière.
+- **Assets natifs** : icône applicative générée sur `launcher_icon`, splash Android/iOS
+  recalibré aux tailles natives (Android 12 1152x1152 + branding 800x320, iOS
+  160 pt + branding 250x100 pt), `roundIcon` Android aligné sur `launcher_icon`;
+  les `ic_launcher.png` Flutter historiques restent inchangés.
+- **Thème** : `ThemeProvider` allégé, délègue désormais à `buildExpressiveTheme`.
+  Page transitions `PredictiveBackPageTransitionsBuilder` (Android) /
+  `CupertinoPageTransitionsBuilder` (iOS), boutons en `StadiumBorder` (pill),
+  inputs containerHighest, FAB rayon 16, NavigationBar 72 dp, slider M3E (track 12),
+  sheets et dialogs en rayons larges.
+- **Bump dépendances (patches & minor sûrs)** :
+  - `cupertino_icons` 1.0.8 → 1.0.9
+  - `clipboard` 3.0.8 → 3.0.14
+  - `mobile_scanner` 7.0.1 → 7.2.0
+  - `file_picker` 10.3.7 → 11.0.2
+  - `lottie` 3.3.1 → 3.3.3
+  - `package_info_plus` 9.0.0 → 9.0.1
+  - `shared_preferences` 2.5.3 → 2.5.5
+  - `flutter_local_notifications` 19.4.0 → 21.0.0
+  - `animate_do` 4.2.0 → 5.1.0
+  - `open_file` 3.5.10 → 3.5.11
+  - `connectivity_plus` 7.0.0 → 7.1.1 (ajout du cas `ConnectivityResult.satellite`).
+- **Compatibilité APIs post-bump** : appels `flutter_local_notifications` migrés
+  vers les paramètres nommés de la v21 et `file_picker` vers l'API statique v11.
+- **Toolchain** : projet aligné sur Flutter 3.41.7 stable et Dart 3.11.5
+  (`environment.sdk` mis à `^3.11.0`), NDK Android aligné sur `28.2.13676358`
+  pour satisfaire `jni`.
+
+### Retiré
+
+- Plateformes **Linux**, **Windows**, **macOS** et **Web** : l'application n'est plus livrée que sur
+  **Android** et **iOS**.
+- `lib/presentation/widgets/tool_card.dart` (remplacé par `lib/shared/widgets/tool_card.dart`).
+- `lib/core/services/download_service_universal.dart` et `download_service_stub.dart`
+  (export conditionnel web inutilisé sur mobile).
+
+## [0.2.6] - 2025-12-15
 
 ### Ajouté
 - **Sélecteur de couleurs avancé** : Nouvel outil avec roue chromatique, export HEX/RGB/RGBA/HSL, et historique des 12 dernières couleurs (persistant).
@@ -41,7 +121,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [1.0.0] - 2025-08-25
+## [0.2.5] - 2025-08-25
 
 ### Ajouté
 - **Support du Predictive Back Gesture** : Intégration complète de la navigation gestuelle prédictive d'Android 16+ pour une expérience fluide.

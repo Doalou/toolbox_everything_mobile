@@ -1,142 +1,167 @@
 # 🧰 Toolbox Everything Mobile
 
-**Version 1.1.0** - Votre boîte à outils numérique complète et moderne
+Votre boîte à outils numérique, locale-first et mobile-only.
 
-Une application Flutter élégante qui regroupe tous vos outils numériques essentiels en une seule application. Conçue avec Material Design 3 et optimisée pour une expérience utilisateur exceptionnelle.
+Application **Flutter** Material 3 Expressive qui regroupe une vingtaine d'outils
+utiles au quotidien : générateur de mots de passe, QR code, hash, JWT decoder,
+formateur JSON, regex tester, capteurs, téléchargeur YouTube, conversion média,
+diff texte, etc.
 
-## 🆕 Dernières mises à jour (v1.1.0)
+> 🎯 **Local-first.** La plupart des outils fonctionnent **sans Internet**, sans
+> compte, sans backend. Les flux qui sortent de cette règle sont marqués
+> explicitement (« Réseau »).
 
-### ✨ Nouvelles fonctionnalités
-- **🎨 Sélecteur de couleurs** : Roue chromatique, export HEX/RGB/RGBA/HSL, historique persistant des couleurs
-- **🔐 Encodeur/Décodeur** : Base64, URL, HTML entities, Hexadécimal avec toggle encode ↔ decode
-
-### 🚀 Migration Flutter 3.38 / Dart 3.10
-- SDK mis à jour vers Dart 3.10.0
-- Modernisation du code Flutter (nouvelles APIs, dépréciations corrigées)
-
-### 🔧 Corrections techniques
-- **Téléchargeur de médias** : Correction du plugin obsolète `open_file_plus` → `open_file: ^3.5.10`
-- **Compatibilité Android** : Résolution des erreurs de compilation liées à l'API Flutter moderne
-- **Build Web** : évite les échecs liés aux imports `dart:io`/FFmpeg sur le Web via un stub conditionnel
-
-## ✨ Fonctionnalités
-
-### 🔐 Sécurité & Cryptographie
-- **Générateur de mots de passe** avec indicateur de force et options avancées
-- **Calculateur de hash** (MD5, SHA256, SHA512) pour texte et hexadécimal
-- **Générateur QR Code** avec scanner intégré
-- **Encodeur/Décodeur** Base64, URL, HTML, Hexadécimal
-
-### 🔧 Utilitaires
-- **Convertisseur d'unités** (longueur, poids, température, données)
-- **Convertisseur de nombres** (binaire, décimal, hexadécimal, octal)
-- **Convertisseur de fichiers** (JSON ↔ YAML, CSV, XML)
-- **Téléchargeur YouTube** avec support audio et vidéo
-- **Sélecteur de couleurs** avec export HEX/RGB/RGBA/HSL
-
-### 📱 Outils mobiles
-- **Boussole** avec interface moderne et direction précise
-- **Niveau à bulle** utilisant les capteurs du téléphone
-- **Minuteur** avec alarmes et notifications
-
-### 📝 Productivité
-- **Bloc-notes** avec sauvegarde automatique
-- **Générateur Lorem Ipsum** personnalisable
-- **Gestionnaire de paramètres** avec thèmes multiples
-
-## 🎨 Design & Interface
-
-### Material Design 3
-- **Interface moderne** avec couleurs expressives
-- **Thème sombre/clair** adaptatif
-- **Animations fluides** et transitions élégantes
-- **Accessibilité** optimisée avec labels sémantiques
-
-### Couleurs expressives
-8 palettes de couleurs dynamiques :
-- Violet principal (#6750A4)
-- Rose dynamique (#E91E63)
-- Cyan moderne (#00BCD4)
-- Vert nature (#4CAF50)
-- Orange énergique (#FF9800)
-- Violet créatif (#9C27B0)
-- Bleu technologique (#2196F3)
-- Rouge passion (#FF5722)
+---
 
 ## 📱 Plateformes supportées
 
-- ✅ **Android** (API 21+)
-- ✅ **iOS** (iOS 12+)
-- ✅ **Windows** (Windows 10+)
-- ✅ **macOS** (macOS 10.14+)
-- ✅ **Linux** (Ubuntu 18.04+)
-- ✅ **Web** (PWA support)
+| Plateforme | Statut | Notes                                                  |
+|------------|:------:|--------------------------------------------------------|
+| Android    | ✅      | API 21+ (Android 5.0).                                 |
+| iOS        | ✅      | iOS 13+.                                               |
+| Desktop    | ❌      | Linux/Windows/macOS retirés en 0.3.0.                  |
+
+L'application est pensée **mobile-first**. Les écrans s'adaptent aussi aux
+tablettes Android et iPad, mais la priorité de design est le smartphone.
+
+## ✨ Outils inclus (V1)
+
+### Essentiels
+- Générateur de mots de passe (force visuelle, options avancées).
+- QR Code (générer + scanner + copier image).
+- Calculateur Hash (MD5, SHA-1, SHA-256, SHA-512).
+- Encodeur / Décodeur (Base64, URL, HTML, Hexadécimal).
+- **JSON Formatter** — formater / minifier (nouveau en 0.3.0).
+- **UUID v4** — génération en lot, validation (nouveau en 0.3.0).
+- **Timestamp** — epoch ↔ ISO 8601 / local / UTC, horloge live (nouveau en 0.3.0).
+- **JWT Decoder** — header / payload / signature, sans vérif. crypto (nouveau en 0.3.0).
+- **Regex tester** — multi-ligne, casse, dot-all (nouveau en 0.3.0).
+- **Diff texte** — comparaison ligne à ligne LCS (nouveau en 0.3.0).
+- Lorem Ipsum, sélecteur de couleurs.
+
+### Convertisseurs
+- Unités (longueur, poids, température, volume, vitesse, surface, temps, données).
+- Binaire / Hexadécimal / Décimal / Texte.
+
+### Capteurs (Android / iOS uniquement)
+- Boussole (`flutter_compass`).
+- Niveau à bulle (`sensors_plus`).
+
+### Média
+- Conversion de fichiers (JSON ↔ YAML ↔ CSV, Markdown ↔ HTML, export PDF).
+- Téléchargeur YouTube audio + vidéo (`youtube_explode_dart` + FFmpeg local).
+
+### Réseau
+- Test connexion : type (Wi-Fi / mobile / Ethernet / Satellite / VPN…), latence
+  HTTP, infos publiques.
+
+### Productivité
+- Bloc-notes local, Minuteur.
+
+> Les outils peuvent être désactivés au build via `lib/core/feature_flags/app_feature_flags.dart`
+> — utile pour respecter une politique store sans cacher l'app entière.
+
+## 🎨 Design — Material 3 Expressive
+
+L'application embarque un **design system M3 Expressive** custom, isolé dans
+`lib/core/design/` :
+
+- `expressive_motion.dart` — durées et courbes (springs, emphasized, effects).
+- `expressive_shapes.dart` — système de formes (rayons, formes asymétriques
+  signature M3E, pill, dialog, bottom sheet).
+- `expressive_tokens.dart` — espacements, élévations, palette saturée.
+- `app_theme.dart` — `buildExpressiveTheme()` : builder pur de `ThemeData`,
+  testable.
+
+L'app supporte :
+
+- thème clair / sombre / système ;
+- couleurs dynamiques (`dynamic_color`) sur Android 12+ ;
+- mode AMOLED noir pur ;
+- transitions natives `PredictiveBackPageTransitionsBuilder` (Android) et
+  `CupertinoPageTransitionsBuilder` (iOS).
+
+Les widgets partagés (`lib/shared/widgets/`) reproduisent l'esprit M3 Expressive
+sans dépendance tierce : `ExpressiveCard` (+ variante hero asymétrique),
+`ExpressiveActionButton` (pill avec spring), `ExpressiveSectionHeader`,
+`StatusBadge`, `StatusBanner`, `ExpressiveToolCard`.
 
 ## 🚀 Installation
 
 ### Prérequis
-- Flutter SDK 3.8.1+
-- Dart 3.0+
-- Android Studio / VS Code
-- Git
+- Flutter SDK 3.41+ (Dart 3.11+).
+- Android Studio / Xcode pour le build natif.
 
-### Étapes d'installation
+### Démarrer
 
-1. **Cloner le projet**
 ```bash
 git clone https://github.com/Doalou/toolbox_everything_mobile.git
 cd toolbox_everything_mobile
-```
-
-2. **Installer les dépendances**
-```bash
 flutter pub get
 ```
 
-3. **Configurer les plateformes**
-```bash
-# Pour Android
-flutter config --android-studio-dir <path-to-android-studio>
+### Lancer
 
-# Pour iOS (macOS uniquement)
-cd ios && pod install && cd ..
-```
-
-4. **Lancer l'application**
 ```bash
-# Mode debug
+# Émulateur ou appareil branché
 flutter run
 
-# Mode release
-flutter run --release
-
-# Pour une plateforme spécifique
-flutter run -d windows
-flutter run -d macos
-flutter run -d chrome
+# Choisir explicitement
+flutter devices
+flutter run -d <device-id>
 ```
 
-## 🏗️ Architecture du projet
+### Tests & qualité
+
+```bash
+flutter analyze
+flutter test
+dart format lib test
+```
+
+### Build release
+
+```bash
+# Android — App Bundle pour Play Store
+flutter build appbundle --release
+
+# iOS — archive ouverte ensuite dans Xcode
+flutter build ios --release
+```
+
+## 🏗️ Architecture
 
 ```
 lib/
 ├── core/
-│   ├── constants/         # Constantes de l'application
-│   ├── models/           # Modèles de données
-│   ├── providers/        # Gestionnaires d'état (Provider)
-│   └── services/         # Services métier
+│   ├── constants/         # AppConstants (alias vers les tokens design)
+│   ├── design/            # Design system M3 Expressive (tokens, motion, shapes, theme)
+│   ├── feature_flags/     # Toggles store-friendly
+│   ├── models/            # ToolItem + ToolCategory
+│   ├── providers/         # Provider (theme, settings, downloader)
+│   ├── services/          # Services purs : json, uuid, jwt, timestamp, regex, diff, etc.
+│   └── tool_catalog.dart  # Liste centralisée des outils
 ├── presentation/
-│   ├── screens/          # Écrans de l'application
-│   ├── widgets/          # Widgets réutilisables
-│   └── theme/           # Configuration des thèmes
-└── main.dart            # Point d'entrée
+│   ├── navigation/        # Helpers de navigation
+│   ├── screens/           # Écrans (un par outil)
+│   │   └── essentials/    # Sous-dossier pour les nouveaux outils 0.3.0
+│   └── widgets/           # Widgets historiques (error_state, downloader)
+├── shared/
+│   └── widgets/           # Composants expressifs réutilisables
+└── main.dart              # Bootstrap (providers + MaterialApp)
+
+test/
+├── services/              # 6 suites unitaires pour les nouveaux services
+└── widget_test.dart       # Smoke test
 ```
 
-## 🔧 Configuration
+Les services métier sont **purs** (aucune dépendance Flutter) — ils sont
+testables en isolation.
 
-### Permissions requises
+## 🔐 Permissions
 
-#### Android (`android/app/src/main/AndroidManifest.xml`)
+Android (`android/app/src/main/AndroidManifest.xml`) :
+
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -144,204 +169,27 @@ lib/
 <uses-permission android:name="android.permission.VIBRATE" />
 ```
 
-#### iOS (`ios/Runner/Info.plist`)
+iOS (`ios/Runner/Info.plist`) :
+
 ```xml
 <key>NSCameraUsageDescription</key>
-<string>Pour scanner les codes QR</string>
-<key>NSMicrophoneUsageDescription</key>
-<string>Pour les fonctionnalités audio</string>
+<string>Pour scanner les codes QR.</string>
 ```
 
-## 📦 Dépendances principales
+## 📦 Dépendances clés
 
-### Interface & État
-- **`provider`** - Gestion d'état
-- **`dynamic_color`** - Couleurs dynamiques (Material You)
-- **`animate_do`** & **`flutter_staggered_animations`** - Animations
-- **`shimmer`** & **`lottie`** - Effets visuels et de chargement
-- **`auto_size_text`** - Texte responsive
+| Catégorie       | Paquets                                                                            |
+|-----------------|------------------------------------------------------------------------------------|
+| Thème           | `dynamic_color`                                                                    |
+| État            | `provider`                                                                         |
+| Capteurs        | `flutter_compass`, `sensors_plus`                                                  |
+| Médias          | `youtube_explode_dart`, `ffmpeg_kit_flutter_new`, `mobile_scanner`, `qr_flutter`   |
+| Documents       | `pdf`, `printing`, `file_picker`, `path_provider`                                  |
+| Plateforme      | `permission_handler`, `connectivity_plus`, `flutter_local_notifications`           |
+| Crypto / utils  | `crypto`, `clipboard`, `super_clipboard`, `shared_preferences`, `package_info_plus`|
 
-### Fonctionnalités
-- **`qr_flutter`** & **`mobile_scanner`** - QR Codes
-- **`flutter_compass`** & **`sensors_plus`** - Capteurs (boussole, niveau)
-- **`crypto`** - Cryptographie (hash)
-- **`youtube_explode_dart`** - Téléchargement YouTube
-- **`ffmpeg_kit_flutter_new`** - Traitement média
-- **`pdf`** & **`printing`** - Génération de documents
+## 📄 Licence & contact
 
-### Utilitaires
-- **`url_launcher`** - Ouverture d'URL
-- **`shared_preferences`** - Stockage local simple
-- **`path_provider`** & **`file_picker`** - Gestion de fichiers
-- **`permission_handler`** - Permissions natives
-- **`clipboard`** & **`super_clipboard`** - Gestion du presse-papiers
-- **`flutter_local_notifications`** - Notifications locales
-- **`connectivity_plus`** - Vérification de la connectivité
-
-## 🛠️ Scripts de développement
-
-### Analyse du code
-```bash
-# Analyse statique
-flutter analyze
-
-# Vérifier les dépendances obsolètes
-flutter pub outdated
-
-# Mettre à jour les dépendances
-flutter pub upgrade
-```
-
-### Tests
-```bash
-# Tests unitaires
-flutter test
-
-# Tests d'intégration
-flutter drive --target=test_driver/app.dart
-```
-
-### Build & Release
-
-#### Android
-```bash
-# APK Debug
-flutter build apk --debug
-
-# APK Release
-flutter build apk --release
-
-# App Bundle (Google Play)
-flutter build appbundle --release
-```
-
-#### iOS
-```bash
-# iOS Debug
-flutter build ios --debug
-
-# iOS Release
-flutter build ios --release
-```
-
-#### Desktop
-```bash
-# Windows
-flutter build windows --release
-
-# macOS
-flutter build macos --release
-
-# Linux
-flutter build linux --release
-```
-
-#### Web
-```bash
-# Web
-flutter build web --release
-```
-
-## 🎯 Fonctionnalités avancées
-
-### Accessibilité
-- **Labels sémantiques** sur tous les éléments interactifs
-- **Support VoiceOver/TalkBack** complet
-- **Contraste** optimisé pour tous les thèmes
-- **Navigation clavier** fluide
-
-### Performance
-- **Lazy loading** des écrans
-- **Optimisation des rebuilds** avec Provider
-- **Images optimisées** multi-résolution
-- **Code splitting** automatique
-
-### Sécurité
-- **Chiffrement local** des données sensibles
-- **Validation** stricte des entrées utilisateur
-- **Protection** contre les injections
-- **Random cryptographique** sécurisé
-
-## 🔧 Personnalisation
-
-### Ajouter un nouvel outil
-
-1. **Créer l'écran** dans `lib/presentation/screens/`
-2. **Ajouter le modèle** dans `lib/core/models/tool_item.dart`
-3. **Enregistrer l'outil** dans `lib/presentation/screens/home_screen.dart`
-
-Exemple :
-```dart
-ToolItem(
-  title: 'Mon nouvel outil',
-  icon: Icons.new_tool,
-  screenBuilder: () => const MonNouvelOutilScreen(),
-),
-```
-
-### Modifier les couleurs
-```dart
-// Dans AppConstants
-static const List<Color> expressiveColors = [
-  Color(0xFF6750A4), // Votre couleur
-  // ... autres couleurs
-];
-```
-
-## 🐛 Dépannage
-
-### Problèmes courants
-
-#### Build Android échoue
-```bash
-flutter clean
-flutter pub get
-cd android && ./gradlew clean && cd ..
-flutter run
-```
-
-#### Permissions iOS
-Vérifiez que toutes les permissions sont déclarées dans `Info.plist`
-
-#### Performance lente
-```bash
-flutter run --profile
-flutter run --release
-```
-
-#### Erreurs de dépendances
-```bash
-flutter pub deps
-flutter pub upgrade --major-versions
-```
-
-## 📄 License
-
-Ce projet est sous licence MIT.
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! Voici comment contribuer :
-
-1. **Fork** le projet
-2. **Créer** une branche pour votre fonctionnalité
-3. **Commiter** vos changements
-4. **Pousser** vers la branche
-5. **Ouvrir** une Pull Request
-
-### Guidelines
-- Suivre les conventions Dart/Flutter
-- Ajouter des tests pour les nouvelles fonctionnalités
-- Maintenir la couverture de code
-- Documenter les changements
-
-## 📞 Support
-
-- **Email** : contact@doalo.fr
-- **Issues** : Utilisez le système d'issues GitHub
-
----
-
-**Développé avec ❤️ en Flutter**
-
-*Toolbox Everything Mobile - Tous vos outils en une seule application*
+- Politique de confidentialité : <https://doalo.fr/toolbox-everything/>
+- Contact : `contact@doalo.fr`
+- Code source : <https://github.com/Doalou/toolbox_everything_mobile>

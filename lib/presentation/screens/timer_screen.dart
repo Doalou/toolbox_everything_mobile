@@ -57,7 +57,7 @@ class _TimerScreenState extends State<TimerScreen> {
       iOS: iosSettings,
     );
 
-    await _notificationsPlugin.initialize(settings);
+    await _notificationsPlugin.initialize(settings: settings);
   }
 
   void _startStopwatchUpdater() {
@@ -204,10 +204,11 @@ class _TimerScreenState extends State<TimerScreen> {
     );
 
     await _notificationsPlugin.show(
-      0,
-      'Minuteur terminé !',
-      'Votre minuteur de ${_formatTime(_initialTimerSeconds)} est arrivé à terme.',
-      details,
+      id: 0,
+      title: 'Minuteur terminé !',
+      body:
+          'Votre minuteur de ${_formatTime(_initialTimerSeconds)} est arrivé à terme.',
+      notificationDetails: details,
     );
   }
 
@@ -292,7 +293,6 @@ class _TimerScreenState extends State<TimerScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(

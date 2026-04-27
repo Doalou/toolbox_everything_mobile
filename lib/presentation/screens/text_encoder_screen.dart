@@ -189,19 +189,17 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                       children: [
                         Text(
                           'Encodez et décodez du texte',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
+                          style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Base64, URL, HTML entities, Hexadécimal.',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.onPrimaryContainer
-                                        .withValues(alpha: 0.8),
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: colorScheme.onPrimaryContainer
+                                    .withValues(alpha: 0.8),
+                              ),
                         ),
                       ],
                     ),
@@ -235,13 +233,15 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
             SegmentedButton<bool>(
               segments: const [
                 ButtonSegment(
-                    value: true,
-                    label: Text('Encoder'),
-                    icon: Icon(Icons.lock)),
+                  value: true,
+                  label: Text('Encoder'),
+                  icon: Icon(Icons.lock),
+                ),
                 ButtonSegment(
-                    value: false,
-                    label: Text('Décoder'),
-                    icon: Icon(Icons.lock_open)),
+                  value: false,
+                  label: Text('Décoder'),
+                  icon: Icon(Icons.lock_open),
+                ),
               ],
               selected: {_isEncoding},
               onSelectionChanged: (v) {
@@ -265,9 +265,7 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                         const SizedBox(width: 8),
                         Text(
                           _isEncoding ? 'Texte à encoder' : 'Texte à décoder',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
+                          style: Theme.of(context).textTheme.titleSmall
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const Spacer(),
@@ -312,14 +310,15 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.output,
-                            size: 18, color: colorScheme.primary),
+                        Icon(
+                          Icons.output,
+                          size: 18,
+                          color: colorScheme.primary,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Résultat ($_typeLabel)',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
+                          style: Theme.of(context).textTheme.titleSmall
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const Spacer(),
@@ -359,14 +358,15 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.lightbulb_outline,
-                            size: 18, color: colorScheme.primary),
+                        Icon(
+                          Icons.lightbulb_outline,
+                          size: 18,
+                          color: colorScheme.primary,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'À propos',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
+                          style: Theme.of(context).textTheme.titleSmall
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ],

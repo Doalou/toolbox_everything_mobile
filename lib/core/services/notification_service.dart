@@ -20,7 +20,7 @@ class NotificationService {
       android: androidInitSettings,
     );
 
-    await _plugin.initialize(initSettings);
+    await _plugin.initialize(settings: initSettings);
     // Création explicite du canal de notifications pour assurer la compatibilité
     final android = _plugin
         .resolvePlatformSpecificImplementation<
@@ -91,7 +91,12 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    await _plugin.show(id, title, body, _progressDetails());
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: _progressDetails(),
+    );
   }
 
   Future<void> updateProgress(
@@ -118,18 +123,33 @@ class NotificationService {
           icon: 'ic_notification',
         );
     final details = NotificationDetails(android: androidDetails);
-    await _plugin.show(id, title, body, details);
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: details,
+    );
   }
 
   Future<void> complete(int id, {required String title, String? body}) async {
-    await _plugin.show(id, title, body, _finalDetails(success: true));
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: _finalDetails(success: true),
+    );
   }
 
   Future<void> fail(int id, {required String title, String? body}) async {
-    await _plugin.show(id, title, body, _finalDetails(success: false));
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: _finalDetails(success: false),
+    );
   }
 
   Future<void> cancel(int id) async {
-    await _plugin.cancel(id);
+    await _plugin.cancel(id: id);
   }
 }

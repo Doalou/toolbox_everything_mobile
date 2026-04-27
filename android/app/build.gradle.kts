@@ -17,7 +17,7 @@ if (keyPropertiesFile.exists()) {
 android {
     namespace = "com.toolbox.everything.mobile"
     compileSdk = 36 // Android 15 pour compatibilité plugins
-    ndkVersion = "27.3.13750724" // Version NDK spécifiée
+    ndkVersion = "28.2.13676358" // Requis par jni, rétrocompatible avec les plugins NDK 27
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

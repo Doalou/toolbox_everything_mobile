@@ -29,7 +29,6 @@ class CompassScreenState extends State<CompassScreen>
     });
   }
 
-
   String _getDirection(double heading) {
     if (heading >= 337.5 || heading < 22.5) {
       return 'Nord';
@@ -128,7 +127,6 @@ class CompassScreenState extends State<CompassScreen>
           if (direction == null) {
             return _buildUnsupportedView();
           }
-
 
           return _buildCompassView(direction, colorScheme);
         },

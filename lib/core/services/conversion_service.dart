@@ -31,7 +31,7 @@ class ConversionService {
         Unit(name: 'Kelvin', conversionFactor: 1.0), // Special handling
       ],
     ),
-     ConversionCategory(
+    ConversionCategory(
       name: 'Données',
       baseUnitName: 'Octet',
       units: [
@@ -43,17 +43,22 @@ class ConversionService {
     ),
   ];
 
-  double convert(double value, Unit from, Unit to, ConversionCategory category) {
+  double convert(
+    double value,
+    Unit from,
+    Unit to,
+    ConversionCategory category,
+  ) {
     if (category.name == 'Température') {
       return _convertTemperature(value, from.name, to.name);
     }
-    
+
     // Convert 'from' unit to the base unit of the category
     double baseValue = value * from.conversionFactor;
-    
+
     // Convert the base unit to the 'to' unit
     double result = baseValue / to.conversionFactor;
-    
+
     return result;
   }
 
@@ -67,7 +72,7 @@ class ConversionService {
     // From Celsius
     if (to == 'Fahrenheit') return value * 9 / 5 + 32;
     if (to == 'Kelvin') return value + 273.15;
-    
+
     return value; // Should be Celsius
   }
-} 
+}

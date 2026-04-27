@@ -61,6 +61,9 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
           case ConnectivityResult.other:
             _connectionType = 'Autre';
             break;
+          case ConnectivityResult.satellite:
+            _connectionType = 'Satellite';
+            break;
           case ConnectivityResult.none:
             _connectionType = 'Non connecté';
             break;
@@ -114,6 +117,9 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
           break;
         case ConnectivityResult.other:
           connectionType = 'Autre';
+          break;
+        case ConnectivityResult.satellite:
+          connectionType = 'Satellite';
           break;
         case ConnectivityResult.none:
           connectionType = 'Non connecté';

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/providers/downloader_provider.dart';
 import 'package:toolbox_everything_mobile/presentation/widgets/downloader_widgets.dart';
 
@@ -11,6 +13,8 @@ class DownloaderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -19,229 +23,442 @@ class DownloaderScreen extends StatelessWidget {
           child: Material(
             type: MaterialType.transparency,
             child: Text(
-              'Téléchargeur YouTube',
+              'Téléchargeur',
               style: Theme.of(context).appBarTheme.titleTextStyle,
             ),
           ),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
       ),
-      body: Column(
-        children: [
-          // Bandeau d'intro (Material You harmonisé)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
+      body: Consumer<DownloaderProvider>(
+        builder: (context, provider, _) {
+          return CustomScrollView(
+            physics: const ClampingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: _DownloaderHeader(provider: provider),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.video_file_outlined,
-                      color: Theme.of(context).colorScheme.primary,
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              const SliverToBoxAdapter(child: UrlInputPanel()),
+              if (provider.hasDownloadStatus)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: DownloadStatusPanel(),
+                  ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              switch (provider.state) {
+                DownloaderState.loading => const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _LoadingState(),
+                  ),
+                DownloaderState.error => SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _ErrorState(
+                      message:
+                          provider.errorMessage ?? 'Une erreur est survenue.',
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Téléchargeur YouTube',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Collez un lien YouTube pour récupérer la vidéo ou l’audio. Conversion MP3 et fusion vidéo/audio disponibles.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer
-                                    .withValues(alpha: 0.8),
-                              ),
-                        ),
-                      ],
+                DownloaderState.success => const SliverPadding(
+                    padding: EdgeInsets.fromLTRB(16, 0, 16, 120),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          VideoInfoCard(),
+                          SizedBox(height: 14),
+                          DownloadOptions(),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const UrlInputField(),
-          const SizedBox(height: 16),
-          Expanded(
-            child: Consumer<DownloaderProvider>(
-              builder: (context, provider, child) {
-                // Bandeau persistant d'état de téléchargement (au-dessus du contenu)
-                final Widget downloadBanner =
-                    provider.downloadActivity ==
-                        DownloadActivityState.downloading
-                    ? const Padding(
-                        padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                        child: DownloadProgressIndicator(),
-                      )
-                    : (provider.downloadActivity ==
-                              DownloadActivityState.completed
-                          ? const Padding(
-                              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                              child: CompletedDownloadCard(),
-                            )
-                          : const SizedBox.shrink());
-
-                Widget bodyContent;
-                switch (provider.state) {
-                  case DownloaderState.loading:
-                    bodyContent = const Expanded(
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                    break;
-                  case DownloaderState.error:
-                    bodyContent = Expanded(
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            provider.errorMessage ?? 'Une erreur est survenue.',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    );
-                    break;
-                  case DownloaderState.success:
-                    bodyContent = Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          children: const [
-                            VideoInfoCard(),
-                            SizedBox(height: 16),
-                            DownloadOptions(),
-                          ],
-                        ),
-                      ),
-                    );
-                    break;
-                  default:
-                    bodyContent = const Expanded(
-                      child: Center(
-                        child: Text(
-                          'Veuillez entrer une URL YouTube pour commencer.',
-                        ),
-                      ),
-                    );
-                    break;
-                }
-                return Column(
-                  children: [
-                    if (provider.hasDownloadStatus) downloadBanner,
-                    bodyContent,
-                  ],
-                );
+                DownloaderState.initial => SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _EmptyState(color: scheme.primary),
+                  ),
               },
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-class UrlInputField extends StatefulWidget {
-  const UrlInputField({super.key});
+class _DownloaderHeader extends StatelessWidget {
+  final DownloaderProvider provider;
+
+  const _DownloaderHeader({required this.provider});
 
   @override
-  State<UrlInputField> createState() => _UrlInputFieldState();
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: ShapeDecoration(
+          color: scheme.primaryContainer,
+          shape: RoundedRectangleBorder(
+            borderRadius: ExpressiveShapes.asymmetricHero(),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: ShapeDecoration(
+                    color: scheme.surface,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: Icon(
+                    Icons.video_library_rounded,
+                    color: scheme.primary,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'YouTube audio & vidéo',
+                        style: Theme.of(context).textTheme.titleLarge
+                            ?.copyWith(
+                              color: scheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Collez un lien, inspectez les formats, puis choisissez une sortie claire.',
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(
+                              color: scheme.onPrimaryContainer.withValues(
+                                alpha: 0.78,
+                              ),
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _HeaderChip(
+                  icon: Icons.music_note_rounded,
+                  label: 'Audio',
+                  color: scheme.primary,
+                ),
+                _HeaderChip(
+                  icon: Icons.movie_creation_rounded,
+                  label: 'Vidéo',
+                  color: scheme.tertiary,
+                ),
+                _HeaderChip(
+                  icon: Icons.merge_type_rounded,
+                  label: 'Fusion',
+                  color: scheme.secondary,
+                ),
+                if (provider.video != null)
+                  _HeaderChip(
+                    icon: Icons.check_circle_rounded,
+                    label: 'Lien analysé',
+                    color: scheme.primary,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _UrlInputFieldState extends State<UrlInputField> {
+class _HeaderChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _HeaderChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        color: scheme.surface.withValues(alpha: 0.78),
+        shape: const StadiumBorder(),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: scheme.onSurface,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class UrlInputPanel extends StatefulWidget {
+  const UrlInputPanel({super.key});
+
+  @override
+  State<UrlInputPanel> createState() => _UrlInputPanelState();
+}
+
+class _UrlInputPanelState extends State<UrlInputPanel> {
   final _controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DownloaderProvider>();
-    final colorScheme = Theme.of(context).colorScheme;
+    final scheme = Theme.of(context).colorScheme;
+    final busy = provider.isFetching ||
+        provider.downloadActivity == DownloadActivityState.downloading;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                hintText: 'Collez l\'URL YouTube ici',
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                prefixIcon: const Icon(Icons.link),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.paste),
-                  onPressed: () async {
-                    final data = await Clipboard.getData(Clipboard.kTextPlain);
-                    if (!mounted) return;
-                    final text = data?.text;
-                    if (text != null && text.isNotEmpty) {
-                      _controller.text = text;
-                      context.read<DownloaderProvider>().fetchVideoInfo(text);
-                    }
-                  },
-                ),
-              ),
-              onSubmitted: provider.isFetching
-                  ? null
-                  : (text) {
-                      FocusScope.of(context).unfocus();
-                      context.read<DownloaderProvider>().fetchVideoInfo(text);
-                    },
-            ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: scheme.surfaceContainer,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ExpressiveShapes.large),
+            side: BorderSide(color: scheme.outlineVariant),
           ),
-          const SizedBox(width: 8),
-          IconButton.filled(
-            icon: const Icon(Icons.search),
-            onPressed: provider.isFetching
-                ? null
-                : () {
-                    FocusScope.of(context).unfocus();
-                    context.read<DownloaderProvider>().fetchVideoInfo(
-                      _controller.text,
-                    );
-                  },
-            style: IconButton.styleFrom(
-              minimumSize: const Size.square(56),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _controller,
+                enabled: !busy,
+                minLines: 1,
+                maxLines: 2,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: 'https://www.youtube.com/watch?v=...',
+                  prefixIcon: const Icon(Icons.link_rounded),
+                  filled: true,
+                  fillColor: scheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  suffixIcon: IconButton(
+                    tooltip: 'Coller',
+                    icon: const Icon(Icons.content_paste_rounded),
+                    onPressed: busy ? null : _pasteAndFetch,
+                  ),
+                ),
+                onSubmitted: busy ? null : (_) => _fetch(),
               ),
-            ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: busy ? null : _fetch,
+                      icon: provider.isFetching
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.travel_explore_rounded),
+                      label: Text(
+                        provider.isFetching ? 'Analyse...' : 'Analyser',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.outlined(
+                    tooltip: 'Effacer',
+                    onPressed: busy
+                        ? null
+                        : () {
+                            _controller.clear();
+                            context.read<DownloaderProvider>().clear();
+                          },
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  Future<void> _pasteAndFetch() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
+    final text = data?.text?.trim();
+    if (text == null || text.isEmpty) return;
+    _controller.text = text;
+    _fetch();
+  }
+
+  void _fetch() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    FocusScope.of(context).unfocus();
+    context.read<DownloaderProvider>().fetchVideoInfo(text);
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+}
+
+class _LoadingState extends StatelessWidget {
+  const _LoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(
+            'Analyse du lien...',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Récupération des formats audio et vidéo disponibles.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+
+  const _ErrorState({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: DecoratedBox(
+          decoration: ShapeDecoration(
+            color: scheme.errorContainer,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(ExpressiveShapes.large),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: scheme.onErrorContainer,
+                  size: 36,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Impossible d’analyser ce lien',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: scheme.onErrorContainer,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: scheme.onErrorContainer),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final Color color;
+
+  const _EmptyState({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.link_rounded, size: 54, color: color),
+            const SizedBox(height: ExpressiveTokens.spacing),
+            Text(
+              'Prêt à analyser',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Collez une URL YouTube pour voir les formats disponibles avant de télécharger.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

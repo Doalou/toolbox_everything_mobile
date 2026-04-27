@@ -123,19 +123,17 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
                       children: [
                         Text(
                           'Choisissez une couleur',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
+                          style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Sélectionnez et copiez en HEX, RGB ou HSL.',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.onPrimaryContainer
-                                        .withValues(alpha: 0.8),
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: colorScheme.onPrimaryContainer
+                                    .withValues(alpha: 0.8),
+                              ),
                         ),
                       ],
                     ),
@@ -209,17 +207,13 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
                             children: [
                               Text(
                                 'Aperçu couleur',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
+                                style: Theme.of(context).textTheme.titleSmall
                                     ?.copyWith(fontWeight: FontWeight.w600),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 _hexValue,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
+                                style: Theme.of(context).textTheme.bodyLarge
                                     ?.copyWith(
                                       fontFamily: 'monospace',
                                       fontWeight: FontWeight.w500,
@@ -253,14 +247,15 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.history,
-                              color: colorScheme.primary, size: 20),
+                          Icon(
+                            Icons.history,
+                            color: colorScheme.primary,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Couleurs récentes',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
+                            style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -279,9 +274,11 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
                                 color: color,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: colorScheme.outline
-                                      .withValues(alpha: 0.3),
-                                  width: color.toARGB32() ==
+                                  color: colorScheme.outline.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  width:
+                                      color.toARGB32() ==
                                           _selectedColor.toARGB32()
                                       ? 3
                                       : 1,
@@ -313,17 +310,17 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
             child: Text(
               label,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontFamily: 'monospace',
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
             ),
           ),
           IconButton(

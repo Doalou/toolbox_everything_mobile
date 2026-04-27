@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:collection/collection.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-import 'package:toolbox_everything_mobile/core/services/download_service_universal.dart';
+import 'package:toolbox_everything_mobile/core/services/download_service.dart';
 import 'package:toolbox_everything_mobile/core/services/notification_service.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';

@@ -10,5 +10,9 @@ class ConversionCategory {
   final List<Unit> units;
   final String baseUnitName; // e.g., 'Meters' for Length
 
-  ConversionCategory({required this.name, required this.units, required this.baseUnitName});
-} 
+  ConversionCategory({
+    required this.name,
+    required this.units,
+    required this.baseUnitName,
+  });
+}

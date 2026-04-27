@@ -51,10 +51,18 @@ class DownloadService {
     () async {
       try {
         // L'initialisation du notifier se fait dans le Provider
-        if (task.streamInfo is VideoOnlyStreamInfo && task.audioStreamInfo != null) {
+        if (task.streamInfo is VideoOnlyStreamInfo &&
+            task.audioStreamInfo != null) {
           await _handleMerge(task, task.sendPort, yt, () => cancelRequested);
         } else {
-          await _handleSingleStream(task.streamInfo, task.videoTitle, task.sendPort, yt, notificationId, () => cancelRequested);
+          await _handleSingleStream(
+            task.streamInfo,
+            task.videoTitle,
+            task.sendPort,
+            yt,
+            notificationId,
+            () => cancelRequested,
+          );
         }
       } catch (e) {
         task.sendPort.send({'status': 'error', 'message': e.toString()});
@@ -62,7 +70,7 @@ class DownloadService {
           'notification': 'fail',
           'id': notificationId,
           'title': 'Erreur de téléchargement',
-          'body': task.videoTitle
+          'body': task.videoTitle,
         });
       } finally {
         yt.close();
@@ -71,54 +79,102 @@ class DownloadService {
     }();
   }
 
-  static Future<void> _handleSingleStream(StreamInfo streamInfo, String videoTitle, SendPort sendPort, YoutubeExplode yt, int notificationId, bool Function() isCancelled) async {
+  static Future<void> _handleSingleStream(
+    StreamInfo streamInfo,
+    String videoTitle,
+    SendPort sendPort,
+    YoutubeExplode yt,
+    int notificationId,
+    bool Function() isCancelled,
+  ) async {
     final downloadsDir = await getApplicationDocumentsDirectory();
-    final sanitizedTitle = videoTitle.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').replaceAll(RegExp(r'\s+'), '_');
-    final filePath = _ensureUniquePath('${downloadsDir.path}/$sanitizedTitle.${streamInfo.container.name}');
-    
+    final sanitizedTitle = videoTitle
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+        .replaceAll(RegExp(r'\s+'), '_');
+    final filePath = _ensureUniquePath(
+      '${downloadsDir.path}/$sanitizedTitle.${streamInfo.container.name}',
+    );
+
     sendPort.send({
       'notification': 'startProgress',
       'id': notificationId,
       'title': 'Téléchargement...',
-      'body': videoTitle
+      'body': videoTitle,
     });
-    await _downloadStream(streamInfo, filePath, sendPort, yt, notificationId, isCancelled);
-    
+    await _downloadStream(
+      streamInfo,
+      filePath,
+      sendPort,
+      yt,
+      notificationId,
+      isCancelled,
+    );
+
     sendPort.send({'status': 'completed', 'path': filePath});
     sendPort.send({
       'notification': 'complete',
       'id': notificationId,
       'title': 'Téléchargement terminé',
-      'body': videoTitle
+      'body': videoTitle,
     });
   }
 
-  static Future<void> _handleMerge(DownloadTask task, SendPort sendPort, YoutubeExplode yt, bool Function() isCancelled) async {
+  static Future<void> _handleMerge(
+    DownloadTask task,
+    SendPort sendPort,
+    YoutubeExplode yt,
+    bool Function() isCancelled,
+  ) async {
     final downloadsDir = await getApplicationDocumentsDirectory();
-    final sanitizedTitle = task.videoTitle.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').replaceAll(RegExp(r'\s+'), '_');
+    final sanitizedTitle = task.videoTitle
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+        .replaceAll(RegExp(r'\s+'), '_');
     final notificationId = task.notificationId;
 
-    final videoPath = _ensureUniquePath('${downloadsDir.path}/${sanitizedTitle}_video.${task.streamInfo.container.name}');
-    final audioPath = _ensureUniquePath('${downloadsDir.path}/${sanitizedTitle}_audio.${task.audioStreamInfo!.container.name}');
-    final outputPath = _ensureUniquePath('${downloadsDir.path}/$sanitizedTitle.mp4');
+    final videoPath = _ensureUniquePath(
+      '${downloadsDir.path}/${sanitizedTitle}_video.${task.streamInfo.container.name}',
+    );
+    final audioPath = _ensureUniquePath(
+      '${downloadsDir.path}/${sanitizedTitle}_audio.${task.audioStreamInfo!.container.name}',
+    );
+    final outputPath = _ensureUniquePath(
+      '${downloadsDir.path}/$sanitizedTitle.mp4',
+    );
 
     sendPort.send({
       'notification': 'startProgress',
       'id': notificationId,
       'title': 'Téléchargement...',
-      'body': task.videoTitle
+      'body': task.videoTitle,
     });
-    
+
     sendPort.send({'progress_text': 'Téléchargement de la vidéo...'});
-    await _downloadStream(task.streamInfo, videoPath, sendPort, yt, notificationId, isCancelled, isPart: true);
+    await _downloadStream(
+      task.streamInfo,
+      videoPath,
+      sendPort,
+      yt,
+      notificationId,
+      isCancelled,
+      isPart: true,
+    );
     if (isCancelled()) throw 'Cancelled';
 
     sendPort.send({'progress_text': 'Téléchargement de l\'audio...'});
-    await _downloadStream(task.audioStreamInfo!, audioPath, sendPort, yt, notificationId, isCancelled, isPart: true);
+    await _downloadStream(
+      task.audioStreamInfo!,
+      audioPath,
+      sendPort,
+      yt,
+      notificationId,
+      isCancelled,
+      isPart: true,
+    );
     if (isCancelled()) throw 'Cancelled';
 
     sendPort.send({'progress_text': 'Fusion en cours...'});
-    final command = "-i \"$videoPath\" -i \"$audioPath\" -c:v copy -c:a aac \"$outputPath\"";
+    final command =
+        "-i \"$videoPath\" -i \"$audioPath\" -c:v copy -c:a aac \"$outputPath\"";
     final session = await FFmpegKit.execute(command);
     final returnCode = await session.getReturnCode();
 
@@ -133,14 +189,22 @@ class DownloadService {
         'notification': 'complete',
         'id': notificationId,
         'title': 'Fusion terminée',
-        'body': task.videoTitle
+        'body': task.videoTitle,
       });
     } else {
       throw 'La fusion FFmpeg a échoué.';
     }
   }
 
-  static Future<void> _downloadStream(StreamInfo streamInfo, String path, SendPort sendPort, YoutubeExplode yt, int notificationId, bool Function() isCancelled, {bool isPart = false}) async {
+  static Future<void> _downloadStream(
+    StreamInfo streamInfo,
+    String path,
+    SendPort sendPort,
+    YoutubeExplode yt,
+    int notificationId,
+    bool Function() isCancelled, {
+    bool isPart = false,
+  }) async {
     final file = File(path);
     final fileStream = file.openWrite();
     final stream = yt.videos.streamsClient.get(streamInfo);
@@ -165,7 +229,7 @@ class DownloadService {
           'title': 'Téléchargement (${(progress * 100).toInt()}%)',
           'body': streamInfo.toString(),
           'progress': downloadedBytes,
-          'maxProgress': totalBytes
+          'maxProgress': totalBytes,
         });
       }
     }
@@ -175,7 +239,10 @@ class DownloadService {
   static String _ensureUniquePath(String path) {
     if (!File(path).existsSync()) return path;
     final directory = path.substring(0, path.lastIndexOf('/'));
-    final filename = path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.'));
+    final filename = path.substring(
+      path.lastIndexOf('/') + 1,
+      path.lastIndexOf('.'),
+    );
     final extension = path.substring(path.lastIndexOf('.'));
     int i = 1;
     while (File('$directory/$filename($i)$extension').existsSync()) {
@@ -252,7 +319,8 @@ class DownloadServiceDirect {
         .replaceAll(RegExp(r'\s+'), '_');
     final extension = streamInfo.container.name;
     final filePath = _ensureUniquePath(
-        '${downloadsDir.path}/$sanitizedTitle.$extension');
+      '${downloadsDir.path}/$sanitizedTitle.$extension',
+    );
 
     // Notification début
     await NotificationService.instance.startProgress(
@@ -261,24 +329,21 @@ class DownloadServiceDirect {
       body: videoTitle,
     );
 
-    await _downloadStreamDirect(
-      yt,
-      streamInfo,
-      filePath,
-      cancelToken,
-      (received, total) {
-        final progress = received / total;
-        onProgress(received, total);
-        final percent = (progress * 100).toInt().clamp(0, 100);
-        NotificationService.instance.updateProgress(
-          notificationId,
-          title: 'Téléchargement $percent%',
-          body: '${(received).toMB()} / ${(total).toMB()} MB',
-          progress: percent,
-          maxProgress: 100,
-        );
-      },
-    );
+    await _downloadStreamDirect(yt, streamInfo, filePath, cancelToken, (
+      received,
+      total,
+    ) {
+      final progress = received / total;
+      onProgress(received, total);
+      final percent = (progress * 100).toInt().clamp(0, 100);
+      NotificationService.instance.updateProgress(
+        notificationId,
+        title: 'Téléchargement $percent%',
+        body: '${(received).toMB()} / ${(total).toMB()} MB',
+        progress: percent,
+        maxProgress: 100,
+      );
+    });
 
     final savedPath = await DownloadsSaver.saveFileToDownloads(
       filePath,
@@ -309,17 +374,22 @@ class DownloadServiceDirect {
     final videoExt = videoStream.container.name;
     final audioExt = audioStream.container.name;
     final videoPath = _ensureUniquePath(
-        '${downloadsDir.path}/${sanitizedTitle}_video.$videoExt');
+      '${downloadsDir.path}/${sanitizedTitle}_video.$videoExt',
+    );
     final audioPath = _ensureUniquePath(
-        '${downloadsDir.path}/${sanitizedTitle}_audio.$audioExt');
+      '${downloadsDir.path}/${sanitizedTitle}_audio.$audioExt',
+    );
 
     // Choix du conteneur de sortie
     final vExt = videoExt.toLowerCase();
     final aExt = audioExt.toLowerCase();
-    final canMp4 = (vExt == 'mp4') && (aExt == 'm4a' || aExt == 'aac' || aExt == 'mp4');
+    final canMp4 =
+        (vExt == 'mp4') && (aExt == 'm4a' || aExt == 'aac' || aExt == 'mp4');
     // Préférer WEBM en fallback (au lieu de MKV)
     final outExt = canMp4 ? 'mp4' : 'webm';
-    final outputPath = _ensureUniquePath('${downloadsDir.path}/$sanitizedTitle.$outExt');
+    final outputPath = _ensureUniquePath(
+      '${downloadsDir.path}/$sanitizedTitle.$outExt',
+    );
 
     await NotificationService.instance.startProgress(
       notificationId,
@@ -347,26 +417,20 @@ class DownloadServiceDirect {
 
     // Téléchargements en parallèle
     await Future.wait([
-      _downloadStreamDirect(
-        yt,
-        videoStream,
-        videoPath,
-        cancelToken,
-        (received, total) {
-          downloadedVideo = received;
-          updateCombinedProgress();
-        },
-      ),
-      _downloadStreamDirect(
-        yt,
-        audioStream,
-        audioPath,
-        cancelToken,
-        (received, total) {
-          downloadedAudio = received;
-          updateCombinedProgress();
-        },
-      ),
+      _downloadStreamDirect(yt, videoStream, videoPath, cancelToken, (
+        received,
+        total,
+      ) {
+        downloadedVideo = received;
+        updateCombinedProgress();
+      }),
+      _downloadStreamDirect(yt, audioStream, audioPath, cancelToken, (
+        received,
+        total,
+      ) {
+        downloadedAudio = received;
+        updateCombinedProgress();
+      }),
     ]);
 
     if (cancelToken.isCancelled) throw 'Annulé';
@@ -453,8 +517,10 @@ class DownloadServiceDirect {
   static String _ensureUniquePath(String path) {
     if (!File(path).existsSync()) return path;
     final directory = path.substring(0, path.lastIndexOf('/'));
-    final filename =
-        path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.'));
+    final filename = path.substring(
+      path.lastIndexOf('/') + 1,
+      path.lastIndexOf('.'),
+    );
     final extension = path.substring(path.lastIndexOf('.'));
     int i = 1;
     while (File('$directory/$filename($i)$extension').existsSync()) {
