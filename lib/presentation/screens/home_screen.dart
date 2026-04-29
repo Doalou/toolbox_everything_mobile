@@ -39,8 +39,12 @@ class _HomeScreenState extends State<HomeScreen>
     );
     _loadFavorites();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _isLowResource) return;
-      _stagger.forward();
+      if (!mounted) return;
+      if (_isLowResource) {
+        _stagger.value = 1.0;
+      } else {
+        _stagger.forward();
+      }
     });
   }
 
@@ -68,7 +72,9 @@ class _HomeScreenState extends State<HomeScreen>
         }).toList();
       }
     });
-    if (!_isLowResource) {
+    if (_isLowResource) {
+      _stagger.value = 1.0;
+    } else {
       _stagger
         ..reset()
         ..forward();
@@ -116,6 +122,14 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lowResource = context.select<SettingsProvider, bool>(
+      (s) => s.lowResourceMode,
+    );
+    if (lowResource && _stagger.value != 1.0 && !_stagger.isAnimating) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _stagger.value = 1.0;
+      });
+    }
     final favorites = _allTools.where((t) => t.isFavorite).toList();
     final groups = _groupByCategory(_filtered);
 
@@ -155,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen>
               titlePadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               expandedTitleScale: 1.22,
               title: const _GradientHomeTitle(),
-              background: const _HeroBackground(),
+              background: _HeroBackground(lowResource: lowResource),
             ),
           ),
           if (_searching)
@@ -221,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final tool = tools[index];
-                      if (_isLowResource) {
+                      if (lowResource) {
                         return ExpressiveToolCard(
                           tool: tool,
                           onFavoriteToggle: _persistFavorites,
@@ -265,7 +279,8 @@ class _HomeScreenState extends State<HomeScreen>
 }
 
 class _HeroBackground extends StatelessWidget {
-  const _HeroBackground();
+  final bool lowResource;
+  const _HeroBackground({this.lowResource = false});
 
   @override
   Widget build(BuildContext context) {
@@ -287,9 +302,10 @@ class _HeroBackground extends StatelessWidget {
               ),
             ),
           ),
-          const Positioned.fill(
-            child: CustomPaint(painter: _RipplePainter()),
-          ),
+          if (!lowResource)
+            const Positioned.fill(
+              child: CustomPaint(painter: _RipplePainter()),
+            ),
         ],
       ),
     );

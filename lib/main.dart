@@ -127,8 +127,9 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
+    return Consumer2<ThemeProvider, SettingsProvider>(
+      builder: (context, themeProvider, settingsProvider, child) {
+        final lowResource = settingsProvider.lowResourceMode;
         return DynamicColorBuilder(
           builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
             final useDynamic = themeProvider.useDynamicColor;
@@ -166,12 +167,18 @@ class _MyAppState extends State<MyApp> {
               ),
             );
 
-            final pageTransitionsTheme = const PageTransitionsTheme(
-              builders: {
-                // Appliquer une transition douce sur Android
-                TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-              },
-            );
+            final pageTransitionsTheme = lowResource
+                ? const PageTransitionsTheme(
+                    builders: {
+                      TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+                    },
+                  )
+                : const PageTransitionsTheme(
+                    builders: {
+                      TargetPlatform.android:
+                          PredictiveBackPageTransitionsBuilder(),
+                    },
+                  );
 
             return MaterialApp(
               title: 'Toolbox Everything',

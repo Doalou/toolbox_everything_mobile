@@ -64,6 +64,19 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   signalés dans les logs.
 - **Notifications minuteur** : référence d’icône Android alignée sur le service de
   notifications central.
+- **Mode économie de ressources** : réparé et étendu.
+  - Accueil : le nouvel effet ripple/onde du bandeau du haut n'est plus dessiné
+    quand le mode est activé, le toggle est lu en temps réel
+    (`context.select`) et la grille reste visible quand on bascule le mode
+    pendant l'usage (auparavant, l'activation après chargement laissait les
+    cartes à opacité 0 car le contrôleur de stagger restait à `value=0`).
+  - Composants partagés : `ExpressiveCard`, `ExpressiveActionButton` et
+    `ExpressiveToolCard` désactivent maintenant leur `AnimatedScale` de pression
+    et leur splash/highlight `InkWell` quand le mode est activé, supprimant les
+    rebonds spring et les ondes de tap sur tous les écrans.
+  - Transitions de page : `PredictiveBackPageTransitionsBuilder` est remplacé
+    par `FadeUpwardsPageTransitionsBuilder` (plus léger) sur Android quand le
+    mode est activé.
 
 ## [0.3.0] - 2026-04-27
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
+import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 
 /// Carte Material 3 Expressive : surface containerLow, rayons larges,
 /// animation spring sur la pression (scale + radius).
@@ -53,6 +55,9 @@ class _ExpressiveCardState extends State<ExpressiveCard> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lowResource = context.select<SettingsProvider, bool>(
+      (s) => s.lowResourceMode,
+    );
     final shape =
         widget.shape ??
         RoundedRectangleBorder(
@@ -63,24 +68,34 @@ class _ExpressiveCardState extends State<ExpressiveCard> {
           ),
         );
 
+    final material = Material(
+      color: widget.color ?? scheme.surfaceContainerLow,
+      shape: shape,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: widget.onTap,
+        onHighlightChanged: lowResource
+            ? null
+            : (v) {
+                if (mounted) setState(() => _pressed = v);
+              },
+        splashColor: lowResource
+            ? Colors.transparent
+            : scheme.primary.withValues(alpha: 0.10),
+        highlightColor: lowResource
+            ? Colors.transparent
+            : scheme.primary.withValues(alpha: 0.05),
+        child: Padding(padding: widget.padding, child: widget.child),
+      ),
+    );
+
+    if (lowResource) return material;
+
     return AnimatedScale(
       scale: _pressed ? 0.97 : 1.0,
       duration: ExpressiveMotion.short3,
       curve: ExpressiveMotion.springStandard,
-      child: Material(
-        color: widget.color ?? scheme.surfaceContainerLow,
-        shape: shape,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: widget.onTap,
-          onHighlightChanged: (v) {
-            if (mounted) setState(() => _pressed = v);
-          },
-          splashColor: scheme.primary.withValues(alpha: 0.10),
-          highlightColor: scheme.primary.withValues(alpha: 0.05),
-          child: Padding(padding: widget.padding, child: widget.child),
-        ),
-      ),
+      child: material,
     );
   }
 }

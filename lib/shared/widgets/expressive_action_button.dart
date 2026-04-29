@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
+import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 
 /// Bouton hero pill avec spring sur la pression — variante visuelle marquée
 /// pour les actions principales (Télécharger, Convertir, Lancer test, etc.).
@@ -51,6 +53,9 @@ class _ExpressiveActionButtonState extends State<ExpressiveActionButton> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lowResource = context.select<SettingsProvider, bool>(
+      (s) => s.lowResourceMode,
+    );
     final bg = widget.tonal ? scheme.secondaryContainer : scheme.primary;
     final fg = widget.tonal ? scheme.onSecondaryContainer : scheme.onPrimary;
     final disabled = widget.onPressed == null || widget.loading;
@@ -84,27 +89,37 @@ class _ExpressiveActionButtonState extends State<ExpressiveActionButton> {
       content = widget.child;
     }
 
+    final material = Material(
+      color: disabled ? bg.withValues(alpha: 0.5) : bg,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: disabled ? null : widget.onPressed,
+        onHighlightChanged: lowResource
+            ? null
+            : (v) {
+                if (mounted) setState(() => _pressed = v);
+              },
+        splashColor: lowResource
+            ? Colors.transparent
+            : fg.withValues(alpha: 0.18),
+        highlightColor: lowResource
+            ? Colors.transparent
+            : fg.withValues(alpha: 0.10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          child: content,
+        ),
+      ),
+    );
+
+    if (lowResource) return material;
+
     return AnimatedScale(
       scale: _pressed ? 0.96 : 1.0,
       duration: ExpressiveMotion.short3,
       curve: ExpressiveMotion.springSnappy,
-      child: Material(
-        color: disabled ? bg.withValues(alpha: 0.5) : bg,
-        shape: const StadiumBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: disabled ? null : widget.onPressed,
-          onHighlightChanged: (v) {
-            if (mounted) setState(() => _pressed = v);
-          },
-          splashColor: fg.withValues(alpha: 0.18),
-          highlightColor: fg.withValues(alpha: 0.10),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            child: content,
-          ),
-        ),
-      ),
+      child: material,
     );
   }
 }

@@ -53,73 +53,82 @@ class _ExpressiveToolCardState extends State<ExpressiveToolCard> {
       ),
     );
 
-    final card = AnimatedScale(
-      scale: _pressed ? 0.97 : 1.0,
-      duration: ExpressiveMotion.short3,
-      curve: ExpressiveMotion.springStandard,
-      child: Material(
-        color: scheme.surfaceContainerLow,
-        shape: cardShape,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => _open(context),
-          onHighlightChanged: (v) {
-            if (lowResource) return;
-            if (mounted) setState(() => _pressed = v);
-          },
-          splashColor: scheme.primary.withValues(alpha: 0.08),
-          highlightColor: scheme.primary.withValues(alpha: 0.04),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: ShapeDecoration(
-                        color: accent.withValues(alpha: 0.11),
-                        shape: const StadiumBorder(),
-                      ),
-                      child: Icon(widget.tool.icon, color: accent, size: 20),
+    final material = Material(
+      color: scheme.surfaceContainerLow,
+      shape: cardShape,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _open(context),
+        onHighlightChanged: lowResource
+            ? null
+            : (v) {
+                if (mounted) setState(() => _pressed = v);
+              },
+        splashColor: lowResource
+            ? Colors.transparent
+            : scheme.primary.withValues(alpha: 0.08),
+        highlightColor: lowResource
+            ? Colors.transparent
+            : scheme.primary.withValues(alpha: 0.04),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: ShapeDecoration(
+                      color: accent.withValues(alpha: 0.11),
+                      shape: const StadiumBorder(),
                     ),
-                    const Spacer(),
-                    _FavoriteButton(
-                      selected: widget.tool.isFavorite,
-                      onPressed: () {
-                        widget.tool.toggleFavorite();
-                        widget.onFavoriteToggle?.call();
-                        if (mounted) setState(() {});
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Hero(
-                  tag: widget.tool.heroTag,
-                  transitionOnUserGestures: true,
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: Text(
-                      widget.tool.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        height: 1.22,
-                      ),
+                    child: Icon(widget.tool.icon, color: accent, size: 20),
+                  ),
+                  const Spacer(),
+                  _FavoriteButton(
+                    selected: widget.tool.isFavorite,
+                    onPressed: () {
+                      widget.tool.toggleFavorite();
+                      widget.onFavoriteToggle?.call();
+                      if (mounted) setState(() {});
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Hero(
+                tag: widget.tool.heroTag,
+                transitionOnUserGestures: true,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Text(
+                    widget.tool.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      height: 1.22,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
+
+    final card = lowResource
+        ? material
+        : AnimatedScale(
+            scale: _pressed ? 0.97 : 1.0,
+            duration: ExpressiveMotion.short3,
+            curve: ExpressiveMotion.springStandard,
+            child: material,
+          );
 
     return Semantics(
       label: 'Outil ${widget.tool.title}',
