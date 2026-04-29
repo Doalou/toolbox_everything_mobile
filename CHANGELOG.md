@@ -151,7 +151,8 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   pour satisfaire `jni`.
 - **CI Android** : validation explicite des secrets de signature et génération
   propre de `android/key.properties` dans GitHub Actions, avec détection du
-  type réel de keystore (`jks` / `pkcs12`).
+  type réel de keystore (`jks` / `pkcs12`) et installation explicite du SDK
+  Android/NDK via `android-actions/setup-android`.
 
 ### Retiré
 
