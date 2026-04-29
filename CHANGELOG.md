@@ -149,6 +149,9 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Toolchain** : projet aligné sur Flutter 3.41.7 stable et Dart 3.11.5
   (`environment.sdk` mis à `^3.11.0`), NDK Android aligné sur `28.2.13676358`
   pour satisfaire `jni`.
+- **CI Android** : validation explicite des secrets de signature et génération
+  propre de `android/key.properties` dans GitHub Actions, avec détection du
+  type réel de keystore (`jks` / `pkcs12`).
 
 ### Retiré
 

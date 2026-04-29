@@ -38,20 +38,77 @@ jobs:
       - name: Decode keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: echo "$KEYSTORE_BASE64" | base64 --decode > ${{ github.workspace }}/upload-keystore.jks
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Missing KEYSTORE_BASE64 secret"
+            exit 1
+          fi
+
+          KEYSTORE_PATH="${{ github.workspace }}/upload-keystore.jks"
+          # Strip any whitespace/CR/LF that might have crept into the secret
+          printf '%s' "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > "$KEYSTORE_PATH"
+
+          if [ ! -s "$KEYSTORE_PATH" ]; then
+            echo "::error::Keystore file is empty after decoding"
+            exit 1
+          fi
+
+          SIZE=$(stat -c%s "$KEYSTORE_PATH")
+          echo "Keystore decoded — size: ${SIZE} bytes"
+
+      - name: Verify keystore
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::Missing KEYSTORE_PASSWORD/KEY_PASSWORD or KEY_ALIAS secret"
+            exit 1
+          fi
+
+          set +e
+          KEYTOOL_OUTPUT="$(keytool -list \
+            -keystore "${{ github.workspace }}/upload-keystore.jks" \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS" 2>&1)"
+          KEYTOOL_EXIT=$?
+          set -e
+
+          if [ "$KEYTOOL_EXIT" -ne 0 ]; then
+            echo "$KEYTOOL_OUTPUT"
+            echo "::error::Keystore is invalid or password/alias is wrong — re-encode KEYSTORE_BASE64 from your local .jks (see notes)"
+            exit 1
+          fi
+
+          KEYSTORE_TYPE="$(printf '%s\n' "$KEYTOOL_OUTPUT" | awk -F': ' '/Keystore type:/ {print tolower($2); exit}')"
+          if [ -z "$KEYSTORE_TYPE" ]; then
+            KEYSTORE_TYPE="pkcs12"
+          fi
+
+          echo "KEYSTORE_TYPE=${KEYSTORE_TYPE}" >> "$GITHUB_ENV"
+          echo "Keystore verified."
+          echo "Keystore type: ${KEYSTORE_TYPE}"
 
       - name: Create key.properties
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.KEY_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          cat > android/key.properties <<EOF
-          storePassword=${KEYSTORE_PASSWORD}
-          keyPassword=${KEY_PASSWORD}
-          keyAlias=${KEY_ALIAS}
-          storeFile=${{ github.workspace }}/upload-keystore.jks
-          EOF
+          if [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::Missing one of KEYSTORE_PASSWORD, KEY_PASSWORD or KEY_ALIAS"
+            exit 1
+          fi
+
+          {
+            echo "storePassword=${KEYSTORE_PASSWORD}"
+            echo "keyPassword=${KEY_PASSWORD}"
+            echo "keyAlias=${KEY_ALIAS}"
+            echo "storeFile=${{ github.workspace }}/upload-keystore.jks"
+            echo "storeType=${KEYSTORE_TYPE}"
+          } > android/key.properties
+
+          grep -E '^(storePassword|keyPassword|keyAlias|storeFile|storeType)=' android/key.properties | sed -E 's/=(.*)$/=<hidden>/'
 
       - name: Build release APK
         run: flutter build apk --release

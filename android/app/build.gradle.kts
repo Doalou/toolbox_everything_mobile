@@ -14,6 +14,14 @@ if (keyPropertiesFile.exists()) {
     keyProperties.load(FileInputStream(keyPropertiesFile))
 }
 
+fun signingProperty(name: String): String {
+    val value = keyProperties.getProperty(name)?.trim()
+    require(!value.isNullOrBlank()) {
+        "Missing or empty Android signing property '$name' in ${keyPropertiesFile.path}"
+    }
+    return value
+}
+
 android {
     namespace = "com.toolbox.everything.mobile"
     compileSdk = 36 // Android 15 pour compatibilité plugins
@@ -46,10 +54,13 @@ android {
     signingConfigs {
         create("release") {
             if (keyPropertiesFile.exists()) {
-                keyAlias = keyProperties["keyAlias"] as String
-                keyPassword = keyProperties["keyPassword"] as String
-                storeFile = file(keyProperties["storeFile"] as String)
-                storePassword = keyProperties["storePassword"] as String
+                keyAlias = signingProperty("keyAlias")
+                keyPassword = signingProperty("keyPassword")
+                storeFile = file(signingProperty("storeFile"))
+                storePassword = signingProperty("storePassword")
+                keyProperties.getProperty("storeType")?.trim()
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { storeType = it }
             }
         }
     }
