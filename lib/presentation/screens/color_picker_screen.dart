@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ColorPickerScreen extends StatefulWidget {
@@ -145,151 +146,144 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
             const SizedBox(height: 16),
 
             // Color picker card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    ColorPicker(
-                      pickerColor: _selectedColor,
-                      onColorChanged: (color) {
-                        setState(() => _selectedColor = color);
-                      },
-                      enableAlpha: true,
-                      hexInputBar: true,
-                      displayThumbColor: true,
-                      pickerAreaHeightPercent: 0.6,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () => _addToRecent(_selectedColor),
-                      icon: const Icon(Icons.save),
-                      label: const Text('Enregistrer dans les récents'),
-                    ),
-                  ],
-                ),
+            ExpressiveCard(
+              child: Column(
+                children: [
+                  _CardTitle(
+                    icon: Icons.tune_rounded,
+                    title: 'Sélection',
+                    subtitle: 'Ajustez la couleur et son opacité.',
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(height: 12),
+                  ColorPicker(
+                    pickerColor: _selectedColor,
+                    onColorChanged: (color) {
+                      setState(() => _selectedColor = color);
+                    },
+                    enableAlpha: true,
+                    hexInputBar: true,
+                    displayThumbColor: true,
+                    pickerAreaHeightPercent: 0.6,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () => _addToRecent(_selectedColor),
+                    icon: const Icon(Icons.save),
+                    label: const Text('Enregistrer dans les récents'),
+                  ),
+                ],
               ),
             ),
 
             const SizedBox(height: 16),
 
             // Preview & formats
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: _selectedColor,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: colorScheme.outline.withValues(alpha: 0.3),
+            ExpressiveCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: _selectedColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: colorScheme.outline.withValues(alpha: 0.3),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _selectedColor.withValues(alpha: 0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _selectedColor.withValues(alpha: 0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Aperçu couleur',
-                                style: Theme.of(context).textTheme.titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _hexValue,
-                                style: Theme.of(context).textTheme.bodyLarge
-                                    ?.copyWith(
-                                      fontFamily: 'monospace',
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                              ),
-                            ],
-                          ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Aperçu couleur',
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _hexValue,
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    const SizedBox(height: 8),
-                    _buildFormatRow(context, 'HEX', _hexValue),
-                    _buildFormatRow(context, 'RGB', _rgbValue),
-                    _buildFormatRow(context, 'RGBA', _rgbaValue),
-                    _buildFormatRow(context, 'HSL', _hslValue),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  _buildFormatRow(context, 'HEX', _hexValue),
+                  _buildFormatRow(context, 'RGB', _rgbValue),
+                  _buildFormatRow(context, 'RGBA', _rgbaValue),
+                  _buildFormatRow(context, 'HSL', _hslValue),
+                ],
               ),
             ),
 
             // Recent colors
             if (_recentColors.isNotEmpty) ...[
               const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.history,
-                            color: colorScheme.primary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Couleurs récentes',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _recentColors.map((color) {
-                          return GestureDetector(
-                            onTap: () => setState(() => _selectedColor = color),
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: color,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: colorScheme.outline.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                  width:
-                                      color.toARGB32() ==
-                                          _selectedColor.toARGB32()
-                                      ? 3
-                                      : 1,
-                                ),
+              ExpressiveCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _CardTitle(
+                      icon: Icons.history,
+                      title: 'Couleurs récentes',
+                      subtitle: 'Touchez une couleur pour la reprendre.',
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _recentColors.map((color) {
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedColor = color),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color:
+                                    color.toARGB32() ==
+                                        _selectedColor.toARGB32()
+                                    ? colorScheme.primary
+                                    : colorScheme.outline.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                width:
+                                    color.toARGB32() ==
+                                        _selectedColor.toARGB32()
+                                    ? 3
+                                    : 1,
                               ),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -331,6 +325,52 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CardTitle extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+
+  const _CardTitle({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: ShapeDecoration(
+            color: color.withValues(alpha: 0.14),
+            shape: const StadiumBorder(),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

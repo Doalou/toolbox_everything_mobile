@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quick_actions/quick_actions.dart';
+import 'package:toolbox_everything_mobile/presentation/navigation/unified_navigation.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/qr_code_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/downloader_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/unit_converter_screen.dart';
@@ -66,24 +67,25 @@ class QuickActionsService {
       switch (type) {
         case 'action_qr':
           nav.push(
-            MaterialPageRoute(
-              builder: (_) => const QrCodeScreen(heroTag: 'quick_action_qr'),
+            unifiedNavigation(
+              nav.context,
+              const QrCodeScreen(heroTag: 'quick_action_qr'),
             ),
           );
           break;
         case 'action_downloader':
           nav.push(
-            MaterialPageRoute(
-              builder: (_) =>
-                  const DownloaderScreen(heroTag: 'quick_action_downloader'),
+            unifiedNavigation(
+              nav.context,
+              const DownloaderScreen(heroTag: 'quick_action_downloader'),
             ),
           );
           break;
         case 'action_convert':
           nav.push(
-            MaterialPageRoute(
-              builder: (_) =>
-                  const UnitConverterScreen(heroTag: 'quick_action_converter'),
+            unifiedNavigation(
+              nav.context,
+              const UnitConverterScreen(heroTag: 'quick_action_converter'),
             ),
           );
           break;

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/models/tool_item.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/core/services/usage_stats_service.dart';
@@ -39,7 +38,10 @@ class _HomeScreenState extends State<HomeScreen>
       duration: ExpressiveMotion.long2,
     );
     _loadFavorites();
-    if (!_isLowResource) _stagger.forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isLowResource) return;
+      _stagger.forward();
+    });
   }
 
   bool get _isLowResource => context.read<SettingsProvider>().lowResourceMode;
@@ -100,13 +102,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _openScreen(BuildContext context, Widget screen) {
-    Navigator.of(context).push(
-      unifiedNavigation(
-        context,
-        screen,
-        isAndroid: Theme.of(context).platform == TargetPlatform.android,
-      ),
-    );
+    Navigator.of(context).push(unifiedNavigation(context, screen));
   }
 
   Map<ToolCategory, List<ToolItem>> _groupByCategory(List<ToolItem> tools) {
@@ -131,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen>
           SliverAppBar.large(
             pinned: true,
             stretch: true,
-            expandedHeight: 220,
+            expandedHeight: 158,
             elevation: 0,
             backgroundColor: scheme.surface,
             surfaceTintColor: Colors.transparent,
@@ -157,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen>
             ],
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              expandedTitleScale: 1.45,
+              expandedTitleScale: 1.22,
               title: const _GradientHomeTitle(),
               background: const _HeroBackground(),
             ),
@@ -215,18 +211,13 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    ExpressiveTokens.spacingLg,
-                    0,
-                    ExpressiveTokens.spacingLg,
-                    ExpressiveTokens.spacingMd,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                   sliver: SliverGrid(
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 220,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.0,
+                      maxCrossAxisExtent: 152,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 1.06,
                     ),
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final tool = tools[index];
@@ -266,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen>
               ];
             }),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          const SliverToBoxAdapter(child: SizedBox(height: 56)),
         ],
       ),
     );
@@ -279,33 +270,96 @@ class _HeroBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
+    return ClipRect(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  scheme.surface,
+                  scheme.surfaceContainerLowest,
+                  scheme.surfaceContainerLow,
+                ],
+              ),
+            ),
+          ),
+          const Positioned.fill(
+            child: CustomPaint(painter: _RipplePainter()),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RipplePainter extends CustomPainter {
+  const _RipplePainter();
+
+  static const _start = Color(0xFF5C6FF4);
+  static const _end = Color(0xFFE870C2);
+  static const _alphas = [0.50, 0.36, 0.25, 0.17, 0.11, 0.06];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final origin = Offset(size.width - 30, size.height - 28);
+    final shaderRect = Rect.fromLTWH(0, 0, size.width, size.height);
+
+    final haloPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          _end.withValues(alpha: 0.32),
+          _end.withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromCircle(center: origin, radius: 70));
+    canvas.drawCircle(origin, 70, haloPaint);
+
+    for (var i = 0; i < _alphas.length; i++) {
+      final radius = 42.0 + i * 36.0;
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = i == 0 ? 2.4 : 1.4
+        ..shader = LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            scheme.surface,
-            const Color(0xFF5C6FF4).withValues(alpha: 0.14),
-            const Color(0xFFE870C2).withValues(alpha: 0.12),
+            _start.withValues(alpha: _alphas[i]),
+            _end.withValues(alpha: _alphas[i]),
           ],
-        ),
-      ),
-      child: const SizedBox.expand(),
-    );
+        ).createShader(shaderRect);
+      canvas.drawCircle(origin, radius, paint);
+    }
+
+    final dotPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [_start, _end],
+      ).createShader(Rect.fromCircle(center: origin, radius: 12));
+    canvas.drawCircle(origin, 8, dotPaint);
   }
+
+  @override
+  bool shouldRepaint(covariant _RipplePainter oldDelegate) => false;
 }
 
 class _GradientHomeTitle extends StatelessWidget {
   const _GradientHomeTitle();
 
+  static const _gradient = LinearGradient(
+    colors: [Color(0xFF5c6ff4), Color(0xFFe870c2)],
+  );
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final textStyle = TextStyle(
-      color: scheme.onSurface,
+    final baseStyle = TextStyle(
       fontWeight: FontWeight.w900,
       letterSpacing: 0,
+      color: scheme.onSurface,
     );
 
     return FittedBox(
@@ -315,18 +369,12 @@ class _GradientHomeTitle extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ShaderMask(
+            shaderCallback: (bounds) =>
+                _gradient.createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
             blendMode: BlendMode.srcIn,
-            shaderCallback: (bounds) => const LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [Color(0xFF5C6FF4), Color(0xFFE870C2)],
-            ).createShader(bounds),
-            child: Text(
-              'Toolbox',
-              style: textStyle,
-            ),
+            child: Text('Toolbox', style: baseStyle.copyWith(color: Colors.white)),
           ),
-          Text(' Everything', style: textStyle),
+          Text(' Everything', style: baseStyle),
         ],
       ),
     );
@@ -343,12 +391,7 @@ class _FavoritesStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        ExpressiveTokens.spacingLg,
-        ExpressiveTokens.spacingLg,
-        0,
-        0,
-      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 0, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -366,12 +409,12 @@ class _FavoritesStrip extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           SizedBox(
-            height: 96,
+            height: 76,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(right: ExpressiveTokens.spacingLg),
+              padding: const EdgeInsets.only(right: 12),
               itemCount: favorites.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
                 final t = favorites[i];
                 return _FavoritePill(tool: t, onChanged: onChanged);
@@ -392,45 +435,65 @@ class _FavoritePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final shape = RoundedRectangleBorder(
+      borderRadius: ExpressiveShapes.asymmetricHero(major: 18, minor: 10),
+      side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.50)),
+    );
+
     return Material(
       color: scheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ExpressiveShapes.large),
-      ),
+      shape: shape,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
-          Navigator.of(context).push(
-            unifiedNavigation(
-              context,
-              tool.screenBuilder(tool.heroTag),
-              isAndroid: Theme.of(context).platform == TargetPlatform.android,
-            ),
-          );
+          Navigator.of(
+            context,
+          ).push(unifiedNavigation(context, tool.screenBuilder(tool.heroTag)));
         },
-        child: Container(
-          width: 140,
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: SizedBox(
+          width: 132,
+          child: Stack(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: ShapeDecoration(
-                  color: tool.cardColor.withValues(alpha: 0.18),
-                  shape: const StadiumBorder(),
+              Positioned(
+                left: 0,
+                top: 12,
+                bottom: 12,
+                child: Container(
+                  width: 3,
+                  decoration: BoxDecoration(
+                    color: tool.cardColor.withValues(alpha: 0.38),
+                    borderRadius: const BorderRadius.horizontal(
+                      right: Radius.circular(99),
+                    ),
+                  ),
                 ),
-                child: Icon(tool.icon, color: tool.cardColor, size: 18),
               ),
-              Text(
-                tool.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  height: 1.2,
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: ShapeDecoration(
+                        color: tool.cardColor.withValues(alpha: 0.11),
+                        shape: const StadiumBorder(),
+                      ),
+                      child: Icon(tool.icon, color: tool.cardColor, size: 16),
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        tool.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11.5,
+                          height: 1.15,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

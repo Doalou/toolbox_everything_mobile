@@ -44,11 +44,14 @@ class ThemeProvider with ChangeNotifier {
   }
 
   void setSeedColor(Color color) {
-    if (_seedColor != color) {
-      _seedColor = color;
-      _saveSeedColor(color);
-      notifyListeners();
+    if (_seedColor == color && !_useDynamicColor) return;
+    _seedColor = color;
+    _saveSeedColor(color);
+    if (_useDynamicColor) {
+      _useDynamicColor = false;
+      _saveUseDynamic(false);
     }
+    notifyListeners();
   }
 
   void setUseDynamicColor(bool enabled) {
@@ -65,6 +68,18 @@ class ThemeProvider with ChangeNotifier {
       _saveAmoled(enabled);
       notifyListeners();
     }
+  }
+
+  void resetAppearance() {
+    _themeMode = ThemeMode.system;
+    _seedColor = ExpressivePalette.seeds.first;
+    _useDynamicColor = false;
+    _useAmoledBlack = false;
+    _saveThemeMode(_themeMode);
+    _saveSeedColor(_seedColor);
+    _saveUseDynamic(_useDynamicColor);
+    _saveAmoled(_useAmoledBlack);
+    notifyListeners();
   }
 
   Future<void> _init() async {

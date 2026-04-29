@@ -44,6 +44,7 @@ class _NotesScreenState extends State<NotesScreen>
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _saveController.dispose();
     _textController.dispose();
     _focusNode.dispose();
@@ -199,6 +200,12 @@ class _NotesScreenState extends State<NotesScreen>
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      floatingActionButton: FloatingActionButton.small(
+        heroTag: "notes_edit",
+        onPressed: () => _focusNode.requestFocus(),
+        backgroundColor: colorScheme.primary,
+        child: Icon(Icons.edit, color: colorScheme.onPrimary),
+      ),
       appBar: AppBar(
         title: Hero(
           tag: widget.heroTag,
@@ -275,10 +282,9 @@ class _NotesScreenState extends State<NotesScreen>
       ),
       body: Column(
         children: [
-          // Header avec statistiques
           Container(
-            margin: const EdgeInsets.all(20),
-            padding: const EdgeInsets.all(20),
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(16),
@@ -286,7 +292,7 @@ class _NotesScreenState extends State<NotesScreen>
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: colorScheme.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -294,48 +300,32 @@ class _NotesScreenState extends State<NotesScreen>
                   child: Icon(
                     Icons.note_add,
                     color: colorScheme.primary,
-                    size: 24,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Notes temporaires',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          _buildStatChip('$_characterCount caractères'),
-                          const SizedBox(width: 8),
-                          _buildStatChip('$_wordCount mots'),
-                          const SizedBox(width: 8),
-                          if (_hasUnsavedChanges)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Non sauvé',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.orange.shade700,
-                                ),
-                              ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onPrimaryContainer,
                             ),
-                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$_characterCount caractères · $_wordCount mots${_hasUnsavedChanges ? ' · non sauvegardé' : ''}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer.withValues(
+                            alpha: 0.72,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -347,7 +337,7 @@ class _NotesScreenState extends State<NotesScreen>
           // Zone de texte principale
           Expanded(
             child: Container(
-              margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(16),
@@ -376,86 +366,18 @@ class _NotesScreenState extends State<NotesScreen>
                   context,
                 ).textTheme.bodyLarge?.copyWith(height: 1.6, fontSize: 16),
                 decoration: InputDecoration(
-                  hintText:
-                      'Écrivez vos notes temporaires ici...\n\n• Sauvegarde automatique\n• Persistance entre les sessions\n• Compteur de mots en temps réel',
+                  hintText: 'Écrivez vos notes temporaires ici...',
                   hintStyle: TextStyle(
                     color: colorScheme.onSurface.withValues(alpha: 0.4),
                     height: 1.6,
                   ),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(20),
+                  contentPadding: const EdgeInsets.all(18),
                 ),
               ),
             ),
           ),
-
-          // Barre d'outils en bas
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.auto_awesome,
-                          size: 16,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Sauvegarde automatique activée',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: colorScheme.onSurface.withValues(
-                                  alpha: 0.7,
-                                ),
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                FloatingActionButton.small(
-                  heroTag: "notes_edit",
-                  onPressed: () => _focusNode.requestFocus(),
-                  backgroundColor: colorScheme.primary,
-                  child: Icon(Icons.edit, color: colorScheme.onPrimary),
-                ),
-              ],
-            ),
-          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatChip(String text) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: colorScheme.surface.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-          color: colorScheme.onSurface.withValues(alpha: 0.7),
-        ),
       ),
     );
   }

@@ -7,7 +7,6 @@ import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/timestamp_service.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/status_badge.dart';
 
 class TimestampConverterScreen extends StatefulWidget {
   final String heroTag;
@@ -97,14 +96,6 @@ class _TimestampConverterScreenState extends State<TimestampConverterScreen> {
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [
-          Row(
-            children: [
-              StatusBadge.offline(),
-              const SizedBox(width: 8),
-              StatusBadge.local(),
-            ],
-          ),
-          const SizedBox(height: ExpressiveTokens.spacingLg),
           ExpressiveCard.hero(
             color: scheme.primaryContainer,
             child: Column(

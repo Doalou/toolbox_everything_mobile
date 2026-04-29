@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 
 /// En-tête de section : titre fort, sous-titre optionnel et action latérale.
 class ExpressiveSectionHeader extends StatelessWidget {
@@ -21,12 +20,7 @@ class ExpressiveSectionHeader extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        ExpressiveTokens.spacingLg,
-        ExpressiveTokens.spacingLg,
-        ExpressiveTokens.spacingLg,
-        ExpressiveTokens.spacingMd,
-      ),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -39,7 +33,7 @@ class ExpressiveSectionHeader extends StatelessWidget {
               ),
               child: Icon(icon, color: scheme.onPrimaryContainer, size: 18),
             ),
-            const SizedBox(width: ExpressiveTokens.spacingMd),
+            const SizedBox(width: 10),
           ],
           Expanded(
             child: Column(

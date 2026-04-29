@@ -213,30 +213,29 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
         ],
       ),
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        physics: const ClampingScrollPhysics(),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Header
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 children: [
-                  Icon(Icons.fingerprint, size: 48, color: colorScheme.primary),
-                  const SizedBox(height: 12),
+                  Icon(Icons.fingerprint, size: 34, color: colorScheme.primary),
+                  const SizedBox(height: 8),
                   Text(
                     'Calculateur de Hash',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onPrimaryContainer,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     'MD5 • SHA-256 • SHA-512',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -249,11 +248,10 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
-            // Type d'entrée
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(16),
@@ -296,9 +294,8 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Zone de saisie
             Container(
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainer,
@@ -369,9 +366,8 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
 
-            // Résultats des hash
             AnimatedBuilder(
               animation: _calculateAnimation,
               builder: (context, child) {
@@ -389,9 +385,8 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
               },
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Exemples rapides
             _buildQuickExamples(),
           ],
         ),

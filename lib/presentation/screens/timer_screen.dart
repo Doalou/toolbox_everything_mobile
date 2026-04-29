@@ -43,9 +43,7 @@ class _TimerScreenState extends State<TimerScreen> {
   Future<void> _initializeNotifications() async {
     _notificationsPlugin = FlutterLocalNotificationsPlugin();
 
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    );
+    const androidSettings = AndroidInitializationSettings('ic_notification');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -189,7 +187,7 @@ class _TimerScreenState extends State<TimerScreen> {
       channelDescription: 'Notifications pour le minuteur',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: 'ic_notification',
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -314,7 +312,7 @@ class _TimerScreenState extends State<TimerScreen> {
         children: [
           // Mode selector
           Container(
-            margin: const EdgeInsets.all(20),
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: SegmentedButton<TimerMode>(
               segments: const [
                 ButtonSegment(

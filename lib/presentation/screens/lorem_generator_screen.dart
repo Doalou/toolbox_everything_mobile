@@ -172,34 +172,33 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
         ],
       ),
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        physics: const ClampingScrollPhysics(),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Header
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 children: [
                   Icon(
                     Icons.text_snippet,
-                    size: 48,
+                    size: 34,
                     color: colorScheme.primary,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Text(
                     'Générateur de texte',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onPrimaryContainer,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     'Lorem ipsum pour vos maquettes et prototypes',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -213,14 +212,12 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
-            // Options de génération
             _buildGenerationOptions(),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Bouton de génération
             AnimatedBuilder(
               animation: _generateAnimation,
               builder: (context, child) {

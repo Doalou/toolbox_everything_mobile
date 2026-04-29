@@ -74,23 +74,18 @@ class _JwtDecoderScreenState extends State<JwtDecoderScreen> {
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [
-          Row(
-            children: [
-              StatusBadge.offline(),
-              const SizedBox(width: 8),
-              const StatusBadge(
-                label: 'Sans vérif. signature',
-                icon: Icons.warning_amber_rounded,
-                tone: BadgeTone.warning,
-              ),
-            ],
-          ),
-          const SizedBox(height: ExpressiveTokens.spacingLg),
           ExpressiveCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Token', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 4),
+                Text(
+                  'Lecture du contenu uniquement, sans vérification de signature.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _input,

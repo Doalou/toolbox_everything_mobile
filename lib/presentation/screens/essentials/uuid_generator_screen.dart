@@ -5,7 +5,6 @@ import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/uuid_service.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/status_badge.dart';
 
 class UuidGeneratorScreen extends StatefulWidget {
   final String heroTag;
@@ -68,14 +67,6 @@ class _UuidGeneratorScreenState extends State<UuidGeneratorScreen> {
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [
-          Row(
-            children: [
-              StatusBadge.local(),
-              const SizedBox(width: 8),
-              StatusBadge.offline(),
-            ],
-          ),
-          const SizedBox(height: ExpressiveTokens.spacingLg),
           ExpressiveCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

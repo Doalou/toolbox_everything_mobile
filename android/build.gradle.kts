@@ -22,7 +22,6 @@ subprojects {
     tasks.withType<JavaCompile>().configureEach {
         sourceCompatibility = JavaVersion.VERSION_17.toString()
         targetCompatibility = JavaVersion.VERSION_17.toString()
-        // Pour supprimer explicitement l'avertissement lié aux options obsolètes :
-        // options.compilerArgs.add("-Xlint:-options")
+        options.compilerArgs.add("-Xlint:-options")
     }
 }

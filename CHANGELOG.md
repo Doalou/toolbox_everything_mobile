@@ -5,6 +5,66 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-04-29
+
+### Modifié
+
+- **Accueil – barre du haut** : fond neutre du thème (`surface → surfaceContainerLowest →
+  surfaceContainerLow`) habillé d'un motif décoratif inédit — une série d'arcs
+  concentriques (effet ripple/onde) émergeant du coin bas-droit, peints au stroke
+  avec le dégradé `#5c6ff4 → #e870c2` et une opacité décroissante vers l'extérieur,
+  ponctués d'un petit point plein dégradé au point d'origine.
+- **Accueil – titre "Toolbox"** : texte rendu avec un `ShaderMask` appliquant le
+  dégradé `#5c6ff4 → #e870c2`, qui ressort clairement sur le fond neutre ;
+  " Everything" reste en `onSurface` du thème pour la lisibilité.
+- **Paramètres** : écran restructuré en sections plus lisibles avec un header compact,
+  des réglages d’apparence clarifiés, un sélecteur clair/auto/sombre toujours disponible
+  et un panneau d’accentuation dédié.
+- **Identité Android** : les anciens `ic_launcher.png` hérités reprennent désormais
+  l’icône Toolbox Everything, et les notifications du minuteur utilisent l’icône
+  monochrome dédiée.
+- **Build Android** : suppression ciblée des warnings Java `source/target value 8`
+  émis par certaines tâches de plugins, sans masquer les autres diagnostics du
+  compilateur.
+- **Navigation** : les ouvertures d’outils utilisent désormais `MaterialPageRoute`
+  de façon unifiée afin de préserver le geste Predictive Back sur toutes les entrées
+  de navigation Android, y compris les raccourcis d’application.
+- **Predictive Back** : les pages ouvertes depuis l’accueil, les cartes d’outils et
+  les raccourcis d’application utilisent des routes Material natives, sans wrapper de
+  retour supplémentaire, pour laisser Android piloter le geste prédictif.
+- **À propos** : écran entièrement restructuré avec AppBar native, sections
+  Application/Ressources, carte d’identité 0.3.1, liens et actions de contact plus
+  lisibles, et e-mail de suggestion prérempli.
+- **Accueil** : grille d’outils plus compacte, cartes moins hautes et bandeau favoris
+  resserré pour réduire les espaces vides, avec des tuiles plus petites, plus
+  sobres et une palette moins artificielle.
+- **Paramètres** : ajout d’une action de réinitialisation de l’apparence pour revenir
+  au thème auto, à l’accent par défaut et aux réglages visuels standards.
+- **Cartes d’outils** : retrait des badges décoratifs (`Local`, `Offline`,
+  `Sans compte`, catégories du header YouTube) dans les écrans et dans `À propos`,
+  pour réduire le bruit visuel.
+- **Démarrage** : initialisation différée des raccourcis d’application et des
+  notifications après le premier rendu, avec notifications auto-initialisables à
+  l’usage, afin de réduire le travail sur le thread UI au lancement.
+- **À propos** : ajout d’un bouton de signalement de bug avec e-mail prérempli.
+- **Cartes historiques** : rafraîchissement des cartes internes de plusieurs écrans
+  pré-0.3.0 (`À propos`, sélecteur de couleurs, encodeur/décodeur, générateur de
+  mot de passe, convertisseur d’unités) avec `ExpressiveCard`, icônes en pastilles
+  et en-têtes plus lisibles.
+- **Écrans anciens** : compactage des écrans bloc-notes temporaire, hash, lorem et
+  minuteur pour réduire les en-têtes trop hauts et les espaces décoratifs.
+
+### Corrigé
+
+- **Couleur d’accentuation** : choisir une couleur personnalisée désactive maintenant
+  automatiquement les couleurs dynamiques système, afin que le changement soit visible
+  immédiatement.
+- **Dashboard** : le `Hero` des cartes d’outils anime uniquement le titre au lieu de
+  faire transiter toute la carte vers l’AppBar, ce qui évite les overflows `RenderFlex`
+  signalés dans les logs.
+- **Notifications minuteur** : référence d’icône Android alignée sur le service de
+  notifications central.
+
 ## [0.3.0] - 2026-04-27
 
 > Refonte UI majeure autour de **Material 3 Expressive**.

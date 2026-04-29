@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
-import 'dart:convert';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 
 enum EncodingType { base64, url, html, hex }
 
@@ -36,13 +38,7 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
     }
 
     try {
-      String result;
-      if (_isEncoding) {
-        result = _encode(input);
-      } else {
-        result = _decode(input);
-      }
-      _outputController.text = result;
+      _outputController.text = _isEncoding ? _encode(input) : _decode(input);
     } catch (e) {
       _outputController.text = 'Erreur: ${e.toString()}';
     }
@@ -55,7 +51,13 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
       case EncodingType.url:
         return Uri.encodeComponent(input);
       case EncodingType.html:
-        return _htmlEncode(input);
+        return input
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;')
+            .replaceAll(' ', '&nbsp;');
       case EncodingType.hex:
         return input.codeUnits
             .map((c) => c.toRadixString(16).padLeft(2, '0'))
@@ -70,48 +72,29 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
       case EncodingType.url:
         return Uri.decodeComponent(input);
       case EncodingType.html:
-        return _htmlDecode(input);
+        return input
+            .replaceAll('&amp;', '&')
+            .replaceAll('&lt;', '<')
+            .replaceAll('&gt;', '>')
+            .replaceAll('&quot;', '"')
+            .replaceAll('&#39;', "'")
+            .replaceAll('&nbsp;', ' ');
       case EncodingType.hex:
-        return _hexDecode(input);
+        final cleanHex = input.replaceAll(' ', '').replaceAll('\n', '');
+        final bytes = <int>[];
+        for (var i = 0; i < cleanHex.length; i += 2) {
+          if (i + 2 <= cleanHex.length) {
+            bytes.add(int.parse(cleanHex.substring(i, i + 2), radix: 16));
+          }
+        }
+        return String.fromCharCodes(bytes);
     }
-  }
-
-  String _htmlEncode(String input) {
-    return input
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;')
-        .replaceAll(' ', '&nbsp;');
-  }
-
-  String _htmlDecode(String input) {
-    return input
-        .replaceAll('&amp;', '&')
-        .replaceAll('&lt;', '<')
-        .replaceAll('&gt;', '>')
-        .replaceAll('&quot;', '"')
-        .replaceAll('&#39;', "'")
-        .replaceAll('&nbsp;', ' ');
-  }
-
-  String _hexDecode(String input) {
-    final cleanHex = input.replaceAll(' ', '').replaceAll('\n', '');
-    final bytes = <int>[];
-    for (int i = 0; i < cleanHex.length; i += 2) {
-      if (i + 2 <= cleanHex.length) {
-        bytes.add(int.parse(cleanHex.substring(i, i + 2), radix: 16));
-      }
-    }
-    return String.fromCharCodes(bytes);
   }
 
   void _copyOutput() {
-    if (_outputController.text.isNotEmpty) {
-      Clipboard.setData(ClipboardData(text: _outputController.text));
-      Fluttertoast.showToast(msg: AppConstants.copySuccessMessage);
-    }
+    if (_outputController.text.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: _outputController.text));
+    Fluttertoast.showToast(msg: AppConstants.copySuccessMessage);
   }
 
   void _swapFields() {
@@ -143,7 +126,7 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -165,52 +148,8 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.code, color: colorScheme.primary),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Encodez et décodez du texte',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Base64, URL, HTML entities, Hexadécimal.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: colorScheme.onPrimaryContainer
-                                    .withValues(alpha: 0.8),
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
+            _IntroCard(scheme: scheme),
             const SizedBox(height: 16),
-
-            // Type selector
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -219,17 +158,14 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                 return ChoiceChip(
                   label: Text(_getTypeLabel(type)),
                   selected: selected,
-                  onSelected: (v) {
+                  onSelected: (_) {
                     setState(() => _selectedType = type);
                     _process();
                   },
                 );
               }).toList(),
             ),
-
             const SizedBox(height: 16),
-
-            // Encode/Decode toggle
             SegmentedButton<bool>(
               segments: const [
                 ButtonSegment(
@@ -244,55 +180,39 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                 ),
               ],
               selected: {_isEncoding},
-              onSelectionChanged: (v) {
-                setState(() => _isEncoding = v.first);
+              onSelectionChanged: (selection) {
+                setState(() => _isEncoding = selection.first);
                 _process();
               },
             ),
-
             const SizedBox(height: 16),
-
-            // Input field
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.input, size: 18, color: colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Text(
-                          _isEncoding ? 'Texte à encoder' : 'Texte à décoder',
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          onPressed: _clearAll,
-                          icon: const Icon(Icons.clear, size: 18),
-                          tooltip: 'Effacer',
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ],
+            ExpressiveCard(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _CardHeader(
+                    icon: Icons.input_rounded,
+                    title: _isEncoding ? 'Texte à encoder' : 'Texte à décoder',
+                    action: IconButton(
+                      onPressed: _clearAll,
+                      icon: const Icon(Icons.clear, size: 18),
+                      tooltip: 'Effacer',
+                      visualDensity: VisualDensity.compact,
                     ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _inputController,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        hintText: 'Entrez votre texte ici...',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (_) => _process(),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _inputController,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      hintText: 'Entrez votre texte ici...',
                     ),
-                  ],
-                ),
+                    onChanged: (_) => _process(),
+                  ),
+                ],
               ),
             ),
-
-            // Swap button
             Center(
               child: IconButton.filled(
                 onPressed: _swapFields,
@@ -300,84 +220,54 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                 tooltip: 'Inverser',
               ),
             ),
-
-            // Output field
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.output,
-                          size: 18,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Résultat ($_typeLabel)',
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          onPressed: _copyOutput,
-                          icon: const Icon(Icons.copy, size: 18),
-                          tooltip: 'Copier',
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ],
+            ExpressiveCard(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _CardHeader(
+                    icon: Icons.output_rounded,
+                    title: 'Résultat ($_typeLabel)',
+                    action: IconButton(
+                      onPressed: _copyOutput,
+                      icon: const Icon(Icons.copy, size: 18),
+                      tooltip: 'Copier',
+                      visualDensity: VisualDensity.compact,
                     ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _outputController,
-                      maxLines: 4,
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        hintText: 'Le résultat apparaîtra ici...',
-                        border: const OutlineInputBorder(),
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerLow,
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _outputController,
+                    maxLines: 4,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      hintText: 'Le résultat apparaîtra ici...',
+                      filled: true,
+                      fillColor: scheme.surfaceContainerLow,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Quick tips
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb_outline,
-                          size: 18,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'À propos',
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                      ],
+            ExpressiveCard(
+              dense: true,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _CardHeader(
+                    icon: Icons.lightbulb_outline,
+                    title: 'À propos',
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _getDescription(),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _getDescription(),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -410,5 +300,92 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
       case EncodingType.hex:
         return 'Hexadécimal représente chaque caractère par sa valeur en base 16. Utilisé en programmation et debug.';
     }
+  }
+}
+
+class _IntroCard extends StatelessWidget {
+  final ColorScheme scheme;
+
+  const _IntroCard({required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.code, color: scheme.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Encodez et décodez du texte',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Base64, URL, HTML entities, Hexadécimal.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Widget? action;
+
+  const _CardHeader({required this.icon, required this.title, this.action});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: ShapeDecoration(
+            color: scheme.primary.withValues(alpha: 0.14),
+            shape: const StadiumBorder(),
+          ),
+          child: Icon(icon, size: 18, color: scheme.primary),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ),
+        ?action,
+      ],
+    );
   }
 }

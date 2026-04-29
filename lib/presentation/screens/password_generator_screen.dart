@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 import 'dart:math';
 import 'dart:async';
 
@@ -205,153 +206,163 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
 
   // Helper method for the password field card
   Widget _buildPasswordField(BuildContext context, ColorScheme colorScheme) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppConstants.defaultPadding,
-          vertical: AppConstants.largePadding,
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: SelectableText(
-                    _password,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontFamily: 'monospace',
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
+    return ExpressiveCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.defaultPadding,
+        vertical: AppConstants.largePadding,
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _PasswordCardIcon(
+                icon: Icons.password_rounded,
+                color: colorScheme.primary,
+              ),
+              const SizedBox(width: AppConstants.defaultPadding),
+              Expanded(
+                child: Text(
+                  'Mot de passe généré',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                Semantics(
-                  label: AppConstants.semanticCopyButton,
-                  child: IconButton(
-                    icon: const Icon(Icons.copy),
-                    onPressed: _copyToClipboard,
-                    tooltip: AppConstants.semanticCopyButton,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.defaultPadding),
+          Row(
+            children: [
+              Expanded(
+                child: SelectableText(
+                  _password,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Semantics(
+                label: AppConstants.semanticCopyButton,
+                child: IconButton(
+                  icon: const Icon(Icons.copy),
+                  onPressed: _copyToClipboard,
+                  tooltip: AppConstants.semanticCopyButton,
+                ),
+              ),
+            ],
+          ),
+          if (_strengthIndicator.isNotEmpty) ...[
+            const SizedBox(height: AppConstants.defaultPadding),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.security,
+                  color: _strengthColor,
+                  size: AppConstants.smallIconSize,
+                ),
+                const SizedBox(width: AppConstants.smallPadding),
+                Text(
+                  'Force: $_strengthIndicator',
+                  style: TextStyle(
+                    color: _strengthColor,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-            if (_strengthIndicator.isNotEmpty) ...[
-              const SizedBox(height: AppConstants.defaultPadding),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.security,
-                    color: _strengthColor,
-                    size: AppConstants.smallIconSize,
-                  ),
-                  const SizedBox(width: AppConstants.smallPadding),
-                  Text(
-                    'Force: $_strengthIndicator',
-                    style: TextStyle(
-                      color: _strengthColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
 
   // Helper method for the history section
   Widget _buildHistorySection(BuildContext context, ColorScheme colorScheme) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.defaultPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.history,
-                  color: colorScheme.primary,
-                  size: AppConstants.smallIconSize,
-                ),
-                const SizedBox(width: AppConstants.smallPadding),
-                Text(
+    return ExpressiveCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _PasswordCardIcon(
+                icon: Icons.history_rounded,
+                color: colorScheme.primary,
+              ),
+              const SizedBox(width: AppConstants.smallPadding),
+              Expanded(
+                child: Text(
                   'Historique (${_passwordHistory.length} derniers)',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: AppConstants.defaultPadding),
-            SizedBox(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _passwordHistory.length,
-                itemBuilder: (context, index) {
-                  final password = _passwordHistory[index];
-                  return Container(
-                    width: 200,
-                    margin: const EdgeInsets.only(
-                      right: AppConstants.smallPadding,
-                    ),
-                    padding: const EdgeInsets.all(AppConstants.smallPadding),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.smallBorderRadius,
-                      ),
-                      border: Border.all(
-                        color: colorScheme.outline.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                password,
-                                style: const TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 12,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () =>
-                                  _copyPasswordFromHistory(password),
-                              icon: const Icon(Icons.copy, size: 16),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Text(
-                          '${password.length} caractères',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: colorScheme.onSurface.withValues(
-                                  alpha: 0.7,
-                                ),
-                              ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
               ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.defaultPadding),
+          SizedBox(
+            height: 120,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _passwordHistory.length,
+              itemBuilder: (context, index) {
+                final password = _passwordHistory[index];
+                return Container(
+                  width: 200,
+                  margin: const EdgeInsets.only(
+                    right: AppConstants.smallPadding,
+                  ),
+                  padding: const EdgeInsets.all(AppConstants.smallPadding),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.smallBorderRadius,
+                    ),
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              password,
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => _copyPasswordFromHistory(password),
+                            icon: const Icon(Icons.copy, size: 16),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${password.length} caractères',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -441,6 +452,26 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
           },
         ),
       ],
+    );
+  }
+}
+
+class _PasswordCardIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _PasswordCardIcon({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: ShapeDecoration(
+        color: color.withValues(alpha: 0.14),
+        shape: const StadiumBorder(),
+      ),
+      child: Icon(icon, color: color, size: 20),
     );
   }
 }

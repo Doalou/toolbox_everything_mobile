@@ -37,9 +37,7 @@ class DownloaderScreen extends StatelessWidget {
           return CustomScrollView(
             physics: const ClampingScrollPhysics(),
             slivers: [
-              SliverToBoxAdapter(
-                child: _DownloaderHeader(provider: provider),
-              ),
+              SliverToBoxAdapter(child: const _DownloaderHeader()),
               const SliverToBoxAdapter(child: SizedBox(height: 12)),
               const SliverToBoxAdapter(child: UrlInputPanel()),
               if (provider.hasDownloadStatus)
@@ -52,33 +50,33 @@ class DownloaderScreen extends StatelessWidget {
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
               switch (provider.state) {
                 DownloaderState.loading => const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _LoadingState(),
-                  ),
+                  hasScrollBody: false,
+                  child: _LoadingState(),
+                ),
                 DownloaderState.error => SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _ErrorState(
-                      message:
-                          provider.errorMessage ?? 'Une erreur est survenue.',
-                    ),
+                  hasScrollBody: false,
+                  child: _ErrorState(
+                    message:
+                        provider.errorMessage ?? 'Une erreur est survenue.',
                   ),
+                ),
                 DownloaderState.success => const SliverPadding(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, 120),
-                    sliver: SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          VideoInfoCard(),
-                          SizedBox(height: 14),
-                          DownloadOptions(),
-                        ],
-                      ),
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 120),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        VideoInfoCard(),
+                        SizedBox(height: 14),
+                        DownloadOptions(),
+                      ],
                     ),
                   ),
+                ),
                 DownloaderState.initial => SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _EmptyState(color: scheme.primary),
-                  ),
+                  hasScrollBody: false,
+                  child: _EmptyState(color: scheme.primary),
+                ),
               },
             ],
           );
@@ -89,9 +87,7 @@ class DownloaderScreen extends StatelessWidget {
 }
 
 class _DownloaderHeader extends StatelessWidget {
-  final DownloaderProvider provider;
-
-  const _DownloaderHeader({required this.provider});
+  const _DownloaderHeader();
 
   @override
   Widget build(BuildContext context) {
@@ -133,96 +129,24 @@ class _DownloaderHeader extends StatelessWidget {
                     children: [
                       Text(
                         'YouTube audio & vidéo',
-                        style: Theme.of(context).textTheme.titleLarge
-                            ?.copyWith(
-                              color: scheme.onPrimaryContainer,
-                              fontWeight: FontWeight.w800,
-                            ),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Collez un lien, inspectez les formats, puis choisissez une sortie claire.',
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(
-                              color: scheme.onPrimaryContainer.withValues(
-                                alpha: 0.78,
-                              ),
-                            ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: scheme.onPrimaryContainer.withValues(
+                            alpha: 0.78,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _HeaderChip(
-                  icon: Icons.music_note_rounded,
-                  label: 'Audio',
-                  color: scheme.primary,
-                ),
-                _HeaderChip(
-                  icon: Icons.movie_creation_rounded,
-                  label: 'Vidéo',
-                  color: scheme.tertiary,
-                ),
-                _HeaderChip(
-                  icon: Icons.merge_type_rounded,
-                  label: 'Fusion',
-                  color: scheme.secondary,
-                ),
-                if (provider.video != null)
-                  _HeaderChip(
-                    icon: Icons.check_circle_rounded,
-                    label: 'Lien analysé',
-                    color: scheme.primary,
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HeaderChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _HeaderChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: ShapeDecoration(
-        color: scheme.surface.withValues(alpha: 0.78),
-        shape: const StadiumBorder(),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: scheme.onSurface,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
             ),
           ],
         ),
@@ -245,7 +169,8 @@ class _UrlInputPanelState extends State<UrlInputPanel> {
   Widget build(BuildContext context) {
     final provider = context.watch<DownloaderProvider>();
     final scheme = Theme.of(context).colorScheme;
-    final busy = provider.isFetching ||
+    final busy =
+        provider.isFetching ||
         provider.downloadActivity == DownloadActivityState.downloading;
 
     return Padding(
@@ -408,9 +333,9 @@ class _ErrorState extends StatelessWidget {
                 Text(
                   'Impossible d’analyser ce lien',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: scheme.onErrorContainer,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: scheme.onErrorContainer,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -446,9 +371,9 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: ExpressiveTokens.spacing),
             Text(
               'Prêt à analyser',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(

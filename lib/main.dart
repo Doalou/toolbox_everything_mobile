@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -61,12 +63,11 @@ Future<void> main() async {
 
   // Initialisation asynchrone des services et préférences
   final prefs = await SharedPreferences.getInstance();
-  await NotificationService.instance.initialize();
   // Optimisation mémoire pour appareils low-cost
   painting.imageCache.maximumSize = 100; // nombre max d'images en cache
   painting.imageCache.maximumSizeBytes = 50 << 20; // ~50 Mo
   // Edge-to-edge et styles barres système
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
 
   // Ce listener met à jour le style des icônes de la barre de statut en fonction du thème
   SystemChrome.setSystemUIOverlayStyle(
@@ -76,8 +77,6 @@ Future<void> main() async {
     ),
   );
 
-  // Quick Actions (app shortcuts)
-  await QuickActionsService.instance.initialize();
   runApp(
     MultiProvider(
       providers: [
@@ -103,36 +102,31 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Une fois l'UI prête, on vérifie s'il y a une action de raccourci à exécuter.
+    // Une fois l'UI prête, on initialise les services non critiques.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      QuickActionsService.instance.processPendingAction();
+      unawaited(_initializeDeferredServices());
     });
+  }
+
+  Future<void> _initializeDeferredServices() async {
+    try {
+      await QuickActionsService.instance.initialize();
+      QuickActionsService.instance.processPendingAction();
+    } catch (_) {
+      // Les raccourcis ne doivent pas bloquer l'ouverture de l'app.
+    }
+
+    // Laisse l'accueil terminer son premier rendu avant les canaux natifs.
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    try {
+      await NotificationService.instance.initialize();
+    } catch (_) {
+      // Les notifications se réinitialiseront à la prochaine utilisation.
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Mettre à jour le style de la barre de statut en fonction du thème
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final Brightness platformBrightness = MediaQuery.platformBrightnessOf(
-      context,
-    );
-    final bool isDarkMode =
-        themeProvider.themeMode == ThemeMode.dark ||
-        (themeProvider.themeMode == ThemeMode.system &&
-            platformBrightness == Brightness.dark);
-
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        systemNavigationBarColor: Colors.transparent,
-        statusBarIconBrightness: isDarkMode
-            ? Brightness.light
-            : Brightness.dark,
-        systemNavigationBarIconBrightness: isDarkMode
-            ? Brightness.light
-            : Brightness.dark,
-      ),
-    );
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return DynamicColorBuilder(

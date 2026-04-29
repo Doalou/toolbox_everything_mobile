@@ -1,502 +1,184 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:provider/provider.dart';
-import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
+import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final settingsProvider = Provider.of<SettingsProvider>(context);
-    final colorScheme = Theme.of(context).colorScheme;
+    final themeProvider = context.watch<ThemeProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      // Respecte le fond global (peut être transparent/amoled/noir)
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const ClampingScrollPhysics(),
         slivers: [
-          // Nouvel AppBar moderne et extensible
           SliverAppBar.large(
             pinned: true,
             leading: const BackButton(),
-            leadingWidth: 68,
-            centerTitle: false,
+            expandedHeight: 188,
+            elevation: 0,
+            backgroundColor: scheme.surface,
+            surfaceTintColor: Colors.transparent,
             flexibleSpace: FlexibleSpaceBar(
-              collapseMode: CollapseMode.pin,
-              // Masquer le titre quand on est en haut pour éviter le doublon avec le header
+              titlePadding: const EdgeInsets.fromLTRB(72, 0, 20, 16),
               title: const _CollapsingTitle(),
-              titlePadding: const EdgeInsets.only(left: 92, bottom: 16),
-              background: Container(
-                color: colorScheme.surface,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 24, bottom: 24),
+              background: const _SettingsHeader(),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
+            sliver: SliverList.list(
+              children: [
+                _SettingsPanel(
+                  title: 'Apparence',
+                  icon: Icons.palette_outlined,
+                  children: [
+                    _ThemeModeSelector(themeProvider: themeProvider),
+                    _SettingsDivider(),
+                    _SwitchTile(
+                      icon: Icons.auto_awesome_rounded,
+                      title: 'Couleurs système',
+                      subtitle:
+                          'Utilise la palette Material You fournie par Android.',
+                      value: themeProvider.useDynamicColor,
+                      onChanged: themeProvider.setUseDynamicColor,
+                    ),
+                    _SettingsDivider(),
+                    _SwitchTile(
+                      icon: Icons.nightlight_round,
+                      title: 'Noir AMOLED',
+                      subtitle: 'Applique un fond noir pur en mode sombre.',
+                      value: themeProvider.useAmoledBlack,
+                      onChanged: themeProvider.setUseAmoledBlack,
+                    ),
+                    _SettingsDivider(),
+                    _ActionTile(
+                      icon: Icons.restart_alt_rounded,
+                      title: 'Réinitialiser l’apparence',
+                      subtitle:
+                          'Revient au thème auto et à l’accent par défaut.',
+                      onTap: () {
+                        themeProvider.resetAppearance();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Apparence réinitialisée'),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _AccentPanel(themeProvider: themeProvider),
+                const SizedBox(height: 16),
+                _SettingsPanel(
+                  title: 'Comportement',
+                  icon: Icons.tune_rounded,
+                  children: [
+                    _SwitchTile(
+                      icon: Icons.screen_lock_rotation,
+                      title: 'Niveau à bulle en portrait',
+                      subtitle:
+                          'Verrouille l’orientation pour stabiliser la lecture.',
+                      value: settingsProvider.lockBubbleLevelPortrait,
+                      onChanged: settingsProvider.setLockBubbleLevelPortrait,
+                    ),
+                    _SettingsDivider(),
+                    _SwitchTile(
+                      icon: Icons.battery_saver_rounded,
+                      title: 'Économie de ressources',
+                      subtitle:
+                          'Réduit les animations et certains effets visuels.',
+                      value: settingsProvider.lowResourceMode,
+                      onChanged: settingsProvider.setLowResourceMode,
+                    ),
+                    _SettingsDivider(),
+                    _SwitchTile(
+                      icon: Icons.vibration_rounded,
+                      title: 'Retours haptiques',
+                      subtitle: 'Active les vibrations légères de l’interface.',
+                      value: settingsProvider.hapticsEnabled,
+                      onChanged: settingsProvider.setHapticsEnabled,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsHeader extends StatelessWidget {
+  const _SettingsHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 0.35),
+          ),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          child: Align(
+            alignment: Alignment.bottomLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: ShapeDecoration(
+                    color: scheme.primaryContainer,
+                    shape: const StadiumBorder(),
+                  ),
+                  child: Icon(
+                    Icons.settings_rounded,
+                    color: scheme.onPrimaryContainer,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.settings,
-                              color: colorScheme.onPrimaryContainer,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            'Paramètres',
-                            style: Theme.of(context).textTheme.headlineLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: colorScheme.onSurface,
-                                ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
                       Text(
-                        'Gérez l\'apparence et le comportement',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                        'Paramètres',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.headlineLarge
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Apparence et comportement de l’application',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-          ),
-
-          // Contenu des paramètres
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // Section Apparence
-                _buildSectionHeader(
-                  context,
-                  'Apparence',
-                  Icons.palette_outlined,
-                ),
-
-                const SizedBox(height: 8),
-
-                // Sélecteur de thème
-                _buildThemeSelector(context, themeProvider),
-
-                const SizedBox(height: 16),
-
-                // Carte couleur principale
-                _buildColorCard(context, themeProvider),
-
-                const SizedBox(height: 24),
-
-                // Section Comportement
-                _buildSectionHeader(
-                  context,
-                  'Comportement',
-                  Icons.tune_outlined,
-                ),
-
-                const SizedBox(height: 12),
-
-                Card(
-                  margin: const EdgeInsets.symmetric(vertical: 6),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    leading: const Icon(Icons.screen_lock_rotation),
-                    title: const Text(
-                      'Verrouiller le niveau à bulle en portrait',
-                    ),
-                    subtitle: const Text(
-                      'Empêche la rotation pour une lecture plus stable',
-                    ),
-                    trailing: Switch(
-                      value: settingsProvider.lockBubbleLevelPortrait,
-                      onChanged: (v) =>
-                          settingsProvider.setLockBubbleLevelPortrait(v),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Mode économie de ressources
-                Card(
-                  margin: const EdgeInsets.symmetric(vertical: 6),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    leading: const Icon(Icons.battery_saver),
-                    title: const Text('Mode économie de ressources'),
-                    subtitle: const Text(
-                      'Réduit les animations, les ombres et l’usage mémoire pour de meilleures performances',
-                    ),
-                    trailing: Switch(
-                      value: settingsProvider.lowResourceMode,
-                      onChanged: (v) => settingsProvider.setLowResourceMode(v),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Haptics réglables
-                Card(
-                  margin: const EdgeInsets.symmetric(vertical: 6),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    leading: const Icon(Icons.vibration),
-                    title: const Text('Vibrations et haptics'),
-                    subtitle: const Text(
-                      'Active ou désactive les retours haptiques de l’interface',
-                    ),
-                    trailing: Switch(
-                      value: settingsProvider.hapticsEnabled,
-                      onChanged: (v) => settingsProvider.setHapticsEnabled(v),
-                    ),
-                  ),
-                ),
-
-                // Section À propos retirée sur demande
-              ]),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeSelector(
-    BuildContext context,
-    ThemeProvider themeProvider,
-  ) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Matérial You (couleurs dynamiques système)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.palette_outlined),
-              title: const Text('Couleurs dynamiques système (Material You)'),
-              trailing: Switch(
-                value: themeProvider.useDynamicColor,
-                onChanged: (v) => themeProvider.setUseDynamicColor(v),
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Thème noir AMOLED (uniquement pertinent en mode sombre)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.nightlight_round),
-              title: const Text('Thème noir AMOLED'),
-              subtitle: const Text(
-                'Noir pur pour écrans OLED, économise la batterie',
-              ),
-              trailing: Switch(
-                value: themeProvider.useAmoledBlack,
-                onChanged: (v) => themeProvider.setUseAmoledBlack(v),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Mode d\'affichage',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            AbsorbPointer(
-              absorbing: themeProvider.useDynamicColor,
-              child: Opacity(
-                opacity: themeProvider.useDynamicColor ? 0.5 : 1.0,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final bool compact = constraints.maxWidth < 360;
-                    final EdgeInsetsGeometry segPadding = EdgeInsets.symmetric(
-                      horizontal: compact ? 8 : 12,
-                      vertical: compact ? 6 : 8,
-                    );
-                    return MediaQuery(
-                      data: MediaQuery.of(
-                        context,
-                      ).copyWith(textScaler: TextScaler.linear(1.0)),
-                      child: SegmentedButton<ThemeMode>(
-                        segments: [
-                          const ButtonSegment(
-                            value: ThemeMode.light,
-                            icon: Icon(Icons.light_mode),
-                            label: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                'Clair',
-                                maxLines: 1,
-                                softWrap: false,
-                              ),
-                            ),
-                          ),
-                          const ButtonSegment(
-                            value: ThemeMode.system,
-                            icon: Icon(Icons.brightness_auto),
-                            label: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                'Système',
-                                maxLines: 1,
-                                softWrap: false,
-                              ),
-                            ),
-                          ),
-                          const ButtonSegment(
-                            value: ThemeMode.dark,
-                            icon: Icon(Icons.dark_mode),
-                            label: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                'Sombre',
-                                maxLines: 1,
-                                softWrap: false,
-                              ),
-                            ),
-                          ),
-                        ],
-                        selected: {themeProvider.themeMode},
-                        onSelectionChanged: themeProvider.useDynamicColor
-                            ? null
-                            : (newSelection) {
-                                themeProvider.setThemeMode(newSelection.first);
-                              },
-                        style: ButtonStyle(
-                          visualDensity: const VisualDensity(
-                            horizontal: 0,
-                            vertical: -2,
-                          ),
-                          padding: WidgetStateProperty.all(segPadding),
-                          textStyle: WidgetStateProperty.all(
-                            Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(
-    BuildContext context,
-    String title,
-    IconData icon,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: colorScheme.onPrimaryContainer, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildColorCard(BuildContext context, ThemeProvider themeProvider) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [colorScheme.surface, colorScheme.surfaceContainerLow],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: () => _showColorPicker(context, themeProvider),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    // Prévisualisation couleur avec animation
-                    Hero(
-                      tag: 'color_preview',
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: themeProvider.seedColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: themeProvider.seedColor.withValues(
-                                alpha: 0.3,
-                              ),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.palette,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 20),
-
-                    // Texte descriptif
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Couleur principale',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Personnalisez l\'apparence de votre application',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: colorScheme.onSurface.withValues(
-                                    alpha: 0.7,
-                                  ),
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Icône action
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      color: colorScheme.primary,
-                      size: 20,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Palette de couleurs expressives
-                Text(
-                  'Couleurs suggérées',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface.withValues(alpha: 0.8),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Grille de couleurs
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: AppConstants.expressiveColors.map((color) {
-                    final isSelected = color == themeProvider.seedColor;
-
-                    return GestureDetector(
-                      onTap: () {
-                        themeProvider.setSeedColor(color);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected
-                                ? colorScheme.onSurface
-                                : Colors.transparent,
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            if (isSelected)
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.4),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                          ],
-                        ),
-                        child: isSelected
-                            ? Icon(Icons.check, color: Colors.white, size: 20)
-                            : null,
-                      ),
-                    );
-                  }).toList(),
                 ),
               ],
             ),
@@ -505,94 +187,536 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
+}
 
-  // Carte À propos retirée
+class _SettingsPanel extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
 
-  void _showColorPicker(BuildContext context, ThemeProvider themeProvider) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.8,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
+  const _SettingsPanel({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Row(
             children: [
-              // Poignée de drag
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.outline,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+              Icon(icon, color: scheme.primary, size: 20),
+              const SizedBox(width: 8),
+              Text(title, style: Theme.of(context).textTheme.titleLarge),
+            ],
+          ),
+        ),
+        Material(
+          color: scheme.surfaceContainerLow,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: scheme.outlineVariant.withValues(alpha: 0.45),
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+}
 
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Text(
-                      'Choisissez une couleur',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-              ),
+class _ThemeModeSelector extends StatelessWidget {
+  final ThemeProvider themeProvider;
 
-              // Color Picker
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width - 40,
-                      ),
-                      child: ColorPicker(
-                        pickerColor: themeProvider.seedColor,
-                        onColorChanged: (color) {
-                          themeProvider.setSeedColor(color);
-                        },
-                        labelTypes: const [],
-                        pickerAreaHeightPercent: 0.6,
-                        displayThumbColor: true,
-                        portraitOnly: true,
-                        paletteType: PaletteType.hsl,
-                        enableAlpha: false,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+  const _ThemeModeSelector({required this.themeProvider});
 
-              // Actions
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Terminé'),
-                  ),
-                ),
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.contrast_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Mode d’affichage',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<ThemeMode>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  icon: Icon(Icons.light_mode_rounded),
+                  label: Text('Clair'),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.system,
+                  icon: Icon(Icons.brightness_auto_rounded),
+                  label: Text('Auto'),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  icon: Icon(Icons.dark_mode_rounded),
+                  label: Text('Sombre'),
+                ),
+              ],
+              selected: {themeProvider.themeMode},
+              onSelectionChanged: (selection) {
+                themeProvider.setThemeMode(selection.first);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccentPanel extends StatelessWidget {
+  final ThemeProvider themeProvider;
+
+  const _AccentPanel({required this.themeProvider});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final sourceColor = themeProvider.seedColor;
+    final appliedColor = themeProvider.useDynamicColor
+        ? scheme.primary
+        : ColorScheme.fromSeed(
+            seedColor: sourceColor,
+            brightness: scheme.brightness,
+            dynamicSchemeVariant: DynamicSchemeVariant.expressive,
+          ).primary;
+
+    return _SettingsPanel(
+      title: 'Accentuation',
+      icon: Icons.format_paint_rounded,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _AccentPreview(
+                    color: appliedColor,
+                    sourceColor: sourceColor,
+                    showSource: !themeProvider.useDynamicColor,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          themeProvider.useDynamicColor
+                              ? 'Palette système active'
+                              : 'Accent appliqué',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          themeProvider.useDynamicColor
+                              ? 'Choisir une couleur désactivera les couleurs système.'
+                              : 'La couleur choisie sert de source à la palette Material.',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: scheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Couleur personnalisée',
+                    onPressed: () => _showColorPicker(context, themeProvider),
+                    icon: const Icon(Icons.tune_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final color in AppConstants.expressiveColors)
+                    _AccentSwatch(
+                      sourceColor: color,
+                      appliedColor: ColorScheme.fromSeed(
+                        seedColor: color,
+                        brightness: scheme.brightness,
+                        dynamicSchemeVariant: DynamicSchemeVariant.expressive,
+                      ).primary,
+                      selected: color.toARGB32() == sourceColor.toARGB32(),
+                      onTap: () => themeProvider.setSeedColor(color),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showColorPicker(BuildContext context, ThemeProvider themeProvider) {
+    var draftColor = themeProvider.seedColor;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        final scheme = Theme.of(context).colorScheme;
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final appliedDraftColor = ColorScheme.fromSeed(
+              seedColor: draftColor,
+              brightness: scheme.brightness,
+              dynamicSchemeVariant: DynamicSchemeVariant.expressive,
+            ).primary;
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                  top: 10,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _AccentPreview(
+                          color: appliedDraftColor,
+                          sourceColor: draftColor,
+                          size: 44,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Couleur d’accentuation',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Fermer',
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Aperçu : la pastille principale montre l’accent appliqué, le petit point la couleur source.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ColorPicker(
+                      pickerColor: draftColor,
+                      onColorChanged: (color) {
+                        setModalState(() => draftColor = color);
+                      },
+                      labelTypes: const [],
+                      pickerAreaHeightPercent: 0.55,
+                      displayThumbColor: true,
+                      portraitOnly: true,
+                      paletteType: PaletteType.hsl,
+                      enableAlpha: false,
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          themeProvider.setSeedColor(draftColor);
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.check_rounded),
+                        label: Text(
+                          themeProvider.useDynamicColor
+                              ? 'Appliquer et désactiver les couleurs système'
+                              : 'Appliquer',
+                        ),
+                      ),
+                    ),
+                    if (themeProvider.useDynamicColor) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Les couleurs dynamiques Android seront réactivables ici à tout moment.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
+    );
+  }
+}
+
+class _AccentPreview extends StatelessWidget {
+  final Color color;
+  final Color? sourceColor;
+  final bool showSource;
+  final double size;
+
+  const _AccentPreview({
+    required this.color,
+    this.sourceColor,
+    this.showSource = true,
+    this.size = 54,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final source = sourceColor;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.32),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.check_rounded, color: Colors.white),
+        ),
+        if (showSource && source != null)
+          Positioned(
+            right: -1,
+            bottom: -1,
+            child: Container(
+              width: size * 0.34,
+              height: size * 0.34,
+              decoration: BoxDecoration(
+                color: source,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _AccentSwatch extends StatelessWidget {
+  final Color sourceColor;
+  final Color appliedColor;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _AccentSwatch({
+    required this.sourceColor,
+    required this.appliedColor,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Tooltip(
+      message: selected ? 'Couleur active' : 'Choisir cette couleur',
+      child: InkResponse(
+        onTap: onTap,
+        radius: 28,
+        child: AnimatedContainer(
+          duration: ExpressiveMotion.short3,
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: appliedColor,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: selected ? scheme.onSurface : Colors.transparent,
+              width: 2,
+            ),
+          ),
+          child: selected
+              ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
+              : Align(
+                  alignment: Alignment.bottomRight,
+                  child: Container(
+                    width: 13,
+                    height: 13,
+                    decoration: BoxDecoration(
+                      color: sourceColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: scheme.surface, width: 1.5),
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SwitchTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SwitchTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsTile(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      onTap: () => onChanged(!value),
+      trailing: Switch(value: value, onChanged: onChanged),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ActionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsTile(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      onTap: onTap,
+      trailing: const Icon(Icons.chevron_right_rounded),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Widget trailing;
+  final VoidCallback? onTap;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: ShapeDecoration(
+                color: scheme.primaryContainer.withValues(alpha: 0.72),
+                shape: const StadiumBorder(),
+              ),
+              child: Icon(icon, color: scheme.onPrimaryContainer, size: 21),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            trailing,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      indent: 72,
+      color: Theme.of(
+        context,
+      ).colorScheme.outlineVariant.withValues(alpha: 0.45),
     );
   }
 }
@@ -602,17 +726,11 @@ class _CollapsingTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final settings = context
-            .dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
-        if (settings == null) {
-          return const SizedBox.shrink();
-        }
-        final double delta = settings.currentExtent - settings.minExtent;
-        final bool collapsed = delta <= 8;
-        return collapsed ? const Text('Paramètres') : const SizedBox.shrink();
-      },
-    );
+    final settings = context
+        .dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+    if (settings == null) return const SizedBox.shrink();
+
+    final collapsed = settings.currentExtent - settings.minExtent <= 8;
+    return collapsed ? const Text('Paramètres') : const SizedBox.shrink();
   }
 }
