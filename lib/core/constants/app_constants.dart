@@ -11,7 +11,7 @@ class AppConstants {
   // Identité
   static const String appName = 'Toolbox Everything';
   static const String appDescription = 'Vos outils numériques essentiels';
-  static const String version = '0.3.1';
+  static const String version = '0.3.2';
   static const String contactEmail = 'contact@doalo.fr';
 
   // Espacements (alias vers ExpressiveTokens)

@@ -23,12 +23,12 @@ class SettingsScreen extends StatelessWidget {
           SliverAppBar.large(
             pinned: true,
             leading: const BackButton(),
-            expandedHeight: 188,
+            expandedHeight: 148,
             elevation: 0,
             backgroundColor: scheme.surface,
             surfaceTintColor: Colors.transparent,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.fromLTRB(72, 0, 20, 16),
+              titlePadding: const EdgeInsets.fromLTRB(72, 0, 20, 12),
               title: const _CollapsingTitle(),
               background: const _SettingsHeader(),
             ),
@@ -138,15 +138,15 @@ class _SettingsHeader extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
           child: Align(
             alignment: Alignment.bottomLeft,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 44,
+                  height: 44,
                   decoration: ShapeDecoration(
                     color: scheme.primaryContainer,
                     shape: const StadiumBorder(),
@@ -154,10 +154,10 @@ class _SettingsHeader extends StatelessWidget {
                   child: Icon(
                     Icons.settings_rounded,
                     color: scheme.onPrimaryContainer,
-                    size: 28,
+                    size: 23,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -167,13 +167,15 @@ class _SettingsHeader extends StatelessWidget {
                         'Paramètres',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.headlineLarge
+                        style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         'Apparence et comportement de l’application',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
                       ),

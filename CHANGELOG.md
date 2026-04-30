@@ -5,6 +5,20 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-04-30
+
+### Modifié
+
+- **Accueil** : la tuile `Test connexion` est renommée `Testeur de Connexion`
+  pour être cohérente avec le titre de l'écran.
+- **Accueil et Paramètres** : bandeaux du haut réduits pour libérer davantage
+  d'espace utile sans retirer leur identité visuelle.
+- **Démarrage** : initialisation du téléchargeur déplacée à l'ouverture de son
+  écran, notifications chargées uniquement à l'usage et animation d'accueil
+  légèrement différée pour réduire le travail du premier rendu.
+- **Identité native** : icône launcher et splash screen repointés vers les
+  nouveaux assets Toolbox Everything, avec branding conservé au démarrage.
+
 ## [0.3.1] - 2026-04-29
 
 ### Modifié

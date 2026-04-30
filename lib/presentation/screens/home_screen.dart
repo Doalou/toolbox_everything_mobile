@@ -43,7 +43,9 @@ class _HomeScreenState extends State<HomeScreen>
       if (_isLowResource) {
         _stagger.value = 1.0;
       } else {
-        _stagger.forward();
+        Future<void>.delayed(const Duration(milliseconds: 220), () {
+          if (mounted) _stagger.forward();
+        });
       }
     });
   }
@@ -141,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen>
           SliverAppBar.large(
             pinned: true,
             stretch: true,
-            expandedHeight: 158,
+            expandedHeight: 136,
             elevation: 0,
             backgroundColor: scheme.surface,
             surfaceTintColor: Colors.transparent,
@@ -166,8 +168,8 @@ class _HomeScreenState extends State<HomeScreen>
               const SizedBox(width: 4),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              expandedTitleScale: 1.22,
+              titlePadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              expandedTitleScale: 1.14,
               title: const _GradientHomeTitle(),
               background: _HeroBackground(lowResource: lowResource),
             ),

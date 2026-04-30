@@ -13,6 +13,20 @@ class DownloaderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => DownloaderProvider()..initialize(),
+      child: _DownloaderView(heroTag: heroTag),
+    );
+  }
+}
+
+class _DownloaderView extends StatelessWidget {
+  final String heroTag;
+
+  const _DownloaderView({required this.heroTag});
+
+  @override
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(

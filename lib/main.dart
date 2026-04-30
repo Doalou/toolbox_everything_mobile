@@ -4,11 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:toolbox_everything_mobile/core/providers/downloader_provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/home_screen.dart';
-import 'package:toolbox_everything_mobile/core/services/notification_service.dart';
 import 'package:toolbox_everything_mobile/core/services/quick_actions_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/painting.dart' as painting;
@@ -82,9 +80,6 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider(prefs)),
         ChangeNotifierProvider(create: (_) => SettingsProvider(prefs)),
-        ChangeNotifierProvider(
-          create: (_) => DownloaderProvider()..initialize(),
-        ),
       ],
       child: const MyApp(),
     ),
@@ -109,19 +104,15 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _initializeDeferredServices() async {
+    // Laisse le premier rendu respirer avant d'ouvrir les canaux natifs non critiques.
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    if (!mounted) return;
+
     try {
       await QuickActionsService.instance.initialize();
       QuickActionsService.instance.processPendingAction();
     } catch (_) {
       // Les raccourcis ne doivent pas bloquer l'ouverture de l'app.
-    }
-
-    // Laisse l'accueil terminer son premier rendu avant les canaux natifs.
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    try {
-      await NotificationService.instance.initialize();
-    } catch (_) {
-      // Les notifications se réinitialiseront à la prochaine utilisation.
     }
   }
 

@@ -211,7 +211,7 @@ class ToolCatalog {
 
       // --- Réseau ------------------------------------------------------
       ToolItem(
-        title: 'Test connexion',
+        title: 'Testeur de Connexion',
         subtitle: 'Type & latence HTTP',
         icon: Icons.wifi_rounded,
         screenBuilder: (h) => ConnectionTesterScreen(heroTag: h),

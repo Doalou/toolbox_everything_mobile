@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.3.1+9
+version: 0.3.2+10
 
 environment:
   sdk: ^3.11.0
@@ -87,15 +87,15 @@ dev_dependencies:
 flutter_native_splash:
   color: "#1E1E1E"
   color_dark: "#1E1E1E"
-  image: "lib/assets/images/splash_icon_ios.png"
-  branding: "lib/assets/images/splash_branding_ios.png"
+  image: "lib/assets/images/Toolbox Everything Logo Transparent.png"
+  branding: "lib/assets/images/Toolbox Everything Branding.png"
   branding_mode: bottom
 
   android_12:
     color: "#1E1E1E"
     color_dark: "#1E1E1E"
-    image: "lib/assets/images/splash_icon_android12.png"
-    branding: "lib/assets/images/splash_branding_android12.png"
+    image: "lib/assets/images/Toolbox Everything Logo Transparent.png"
+    branding: "lib/assets/images/Toolbox Everything Branding.png"
     branding_mode: bottom
 
 # For information on the generic Dart part of this file, see the
@@ -104,12 +104,12 @@ flutter_native_splash:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "lib/assets/images/tb_app.png" # Icône carrée avec fond sombre
+  image_path: "lib/assets/images/Toolbox Everything Logo.png"
   min_sdk_android: 21 # Votre minSdk actuel
   remove_alpha_ios: true
-  adaptive_icon_background: "#1E1E1E" # Fond sombre pour l'icône
-  adaptive_icon_foreground: "lib/assets/images/tb_app_transp.png" # Logo transparent
-  adaptive_icon_padding: true # Ajoute une marge de sécurité au logo
+  adaptive_icon_background: "#1E1E1E"
+  adaptive_icon_foreground: "lib/assets/images/Toolbox Everything Logo Transparent.png"
+  adaptive_icon_padding: true
 
 # The following section is specific to Flutter packages.
 flutter:
