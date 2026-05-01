@@ -18,6 +18,8 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   légèrement différée pour réduire le travail du premier rendu.
 - **Identité native** : icône launcher et splash screen repointés vers les
   nouveaux assets Toolbox Everything, avec branding conservé au démarrage.
+- **Build Android** : `compileSdk` et `targetSdk` alignés sur le SDK 37
+  pour les tests Android 17.
 
 ## [0.3.1] - 2026-04-29
 
