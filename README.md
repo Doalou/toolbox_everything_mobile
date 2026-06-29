@@ -1,4 +1,5 @@
 # 🧰 Toolbox Everything Mobile
+# Le projet est actuellement en cours de refonte, la description ci-dessous correspond à l'ancienne version et une nouvelle version sera bientôt proposée.
 
 Votre boîte à outils numérique, locale-first et mobile-only.
 
