@@ -6,6 +6,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
+import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/home_screen.dart';
 import 'package:toolbox_everything_mobile/core/services/quick_actions_service.dart';
 import 'package:flutter/services.dart';
@@ -51,8 +52,12 @@ class NoGlowScrollBehavior extends ScrollBehavior {
 
   @override
   ScrollPhysics getScrollPhysics(BuildContext context) {
-    // Uniformise le comportement de scroll (sans rebond)
-    return const ClampingScrollPhysics();
+    return switch (getPlatform(context)) {
+      TargetPlatform.iOS || TargetPlatform.macOS => const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      _ => const ClampingScrollPhysics(),
+    };
   }
 }
 
@@ -161,7 +166,8 @@ class _MyAppState extends State<MyApp> {
             final pageTransitionsTheme = lowResource
                 ? const PageTransitionsTheme(
                     builders: {
-                      TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+                      TargetPlatform.android:
+                          FadeUpwardsPageTransitionsBuilder(),
                     },
                   )
                 : const PageTransitionsTheme(
@@ -173,6 +179,7 @@ class _MyAppState extends State<MyApp> {
 
             return MaterialApp(
               title: 'Toolbox Everything',
+              debugShowCheckedModeBanner: false,
               navigatorKey: QuickActionsService.navigatorKey,
               theme: lightTheme.copyWith(
                 pageTransitionsTheme: pageTransitionsTheme,
@@ -181,8 +188,10 @@ class _MyAppState extends State<MyApp> {
                 pageTransitionsTheme: pageTransitionsTheme,
               ),
               themeMode: themeProvider.themeMode,
-              themeAnimationDuration: Duration.zero,
-              themeAnimationCurve: Curves.linear,
+              themeAnimationDuration: lowResource
+                  ? Duration.zero
+                  : EditorialTokens.duration,
+              themeAnimationCurve: Curves.easeOut,
               scrollBehavior: const NoGlowScrollBehavior(),
               home: const HomeScreen(),
             );

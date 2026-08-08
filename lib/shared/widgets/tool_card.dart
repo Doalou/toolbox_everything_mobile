@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
+import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
 import 'package:toolbox_everything_mobile/core/models/tool_item.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/core/services/haptics_service.dart';
 import 'package:toolbox_everything_mobile/core/services/usage_stats_service.dart';
 import 'package:toolbox_everything_mobile/presentation/navigation/unified_navigation.dart';
 
-/// Carte d'outil M3 Expressive : icône colorée dans une bulle pill,
-/// titre fort, sous-titre, badge favori discret.
+/// Carte éditoriale d'accès direct. Le nom historique est conservé afin de ne
+/// pas casser les écrans qui l'utilisent déjà.
 class ExpressiveToolCard extends StatefulWidget {
   final ToolItem tool;
-  final VoidCallback? onFavoriteToggle;
+  final int index;
+  final bool isFavorite;
+  final ValueChanged<bool>? onFavoriteChanged;
 
   const ExpressiveToolCard({
     super.key,
     required this.tool,
-    this.onFavoriteToggle,
+    required this.index,
+    required this.isFavorite,
+    this.onFavoriteChanged,
   });
 
   @override
@@ -27,9 +30,9 @@ class ExpressiveToolCard extends StatefulWidget {
 class _ExpressiveToolCardState extends State<ExpressiveToolCard> {
   bool _pressed = false;
 
-  void _open(BuildContext context) {
+  void _open() {
     HapticsService.perform(context, HapticType.selection);
-    UsageStatsService.recordToolUsage(widget.tool.title);
+    UsageStatsService.recordToolUsage(widget.tool.id);
     Navigator.of(context).push(
       unifiedNavigation(
         context,
@@ -42,78 +45,95 @@ class _ExpressiveToolCardState extends State<ExpressiveToolCard> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final lowResource = context.select<SettingsProvider, bool>(
-      (s) => s.lowResourceMode,
+      (settings) => settings.lowResourceMode,
     );
     final accent = widget.tool.cardColor;
-    final cardShape = RoundedRectangleBorder(
-      borderRadius: ExpressiveShapes.asymmetricHero(major: 22, minor: 14),
-      side: BorderSide(
-        color: scheme.outlineVariant.withValues(alpha: 0.48),
-        width: 1,
+    final card = Material(
+      color: scheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(EditorialTokens.radiusMd),
+        side: BorderSide(color: scheme.outline),
       ),
-    );
-
-    final material = Material(
-      color: scheme.surfaceContainerLow,
-      shape: cardShape,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _open(context),
+        onTap: _open,
         onHighlightChanged: lowResource
             ? null
-            : (v) {
-                if (mounted) setState(() => _pressed = v);
-              },
-        splashColor: lowResource
-            ? Colors.transparent
-            : scheme.primary.withValues(alpha: 0.08),
-        highlightColor: lowResource
-            ? Colors.transparent
-            : scheme.primary.withValues(alpha: 0.04),
+            : (value) => setState(() => _pressed = value),
         child: Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: ShapeDecoration(
-                      color: accent.withValues(alpha: 0.11),
-                      shape: const StadiumBorder(),
-                    ),
-                    child: Icon(widget.tool.icon, color: accent, size: 20),
+                  Text(
+                    widget.index.toString().padLeft(2, '0'),
+                    style: Theme.of(context).textTheme.labelSmall,
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.tool.category.label.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ),
                   _FavoriteButton(
-                    selected: widget.tool.isFavorite,
-                    onPressed: () {
-                      widget.tool.toggleFavorite();
-                      widget.onFavoriteToggle?.call();
-                      if (mounted) setState(() {});
-                    },
+                    selected: widget.isFavorite,
+                    onPressed: () =>
+                        widget.onFavoriteChanged?.call(!widget.isFavorite),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Hero(
-                tag: widget.tool.heroTag,
-                transitionOnUserGestures: true,
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: Text(
-                    widget.tool.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      height: 1.22,
+              const Spacer(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(
+                        EditorialTokens.radiusSm,
+                      ),
+                      border: Border.all(color: accent.withValues(alpha: 0.28)),
+                    ),
+                    child: Icon(widget.tool.icon, color: accent, size: 21),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Hero(
+                          tag: widget.tool.heroTag,
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: Text(
+                              widget.tool.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                        ),
+                        if (widget.tool.subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.tool.subtitle!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                ),
+                  Icon(Icons.arrow_forward_rounded, size: 16, color: accent),
+                ],
               ),
             ],
           ),
@@ -121,18 +141,10 @@ class _ExpressiveToolCardState extends State<ExpressiveToolCard> {
       ),
     );
 
-    final card = lowResource
-        ? material
-        : AnimatedScale(
-            scale: _pressed ? 0.97 : 1.0,
-            duration: ExpressiveMotion.short3,
-            curve: ExpressiveMotion.springStandard,
-            child: material,
-          );
-
-    return Semantics(
-      label: 'Outil ${widget.tool.title}',
-      button: true,
+    if (lowResource) return card;
+    return AnimatedScale(
+      scale: _pressed ? 0.99 : 1,
+      duration: EditorialTokens.durationFast,
       child: card,
     );
   }
@@ -146,27 +158,17 @@ class _FavoriteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return SizedBox.square(
-      dimension: 28,
-      child: Material(
-        color: scheme.surface.withValues(alpha: 0.72),
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: IconButton(
-          onPressed: onPressed,
-          padding: EdgeInsets.zero,
-          iconSize: 15,
-          visualDensity: VisualDensity.compact,
-          tooltip: selected ? 'Retirer des favoris' : 'Ajouter aux favoris',
-          icon: Icon(
-            selected ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            color: selected
-                ? scheme.error
-                : scheme.onSurfaceVariant.withValues(alpha: 0.72),
-          ),
-        ),
+    return IconButton(
+      onPressed: onPressed,
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      iconSize: 18,
+      tooltip: selected ? 'Retirer des favoris' : 'Ajouter aux favoris',
+      icon: Icon(
+        selected ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+        color: selected
+            ? Theme.of(context).colorScheme.error
+            : Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     );
   }

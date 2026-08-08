@@ -5,8 +5,7 @@ import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 
-/// Carte Material 3 Expressive : surface containerLow, rayons larges,
-/// animation spring sur la pression (scale + radius).
+/// Panneau éditorial bordé ; nom historique conservé pour compatibilité.
 class ExpressiveCard extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
@@ -66,10 +65,11 @@ class _ExpressiveCardState extends State<ExpressiveCard> {
                 ? ExpressiveShapes.medium
                 : ExpressiveShapes.largeIncreased,
           ),
+          side: BorderSide(color: scheme.outline),
         );
 
     final material = Material(
-      color: widget.color ?? scheme.surfaceContainerLow,
+      color: widget.color ?? scheme.surface,
       shape: shape,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -92,9 +92,9 @@ class _ExpressiveCardState extends State<ExpressiveCard> {
     if (lowResource) return material;
 
     return AnimatedScale(
-      scale: _pressed ? 0.97 : 1.0,
+      scale: _pressed ? 0.99 : 1.0,
       duration: ExpressiveMotion.short3,
-      curve: ExpressiveMotion.springStandard,
+      curve: Curves.easeOut,
       child: material,
     );
   }

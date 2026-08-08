@@ -5,6 +5,53 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-08-08
+
+### Ajouté
+
+- **Identité éditoriale** : nouveau design system inspiré de Toolbox Everything
+  Web, avec palette papier, typographie Fraunces sous licence OFL, thèmes clair,
+  sombre et AMOLED, composants partagés et accueil responsive.
+- **Qualité** : tests de migration, thème, catalogue, téléchargement et ouverture
+  des outils, quatre goldens clair/sombre téléphone/tablette et contrôle des
+  grandes tailles de texte.
+- **CI** : formatage, analyse, couverture, APK debug, builds Android de release,
+  build iOS simulateur et régression visuelle Windows.
+
+### Modifié
+
+- **Accueil** : présentation raccourcie, catégories plus directes et suppression
+  des répétitions éditoriales autour de l’usage local.
+- **Outils** : interfaces internes harmonisées avec un shell responsive commun,
+  des en-têtes compacts et les mêmes panneaux, marges et actions sur l’ensemble
+  du catalogue.
+- **Données** : catalogue immuable avec identifiants stables ; favoris et
+  statistiques migrés automatiquement depuis les anciennes clés par titre.
+- **Téléchargement** : un seul service pour les métadonnées, la progression,
+  l’annulation, FFmpeg et le nettoyage des fichiers temporaires.
+- **Stockage et permissions** : MediaStore sur Android récent, écriture externe
+  limitée à Android 8/9 et permissions caméra/notifications demandées à l’usage.
+- **Toolchain** : Flutter 3.44.9, Dart 3.12, Android API 37.0, AGP 9.3.1,
+  Gradle 9.5 et NDK 28.2 ; cible iOS minimale portée à 13.
+- **Documentation** : README français réécrit avec installation, architecture,
+  confidentialité, permissions, limites et capture Android réelle ; liens
+  publics vers la politique de confidentialité et les conditions d'utilisation.
+
+### Corrigé
+
+- Délais d’expiration et messages d’erreur du testeur de connexion.
+- Téléchargeur YouTube aligné sur `youtube_explode_dart` 3.1.0 et le profil HTTP
+  multiplateforme `androidVr`, avec repli `ios`, délais d’expiration et erreurs
+  lisibles pour éviter les flux `androidSdkless` bloqués en HTTP 403 ou sans
+  aucun octet reçu.
+- Nettoyage des notifications et timers périodiques à la fermeture du minuteur.
+- Identifiants natifs harmonisés sur `com.toolbox.everything.mobile`.
+
+### Retiré
+
+- Permission `READ_EXTERNAL_STORAGE`, dépendances inutilisées et rapports de
+  build Android suivis par Git.
+
 ## [0.3.2] - 2026-04-30
 
 ### Modifié

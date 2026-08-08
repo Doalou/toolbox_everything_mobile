@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:toolbox_everything_mobile/core/services/notification_service.dart';
 
 class TimerScreen extends StatefulWidget {
   final String heroTag;
@@ -14,12 +15,11 @@ class TimerScreen extends StatefulWidget {
 }
 
 class _TimerScreenState extends State<TimerScreen> {
-  late FlutterLocalNotificationsPlugin _notificationsPlugin;
-
   TimerMode _currentMode = TimerMode.timer;
 
   // Timer variables
   Timer? _activeTimer;
+  Timer? _stopwatchUpdater;
   int _timerSeconds = 0;
   int _initialTimerSeconds = 300; // 5 minutes par défaut
   bool _timerRunning = false;
@@ -35,33 +35,16 @@ class _TimerScreenState extends State<TimerScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeNotifications();
     _startStopwatchUpdater();
     _restoreState();
-  }
-
-  Future<void> _initializeNotifications() async {
-    _notificationsPlugin = FlutterLocalNotificationsPlugin();
-
-    const androidSettings = AndroidInitializationSettings('ic_notification');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-
-    const settings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
-
-    await _notificationsPlugin.initialize(settings: settings);
   }
 
   void _startStopwatchUpdater() {
     // Réduit la fréquence d'update pour éviter les saccades et la charge CPU,
     // et conserve une bonne précision visuelle (centièmes)
-    Timer.periodic(const Duration(milliseconds: 50), (timer) {
+    _stopwatchUpdater = Timer.periodic(const Duration(milliseconds: 50), (
+      timer,
+    ) {
       if (!mounted) {
         timer.cancel();
         return;
@@ -79,6 +62,7 @@ class _TimerScreenState extends State<TimerScreen> {
   @override
   void dispose() {
     _activeTimer?.cancel();
+    _stopwatchUpdater?.cancel();
     super.dispose();
   }
 
@@ -181,32 +165,9 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   Future<void> _showTimerNotification() async {
-    const androidDetails = AndroidNotificationDetails(
-      'timer_channel',
-      'Timer Notifications',
-      channelDescription: 'Notifications pour le minuteur',
-      importance: Importance.high,
-      priority: Priority.high,
-      icon: 'ic_notification',
-    );
-
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    const details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    await _notificationsPlugin.show(
-      id: 0,
-      title: 'Minuteur terminé !',
+    await NotificationService.instance.notifyTimerComplete(
       body:
           'Votre minuteur de ${_formatTime(_initialTimerSeconds)} est arrivé à terme.',
-      notificationDetails: details,
     );
   }
 
@@ -291,23 +252,9 @@ class _TimerScreenState extends State<TimerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Minuteur & Chronomètre',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
+    return EditorialToolScaffold(
+      title: 'Minuteur & chronomètre',
+      heroTag: widget.heroTag,
       body: Column(
         children: [
           // Mode selector

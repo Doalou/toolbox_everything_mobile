@@ -72,8 +72,8 @@ class VideoInfoCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -149,8 +149,9 @@ class DownloadOptions extends StatelessWidget {
             subtitle: 'Piste seule ou export MP3',
             icon: Icons.graphic_eq_rounded,
             children: [
-              ...provider.audioStreams
-                  .map((stream) => _AudioStreamTile(stream: stream)),
+              ...provider.audioStreams.map(
+                (stream) => _AudioStreamTile(stream: stream),
+              ),
               const Divider(height: 1),
               _Mp3ExportTile(streams: provider.audioStreams),
             ],
@@ -191,23 +192,30 @@ class _QuickActions extends StatelessWidget {
               _PresetButton(
                 icon: Icons.hd_rounded,
                 label: 'MP4 720p',
-                onPressed: disabled ? null : () => provider.downloadPreset('720p'),
+                onPressed: disabled
+                    ? null
+                    : () => provider.downloadPreset('720p'),
               ),
               _PresetButton(
                 icon: Icons.high_quality_rounded,
                 label: 'MP4 1080p',
-                onPressed:
-                    disabled ? null : () => provider.downloadPreset('1080p'),
+                onPressed: disabled
+                    ? null
+                    : () => provider.downloadPreset('1080p'),
               ),
               _PresetButton(
                 icon: Icons.audiotrack_rounded,
                 label: 'Audio 128k',
-                onPressed: disabled ? null : () => provider.downloadPreset('128k'),
+                onPressed: disabled
+                    ? null
+                    : () => provider.downloadPreset('128k'),
               ),
               _PresetButton(
                 icon: Icons.library_music_rounded,
                 label: 'Audio 256k',
-                onPressed: disabled ? null : () => provider.downloadPreset('256k'),
+                onPressed: disabled
+                    ? null
+                    : () => provider.downloadPreset('256k'),
               ),
             ],
           ),
@@ -279,8 +287,8 @@ class _OutputPreferences extends StatelessWidget {
                 onSelected: disabled
                     ? null
                     : (value) => context
-                        .read<DownloaderProvider>()
-                        .setPreferMp4Output(value),
+                          .read<DownloaderProvider>()
+                          .setPreferMp4Output(value),
               ),
               FilterChip(
                 label: const Text('Afficher WEBM/MKV'),
@@ -289,17 +297,17 @@ class _OutputPreferences extends StatelessWidget {
                 onSelected: disabled
                     ? null
                     : (value) => context
-                        .read<DownloaderProvider>()
-                        .setShowMkvOutputs(value),
+                          .read<DownloaderProvider>()
+                          .setShowMkvOutputs(value),
               ),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             'Les flux vidéo seuls sont fusionnés avec la meilleure piste audio compatible.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -405,9 +413,9 @@ class _Mp3ExportTile extends StatelessWidget {
       icon: Icons.library_music_rounded,
       title: 'Exporter en MP3',
       subtitle: 'Convertit la meilleure piste audio via FFmpeg',
-      onTap: () => context
-          .read<DownloaderProvider>()
-          .startAudioMp3Conversion(streams.first),
+      onTap: () => context.read<DownloaderProvider>().startAudioMp3Conversion(
+        streams.first,
+      ),
     );
   }
 }
@@ -470,16 +478,13 @@ class _DownloadTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 8),
-                  trailing!,
-                ],
+                if (trailing != null) ...[const SizedBox(width: 8), trailing!],
                 const SizedBox(width: 8),
                 Icon(Icons.download_rounded, color: scheme.primary),
               ],
@@ -556,8 +561,8 @@ class DownloadProgressIndicator extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
               TextButton.icon(
@@ -604,9 +609,9 @@ class CompletedDownloadCard extends StatelessWidget {
           SelectableText(
             path,
             maxLines: 3,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 12),
           Align(
@@ -688,9 +693,7 @@ class _Panel extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ExpressiveShapes.large),
           side: BorderSide(
-            color: color == null
-                ? scheme.outlineVariant
-                : Colors.transparent,
+            color: color == null ? scheme.outlineVariant : Colors.transparent,
           ),
         ),
       ),
@@ -728,16 +731,16 @@ class _SectionTitle extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -783,7 +786,8 @@ String _sizeLabel(StreamInfo stream) =>
 String _codecLabel(StreamInfo stream) {
   try {
     final dynamic any = stream as dynamic;
-    final raw = any.videoCodec?.toString() ??
+    final raw =
+        any.videoCodec?.toString() ??
         any.audioCodec?.toString() ??
         any.codec?.toString() ??
         '';

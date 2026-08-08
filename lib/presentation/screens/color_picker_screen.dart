@@ -4,6 +4,8 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ColorPickerScreen extends StatefulWidget {
@@ -80,67 +82,19 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Sélecteur de couleurs',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-      ),
+    return EditorialToolScaffold(
+      title: 'Sélecteur de couleurs',
+      heroTag: widget.heroTag,
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.all(AppConstants.defaultPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.palette, color: colorScheme.primary),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Choisissez une couleur',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Sélectionnez et copiez en HEX, RGB ou HSL.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: colorScheme.onPrimaryContainer
-                                    .withValues(alpha: 0.8),
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            const EditorialToolIntro(
+              icon: Icons.palette_rounded,
+              title: 'Choisissez une couleur',
+              description: 'Sélectionnez et copiez en HEX, RGB ou HSL.',
             ),
 
             const SizedBox(height: 16),

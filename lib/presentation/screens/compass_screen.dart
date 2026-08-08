@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'dart:math' as math;
 
@@ -77,40 +79,27 @@ class CompassScreenState extends State<CompassScreen>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Boussole',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
+    return EditorialToolScaffold(
+      title: 'Boussole',
+      heroTag: widget.heroTag,
+      actions: [
+        IconButton(
+          onPressed: () {
+            setState(() {
+              _isCalibrating = true;
+            });
+            Future.delayed(const Duration(seconds: 2), () {
+              if (mounted) {
+                setState(() {
+                  _isCalibrating = false;
+                });
+              }
+            });
+          },
+          icon: Icon(Icons.refresh, color: colorScheme.primary),
+          tooltip: 'Recalibrer',
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _isCalibrating = true;
-              });
-              Future.delayed(const Duration(seconds: 2), () {
-                if (mounted) {
-                  setState(() {
-                    _isCalibrating = false;
-                  });
-                }
-              });
-            },
-            icon: Icon(Icons.refresh, color: colorScheme.primary),
-            tooltip: 'Recalibrer',
-          ),
-        ],
-      ),
+      ],
       body: StreamBuilder<CompassEvent>(
         stream: FlutterCompass.events,
         builder: (context, snapshot) {
@@ -143,51 +132,13 @@ class CompassScreenState extends State<CompassScreen>
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          // Header
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: directionColor.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.explore, size: 32, color: directionColor),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Boussole numérique',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (_isCalibrating)
-                  Text(
-                    'Calibration en cours...',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: directionColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  )
-                else
-                  Text(
-                    'Pointez votre appareil vers la direction souhaitée',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-              ],
-            ),
+          EditorialToolIntro(
+            icon: Icons.explore_rounded,
+            title: 'Boussole numérique',
+            description: _isCalibrating
+                ? 'Calibration en cours…'
+                : 'Pointez l’appareil vers la direction souhaitée.',
+            accent: directionColor,
           ),
 
           const SizedBox(height: 40),

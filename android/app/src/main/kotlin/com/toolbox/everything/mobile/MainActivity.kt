@@ -20,6 +20,9 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.toolbox.everything.mobile/downloads")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "requiresLegacyStoragePermission" -> {
+                        result.success(Build.VERSION.SDK_INT <= Build.VERSION_CODES.P)
+                    }
                     "saveToDownloads" -> {
                         val sourcePath = call.argument<String>("sourcePath")
                         val displayName = call.argument<String>("displayName")

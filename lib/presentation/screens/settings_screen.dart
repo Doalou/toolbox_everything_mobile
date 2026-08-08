@@ -44,13 +44,24 @@ class SettingsScreen extends StatelessWidget {
                     _ThemeModeSelector(themeProvider: themeProvider),
                     _SettingsDivider(),
                     _SwitchTile(
-                      icon: Icons.auto_awesome_rounded,
-                      title: 'Couleurs système',
+                      icon: Icons.tune_rounded,
+                      title: 'Personnalisation avancée',
                       subtitle:
-                          'Utilise la palette Material You fournie par Android.',
-                      value: themeProvider.useDynamicColor,
-                      onChanged: themeProvider.setUseDynamicColor,
+                          'Autorise un accent personnalisé ou les couleurs système.',
+                      value: themeProvider.advancedCustomization,
+                      onChanged: themeProvider.setAdvancedCustomization,
                     ),
+                    if (themeProvider.advancedCustomization) ...[
+                      _SettingsDivider(),
+                      _SwitchTile(
+                        icon: Icons.auto_awesome_rounded,
+                        title: 'Couleurs système',
+                        subtitle:
+                            'Utilise la palette Material You fournie par Android.',
+                        value: themeProvider.useDynamicColor,
+                        onChanged: themeProvider.setUseDynamicColor,
+                      ),
+                    ],
                     _SettingsDivider(),
                     _SwitchTile(
                       icon: Icons.nightlight_round,
@@ -76,8 +87,10 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                _AccentPanel(themeProvider: themeProvider),
+                if (themeProvider.advancedCustomization) ...[
+                  const SizedBox(height: 16),
+                  _AccentPanel(themeProvider: themeProvider),
+                ],
                 const SizedBox(height: 16),
                 _SettingsPanel(
                   title: 'Comportement',
@@ -220,12 +233,10 @@ class _SettingsPanel extends StatelessWidget {
           ),
         ),
         Material(
-          color: scheme.surfaceContainerLow,
+          color: scheme.surface,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
-              color: scheme.outlineVariant.withValues(alpha: 0.45),
-            ),
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(color: scheme.outline),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(children: children),
@@ -312,7 +323,7 @@ class _AccentPanel extends StatelessWidget {
           ).primary;
 
     return _SettingsPanel(
-      title: 'Accentuation',
+      title: 'Accent avancé',
       icon: Icons.format_paint_rounded,
       children: [
         Padding(
@@ -342,7 +353,7 @@ class _AccentPanel extends StatelessWidget {
                         Text(
                           themeProvider.useDynamicColor
                               ? 'Choisir une couleur désactivera les couleurs système.'
-                              : 'La couleur choisie sert de source à la palette Material.',
+                              : 'La couleur choisie modifie l’accent sans changer les surfaces de marque.',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: scheme.onSurfaceVariant),
                         ),

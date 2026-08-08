@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:flutter/services.dart';
 import 'package:yaml/yaml.dart';
 import 'package:file_picker/file_picker.dart';
@@ -459,7 +461,7 @@ $html
 
   Future<void> _pickFile() async {
     try {
-      FilePickerResult? result = await FilePicker.pickFiles(
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['txt', 'json', 'yaml', 'yml', 'csv', 'md', 'html'],
       );
@@ -525,70 +527,28 @@ $html
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Convertisseur de fichiers',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
+    return EditorialToolScaffold(
+      title: 'Convertisseur de fichiers',
+      heroTag: widget.heroTag,
+      actions: [
+        IconButton(
+          onPressed: _clearAll,
+          icon: Icon(Icons.clear_all, color: colorScheme.primary),
+          tooltip: 'Effacer tout',
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _clearAll,
-            icon: Icon(Icons.clear_all, color: colorScheme.primary),
-            tooltip: 'Effacer tout',
-          ),
-        ],
-      ),
+      ],
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Header moderne
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.transform,
-                    size: 48,
-                    color: const Color(0xFF673AB7),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Convertisseur de fichiers',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Convertissez entre différents formats de fichiers',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+            const EditorialToolIntro(
+              icon: Icons.transform_rounded,
+              title: 'Convertir un fichier',
+              description: 'Passez d’un format pris en charge à un autre.',
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
             // Sélecteur de type de conversion
             _buildConversionSelector(),

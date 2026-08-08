@@ -5,6 +5,7 @@ import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/uuid_service.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 
 class UuidGeneratorScreen extends StatefulWidget {
   final String heroTag;
@@ -44,26 +45,16 @@ class _UuidGeneratorScreenState extends State<UuidGeneratorScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Générateur UUID',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
+    return EditorialToolScaffold(
+      title: 'Générateur UUID',
+      heroTag: widget.heroTag,
+      actions: [
+        IconButton(
+          tooltip: 'Tout copier',
+          onPressed: _uuids.isEmpty ? null : _copyAll,
+          icon: const Icon(Icons.copy_all_rounded),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Tout copier',
-            onPressed: _uuids.isEmpty ? null : _copyAll,
-            icon: const Icon(Icons.copy_all_rounded),
-          ),
-        ],
-      ),
+      ],
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [

@@ -26,9 +26,16 @@ class NotificationService {
   Future<void> _initialize() async {
     const AndroidInitializationSettings androidInitSettings =
         AndroidInitializationSettings('ic_notification');
+    const DarwinInitializationSettings darwinInitSettings =
+        DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        );
 
     const InitializationSettings initSettings = InitializationSettings(
       android: androidInitSettings,
+      iOS: darwinInitSettings,
     );
 
     await _plugin.initialize(settings: initSettings);
@@ -60,6 +67,18 @@ class NotificationService {
         final granted = await android.requestNotificationsPermission();
         return granted ?? true;
       }
+    }
+    if (Platform.isIOS) {
+      final ios = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      return await ios?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          ) ??
+          true;
     }
     return true;
   }
@@ -162,6 +181,33 @@ class NotificationService {
       title: title,
       body: body,
       notificationDetails: _finalDetails(success: false),
+    );
+  }
+
+  Future<void> notifyTimerComplete({required String body}) async {
+    final granted = await ensurePermission();
+    if (!granted) return;
+
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'timer_channel',
+        'Minuteur',
+        channelDescription: 'Alertes de fin du minuteur',
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: 'ic_notification',
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+    await _plugin.show(
+      id: 0,
+      title: 'Minuteur terminé !',
+      body: body,
+      notificationDetails: details,
     );
   }
 

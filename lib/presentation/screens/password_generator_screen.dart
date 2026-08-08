@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 import 'dart:math';
 import 'dart:async';
 
@@ -160,21 +161,9 @@ class PasswordGeneratorScreenState extends State<PasswordGeneratorScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Générateur de mot de passe',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-        backgroundColor: colorScheme.surface,
-        elevation: 0,
-      ),
+    return EditorialToolScaffold(
+      title: 'Générateur de mot de passe',
+      heroTag: widget.heroTag,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppConstants.largePadding),
         child: Column(

@@ -4,11 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:toolbox_everything_mobile/core/services/download_service.dart';
 import 'package:toolbox_everything_mobile/core/services/notification_service.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_new/return_code.dart';
-import 'package:toolbox_everything_mobile/core/services/downloads_saver.dart';
+import 'package:toolbox_everything_mobile/core/services/youtube_service.dart';
 
 enum DownloaderState { initial, loading, success, error }
 
@@ -62,54 +58,6 @@ class DownloaderProvider with ChangeNotifier {
       _preferMp4Output = prefs.getBool(_prefsKeyPreferMp4) ?? _preferMp4Output;
       notifyListeners();
     } catch (_) {}
-  }
-
-  // Utilitaires internes pour MP3
-  String _ensureUniquePath(String path) {
-    if (!File(path).existsSync()) return path;
-    final directory = path.substring(0, path.lastIndexOf('/'));
-    final filename = path.substring(
-      path.lastIndexOf('/') + 1,
-      path.lastIndexOf('.'),
-    );
-    final extension = path.substring(path.lastIndexOf('.'));
-    int i = 1;
-    while (File('$directory/$filename($i)$extension').existsSync()) {
-      i++;
-    }
-    return '$directory/$filename($i)$extension';
-  }
-
-  String _bytesToMBText(int bytes) {
-    return (bytes / (1024 * 1024)).toStringAsFixed(2);
-  }
-
-  Future<void> _downloadStreamToPath({
-    required YoutubeExplode yt,
-    required StreamInfo streamInfo,
-    required String outputPath,
-    required DownloadCancelToken cancelToken,
-    required void Function(int received, int total) onReceive,
-  }) async {
-    final file = File(outputPath);
-    final sink = file.openWrite();
-    final Stream<List<int>> stream = yt.videos.streamsClient.get(streamInfo);
-    final totalBytes = streamInfo.size.totalBytes;
-    int downloaded = 0;
-    await for (final List<int> chunk in stream) {
-      if (cancelToken.isCancelled) {
-        await sink.close();
-        await file.delete();
-        throw 'Annulé';
-      }
-      downloaded += chunk.length;
-      sink.add(chunk);
-      if (downloaded == totalBytes || downloaded % (256 * 1024) == 0) {
-        onReceive(downloaded, totalBytes);
-      }
-    }
-    await sink.close();
-    onReceive(totalBytes, totalBytes);
   }
 
   Future<void> _savePrefs() async {
@@ -211,14 +159,15 @@ class DownloaderProvider with ChangeNotifier {
 
     _isFetching = true;
     _state = DownloaderState.loading;
+    _errorMessage = null;
     notifyListeners();
 
     try {
       final videoId = VideoId.parseVideoId(url.trim());
       if (videoId == null) throw 'URL YouTube invalide';
 
-      _video = await _yt.videos.get(videoId);
-      final manifest = await _yt.videos.streamsClient.getManifest(videoId);
+      _video = await YoutubeService.getVideo(_yt, VideoId(videoId));
+      final manifest = await YoutubeService.getManifest(_yt, VideoId(videoId));
 
       _muxedStreams = manifest.muxed.sortByVideoQuality();
       _audioStreams = manifest.audioOnly.sortByBitrate();
@@ -227,7 +176,11 @@ class DownloaderProvider with ChangeNotifier {
       _state = DownloaderState.success;
     } catch (e) {
       _state = DownloaderState.error;
-      _errorMessage = e.toString();
+      _video = null;
+      _muxedStreams = [];
+      _audioStreams = [];
+      _videoOnlyStreams = [];
+      _errorMessage = YoutubeService.userMessage(e);
     } finally {
       _isFetching = false;
       notifyListeners();
@@ -337,21 +290,21 @@ class DownloaderProvider with ChangeNotifier {
           : null;
 
       if (streamInfo is VideoOnlyStreamInfo && companionAudio == null) {
-        _state = DownloaderState.error;
+        _downloadActivity = DownloadActivityState.error;
         _errorMessage =
             "Cette vidéo ne propose pas de piste audio compatible pour la fusion. Choisissez un flux MP4 muxed ou un autre preset.";
         notifyListeners();
         return;
       }
 
-      final outputPath = await DownloadServiceDirect.download(
+      final outputPath = await DownloadService.download(
         streamInfo: streamInfo,
         audioStreamInfo: companionAudio,
         videoTitle: _video!.title,
         cancelToken: _cancelToken!,
         notificationId: _notificationId!,
-        onProgress: (received, total) {
-          _updateProgressUI(received, total);
+        onProgress: (progress) {
+          _updateProgressUI(progress.receivedBytes, progress.totalBytes);
         },
       );
 
@@ -364,7 +317,9 @@ class DownloaderProvider with ChangeNotifier {
       }
     } catch (e) {
       _downloadActivity = DownloadActivityState.error;
-      _errorMessage = e.toString();
+      _errorMessage = e is DownloadException
+          ? e.message
+          : YoutubeService.userMessage(e);
     } finally {
       _notificationId = null;
       notifyListeners();
@@ -420,94 +375,23 @@ class DownloaderProvider with ChangeNotifier {
     _bytesTotal = source.size.totalBytes;
 
     try {
-      // 1) Télécharger l'audio source (sans isolate) vers un fichier temporaire
-      final downloadsDir = await getApplicationDocumentsDirectory();
-      final sanitizedTitle = _video!.title
-          .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
-          .replaceAll(RegExp(r'\s+'), '_');
-      final tempIn = _ensureUniquePath(
-        '${downloadsDir.path}/${sanitizedTitle}_src.${source.container.name}',
-      );
-
-      await NotificationService.instance.startProgress(
-        _notificationId!,
-        title: 'Téléchargement audio...',
-        body: _video!.title,
-      );
-
-      final yt = YoutubeExplode();
-      try {
-        await _downloadStreamToPath(
-          yt: yt,
-          streamInfo: source,
-          outputPath: tempIn,
-          cancelToken: _cancelToken!,
-          onReceive: (received, total) {
-            _updateProgressUI(received, total);
-            final percent = (received * 100 ~/ (total == 0 ? 1 : total)).clamp(
-              0,
-              100,
-            );
-            NotificationService.instance.updateProgress(
-              _notificationId!,
-              title: 'Téléchargement $percent%',
-              body: '${_bytesToMBText(received)} / ${_bytesToMBText(total)} MB',
-              progress: percent,
-              maxProgress: 100,
-            );
-          },
-        );
-      } finally {
-        yt.close();
-      }
-
-      if (_cancelToken!.isCancelled) {
-        throw 'Annulé';
-      }
-
-      // 2) Convertir en MP3 via FFmpegKit
-      final tempOut = _ensureUniquePath(
-        '${downloadsDir.path}/$sanitizedTitle.mp3',
-      );
-      await NotificationService.instance.updateProgress(
-        _notificationId!,
-        title: 'Conversion MP3...',
-        body: _video!.title,
-        progress: 99,
-        maxProgress: 100,
-      );
-
-      final session = await FFmpegKit.execute(
-        '-y -hide_banner -loglevel info -i "$tempIn" -vn -c:a libmp3lame -q:a 2 "$tempOut"',
-      );
-      final returnCode = await session.getReturnCode();
-      if (!ReturnCode.isSuccess(returnCode)) {
-        final logs = await session.getAllLogs();
-        final logText = logs.map((l) => l.getMessage()).join('\n');
-        await NotificationService.instance.fail(
-          _notificationId!,
-          title: 'Échec conversion',
-          body: 'Voir logs',
-        );
-        throw 'Conversion MP3 échouée. Logs FFmpeg:\n$logText';
-      }
-
-      // 3) Déplacer vers Téléchargements et terminer
-      final savedPath = await DownloadsSaver.saveFileToDownloads(
-        tempOut,
-        displayName: '$sanitizedTitle.mp3',
+      final savedPath = await DownloadService.downloadMp3(
+        source: source,
+        videoTitle: _video!.title,
+        cancelToken: _cancelToken!,
+        notificationId: _notificationId!,
+        onProgress: (progress) {
+          _updateProgressUI(progress.receivedBytes, progress.totalBytes);
+        },
       );
 
       _lastOutputPath = savedPath;
       _downloadActivity = DownloadActivityState.completed;
-      await NotificationService.instance.complete(
-        _notificationId!,
-        title: 'Conversion MP3 terminée',
-        body: _video!.title,
-      );
     } catch (e) {
       _downloadActivity = DownloadActivityState.error;
-      _errorMessage = e.toString();
+      _errorMessage = e is DownloadException
+          ? e.message
+          : YoutubeService.userMessage(e);
     } finally {
       _notificationId = null;
       notifyListeners();

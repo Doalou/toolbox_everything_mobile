@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:flutter/services.dart';
 // Animations visuelles retirées
 
@@ -189,67 +191,28 @@ class _NumberConverterScreenState extends State<NumberConverterScreen>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Convertisseur de nombres',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
+    return EditorialToolScaffold(
+      title: 'Convertisseur de nombres',
+      heroTag: widget.heroTag,
+      actions: [
+        IconButton(
+          onPressed: _clearAll,
+          icon: Icon(Icons.clear_all, color: colorScheme.primary),
+          tooltip: 'Effacer tout',
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _clearAll,
-            icon: Icon(Icons.clear_all, color: colorScheme.primary),
-            tooltip: 'Effacer tout',
-          ),
-        ],
-      ),
+      ],
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Header (sans animation)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                children: [
-                  Icon(Icons.transform, size: 48, color: colorScheme.primary),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Convertisseur universel',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Binaire • Décimal • Hexadécimal • ASCII',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onPrimaryContainer.withValues(
-                        alpha: 0.7,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            const EditorialToolIntro(
+              icon: Icons.transform_rounded,
+              title: 'Convertir un nombre',
+              description: 'Binaire, décimal, hexadécimal et ASCII.',
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
 
             // Champs de conversion
             Column(

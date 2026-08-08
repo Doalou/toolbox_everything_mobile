@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -59,20 +60,9 @@ class BubbleLevelScreenState extends State<BubbleLevelScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Niveau à bulle',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-      ),
+    return EditorialToolScaffold(
+      title: 'Niveau à bulle',
+      heroTag: widget.heroTag,
       body: Center(
         child: CustomPaint(
           size: const Size(200, 200),

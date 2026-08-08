@@ -1,196 +1,196 @@
-# 🧰 Toolbox Everything Mobile
-# Le projet est actuellement en cours de refonte, la description ci-dessous correspond à l'ancienne version et une nouvelle version sera bientôt proposée.
+# Toolbox Everything Mobile
 
-Votre boîte à outils numérique, locale-first et mobile-only.
+[![Android CI](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/android.yml/badge.svg)](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/android.yml)
+[![iOS CI](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/ios.yml/badge.svg)](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/ios.yml)
+![Flutter](https://img.shields.io/badge/Flutter-3.44.9-02569B?logo=flutter)
+![Version](https://img.shields.io/badge/version-0.4.0-2544D8)
 
-Application **Flutter** Material 3 Expressive qui regroupe une vingtaine d'outils
-utiles au quotidien : générateur de mots de passe, QR code, hash, JWT decoder,
-formateur JSON, regex tester, capteurs, téléchargeur YouTube, conversion média,
-diff texte, etc.
+La boîte à outils locale pour Android et iOS : générer, convertir, inspecter et
+mesurer sans compte ni backend.
 
-> 🎯 **Local-first.** La plupart des outils fonctionnent **sans Internet**, sans
-> compte, sans backend. Les flux qui sortent de cette règle sont marqués
-> explicitement (« Réseau »).
+La majorité des fonctions travaillent directement sur l’appareil. Seuls le
+téléchargeur et le diagnostic réseau contactent des services externes.
 
----
+<p align="center">
+  <img src="docs/screenshots/home-android.png" width="31%" alt="Accueil de Toolbox Everything Mobile sur Android">
+  <img src="docs/screenshots/downloader-formats-android.png" width="31%" alt="Formats audio et vidéo proposés par le téléchargeur">
+  <img src="docs/screenshots/about-android.png" width="31%" alt="Écran À propos de Toolbox Everything Mobile 0.4.0">
+</p>
 
-## 📱 Plateformes supportées
+## Points clés
 
-| Plateforme | Statut | Notes                                                  |
-|------------|:------:|--------------------------------------------------------|
-| Android    | ✅      | API 21+ (Android 5.0).                                 |
-| iOS        | ✅      | iOS 13+.                                               |
-| Desktop    | ❌      | Linux/Windows/macOS retirés en 0.3.0.                  |
+- **21 outils** réunis dans un catalogue recherchable et organisé par atelier.
+- **Local-first** pour les générateurs, convertisseurs, notes et capteurs.
+- Thèmes clair, sombre, système et AMOLED.
+- Identité éditoriale partagée avec
+  [Toolbox Everything Web](https://github.com/Doalou/toolbox_everything).
+- Palette de marque par défaut, avec accent ou couleurs Material You en option
+  avancée.
+- Aucun compte utilisateur et aucune télémétrie applicative.
 
-L'application est pensée **mobile-first**. Les écrans s'adaptent aussi aux
-tablettes Android et iPad, mais la priorité de design est le smartphone.
+## Outils
 
-## ✨ Outils inclus (V1)
+| Atelier | Outils | Réseau requis |
+|---|---|:---:|
+| Essentiels | Mots de passe, QR Code, hash, encodeur/décodeur, JSON, UUID, timestamp, JWT, regex, diff, Lorem Ipsum, couleurs | Non, sauf scan caméra |
+| Convertisseurs | Unités, binaire/hexadécimal/décimal/texte | Non |
+| Capteurs | Boussole, niveau à bulle | Non |
+| Média | Conversion de fichiers, téléchargement audio/vidéo | Téléchargeur uniquement |
+| Réseau | Type de connexion, IP publique, latence et débit indicatif | Oui |
+| Productivité | Notes locales, minuteur et chronomètre | Non |
 
-### Essentiels
-- Générateur de mots de passe (force visuelle, options avancées).
-- QR Code (générer + scanner + copier image).
-- Calculateur Hash (MD5, SHA-1, SHA-256, SHA-512).
-- Encodeur / Décodeur (Base64, URL, HTML, Hexadécimal).
-- **JSON Formatter** — formater / minifier (nouveau en 0.3.0).
-- **UUID v4** — génération en lot, validation (nouveau en 0.3.0).
-- **Timestamp** — epoch ↔ ISO 8601 / local / UTC, horloge live (nouveau en 0.3.0).
-- **JWT Decoder** — header / payload / signature, sans vérif. crypto (nouveau en 0.3.0).
-- **Regex tester** — multi-ligne, casse, dot-all (nouveau en 0.3.0).
-- **Diff texte** — comparaison ligne à ligne LCS (nouveau en 0.3.0).
-- Lorem Ipsum, sélecteur de couleurs.
+Les fonctions disponibles dans une release peuvent être contrôlées dans
+`lib/core/feature_flags/app_feature_flags.dart` afin de respecter les
+contraintes des stores.
 
-### Convertisseurs
-- Unités (longueur, poids, température, volume, vitesse, surface, temps, données).
-- Binaire / Hexadécimal / Décimal / Texte.
+## Plateformes
 
-### Capteurs (Android / iOS uniquement)
-- Boussole (`flutter_compass`).
-- Niveau à bulle (`sensors_plus`).
+| Plateforme | Minimum | Validation CI |
+|---|---:|:---:|
+| Android | API 24 / Android 7.0 | Analyse, tests, APK debug, APK/AAB release sur `master` |
+| iOS | iOS 13 | Build simulateur sans signature |
 
-### Média
-- Conversion de fichiers (JSON ↔ YAML ↔ CSV, Markdown ↔ HTML, export PDF).
-- Téléchargeur YouTube audio + vidéo (`youtube_explode_dart` + FFmpeg local).
+Le design s’adapte aux téléphones et tablettes. Les projets desktop et Web ne
+font pas partie de ce dépôt.
 
-### Réseau
-- Test connexion : type (Wi-Fi / mobile / Ethernet / Satellite / VPN…), latence
-  HTTP, infos publiques.
-
-### Productivité
-- Bloc-notes local, Minuteur.
-
-> Les outils peuvent être désactivés au build via `lib/core/feature_flags/app_feature_flags.dart`
-> — utile pour respecter une politique store sans cacher l'app entière.
-
-## 🎨 Design — Material 3 Expressive
-
-L'application embarque un **design system M3 Expressive** custom, isolé dans
-`lib/core/design/` :
-
-- `expressive_motion.dart` — durées et courbes (springs, emphasized, effects).
-- `expressive_shapes.dart` — système de formes (rayons, formes asymétriques
-  signature M3E, pill, dialog, bottom sheet).
-- `expressive_tokens.dart` — espacements, élévations, palette saturée.
-- `app_theme.dart` — `buildExpressiveTheme()` : builder pur de `ThemeData`,
-  testable.
-
-L'app supporte :
-
-- thème clair / sombre / système ;
-- couleurs dynamiques (`dynamic_color`) sur Android 12+ ;
-- mode AMOLED noir pur ;
-- transitions natives `PredictiveBackPageTransitionsBuilder` (Android) et
-  `CupertinoPageTransitionsBuilder` (iOS).
-
-Les widgets partagés (`lib/shared/widgets/`) reproduisent l'esprit M3 Expressive
-sans dépendance tierce : `ExpressiveCard` (+ variante hero asymétrique),
-`ExpressiveActionButton` (pill avec spring), `ExpressiveSectionHeader`,
-`StatusBadge`, `StatusBanner`, `ExpressiveToolCard`.
-
-## 🚀 Installation
+## Installation
 
 ### Prérequis
-- Flutter SDK 3.41+ (Dart 3.11+).
-- Android Studio / Xcode pour le build natif.
 
-### Démarrer
+- Flutter `3.44.9` stable et Dart `3.12` ;
+- Android Studio avec le SDK Android 37.0, AGP `9.3.1`, un JDK 17+ et le NDK `28.2.13676358` ;
+- Xcode récent et CocoaPods pour iOS ;
+- un émulateur ou un appareil physique.
 
 ```bash
 git clone https://github.com/Doalou/toolbox_everything_mobile.git
 cd toolbox_everything_mobile
 flutter pub get
+flutter run
 ```
 
-### Lancer
+Pour choisir une cible :
 
 ```bash
-# Émulateur ou appareil branché
-flutter run
-
-# Choisir explicitement
 flutter devices
 flutter run -d <device-id>
 ```
 
-### Tests & qualité
+## Qualité et tests
 
 ```bash
+dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
-dart format lib test
+flutter test --coverage
 ```
 
-### Build release
+La suite couvre les services purs, les migrations de préférences, le catalogue,
+le thème, les règles du téléchargement et les parcours essentiels de l’accueil.
+Les vérifications natives caméra, capteurs, notifications, MediaStore et FFmpeg
+doivent également être exécutées sur appareil avant une release.
+
+## Builds
 
 ```bash
-# Android — App Bundle pour Play Store
+# Android
+flutter build apk --release
 flutter build appbundle --release
 
-# iOS — archive ouverte ensuite dans Xcode
+# iOS — la signature est gérée ensuite dans Xcode
 flutter build ios --release
 ```
 
-## 🏗️ Architecture
+Le workflow Android attend les secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`,
+`KEY_PASSWORD` et `KEY_ALIAS` pour produire les artefacts signés sur `master`.
+Le bundle identifier iOS est `com.toolbox.everything.mobile`.
 
-```
+## Architecture
+
+```text
 lib/
 ├── core/
-│   ├── constants/         # AppConstants (alias vers les tokens design)
-│   ├── design/            # Design system M3 Expressive (tokens, motion, shapes, theme)
-│   ├── feature_flags/     # Toggles store-friendly
-│   ├── models/            # ToolItem + ToolCategory
-│   ├── providers/         # Provider (theme, settings, downloader)
-│   ├── services/          # Services purs : json, uuid, jwt, timestamp, regex, diff, etc.
-│   └── tool_catalog.dart  # Liste centralisée des outils
+│   ├── design/          # palette, tokens, thème et mouvement
+│   ├── feature_flags/   # capacités activées dans la release
+│   ├── models/          # catalogue immuable et modèles
+│   ├── providers/       # état Provider : thème, réglages, téléchargement
+│   ├── services/        # logique pure, stockage, notifications et médias
+│   └── tool_catalog.dart
 ├── presentation/
-│   ├── navigation/        # Helpers de navigation
-│   ├── screens/           # Écrans (un par outil)
-│   │   └── essentials/    # Sous-dossier pour les nouveaux outils 0.3.0
-│   └── widgets/           # Widgets historiques (error_state, downloader)
-├── shared/
-│   └── widgets/           # Composants expressifs réutilisables
-└── main.dart              # Bootstrap (providers + MaterialApp)
+│   ├── navigation/
+│   ├── screens/         # accueil et écrans des outils
+│   └── widgets/
+├── shared/widgets/      # shell et composants éditoriaux réutilisables
+└── main.dart
 
 test/
-├── services/              # 6 suites unitaires pour les nouveaux services
-└── widget_test.dart       # Smoke test
+├── core/
+├── services/
+└── widget_test.dart
 ```
 
-Les services métier sont **purs** (aucune dépendance Flutter) — ils sont
-testables en isolation.
+Chaque outil possède un identifiant stable. Les favoris et statistiques des
+versions antérieures, autrefois enregistrés avec le titre visible, sont migrés
+automatiquement au premier démarrage.
 
-## 🔐 Permissions
+## Design system
 
-Android (`android/app/src/main/AndroidManifest.xml`) :
+L’interface reprend le langage de Toolbox Everything Web :
 
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-<uses-permission android:name="android.permission.CAMERA" />
-<uses-permission android:name="android.permission.VIBRATE" />
-```
+- fond papier `#F3F3F0` et fond sombre `#0E0F13` ;
+- accent fonctionnel bleu, repères bleu/rose/violet ;
+- surfaces bordées avec peu d’élévation ;
+- titres **Fraunces**, grilles numérotées et micro-interactions courtes ;
+- shell commun pour tous les outils, avec largeur de lecture adaptée aux
+  téléphones et tablettes, en-têtes compacts et actions cohérentes ;
+- contrôles et navigation adaptés aux conventions Android et iOS.
 
-iOS (`ios/Runner/Info.plist`) :
+Fraunces est embarquée localement au format variable TTF sous licence SIL Open
+Font License 1.1. La licence est disponible dans
+`lib/assets/fonts/OFL.txt`.
 
-```xml
-<key>NSCameraUsageDescription</key>
-<string>Pour scanner les codes QR.</string>
-```
+## Stockage et permissions
 
-## 📦 Dépendances clés
+### Android
 
-| Catégorie       | Paquets                                                                            |
-|-----------------|------------------------------------------------------------------------------------|
-| Thème           | `dynamic_color`                                                                    |
-| État            | `provider`                                                                         |
-| Capteurs        | `flutter_compass`, `sensors_plus`                                                  |
-| Médias          | `youtube_explode_dart`, `ffmpeg_kit_flutter_new`, `mobile_scanner`, `qr_flutter`   |
-| Documents       | `pdf`, `printing`, `file_picker`, `path_provider`                                  |
-| Plateforme      | `permission_handler`, `connectivity_plus`, `flutter_local_notifications`           |
-| Crypto / utils  | `crypto`, `clipboard`, `super_clipboard`, `shared_preferences`, `package_info_plus`|
+- `INTERNET` et `ACCESS_NETWORK_STATE` pour les outils marqués Réseau ;
+- `CAMERA` au moment d’ouvrir le scanner QR ;
+- `POST_NOTIFICATIONS` au lancement d’un téléchargement sur Android 13+ ;
+- `WRITE_EXTERNAL_STORAGE` uniquement jusqu’à l’API 28 ;
+- MediaStore à partir d’Android 10 pour enregistrer dans Téléchargements.
 
-## 📄 Licence & contact
+### iOS
 
-- Politique de confidentialité : <https://doalo.fr/toolbox-everything/>
+- la caméra est décrite par `NSCameraUsageDescription` ;
+- les notifications sont demandées au premier téléchargement ;
+- les exports sont enregistrés dans Documents et exposés au sélecteur de
+  fichiers iOS.
+
+Les notes, favoris, statistiques d’usage et préférences sont stockés localement
+avec `SharedPreferences`. Ils ne sont pas synchronisés vers un serveur.
+
+## Confidentialité et limites
+
+- Politique de confidentialité : <https://toolbox.doalo.fr/confidentialite>
+- Conditions d'utilisation : <https://toolbox.doalo.fr/conditions-utilisation>
 - Contact : `contact@doalo.fr`
 - Code source : <https://github.com/Doalou/toolbox_everything_mobile>
+
+Le téléchargement média dépend de services tiers, de FFmpeg et des formats
+disponibles pour chaque contenu. L’utilisateur reste responsable du respect des
+conditions d’utilisation, licences et droits d’auteur applicables.
+
+Le téléchargeur repose sur les points d’accès du lecteur utilisés par
+`youtube_explode_dart`, pas sur l’API YouTube Data officielle. YouTube peut
+modifier ses clients, ses limites et l’exigence de PO Tokens sans préavis : une
+vidéo peut donc devenir temporairement indisponible ou répondre HTTP 403. La
+version 0.4.0 privilégie le profil HTTP `androidVr` sur Android comme sur iOS,
+avec le profil `ios` en repli, car `androidSdkless` ne délivre plus
+systématiquement les octets annoncés avec `youtube_explode_dart` 3.1.0. Le nom
+du profil décrit le client YouTube simulé et non la plateforme de l’application.
+
+## Licence
+
+La police Fraunces est distribuée sous SIL OFL 1.1. Le dépôt mobile ne contient
+pas encore de fichier `LICENSE` pour le code applicatif ; les droits restent
+donc réservés à son auteur jusqu’à publication d’une licence explicite.

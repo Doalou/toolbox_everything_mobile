@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
+import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
 import 'package:toolbox_everything_mobile/core/models/tool_item.dart';
-import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/core/services/usage_stats_service.dart';
 import 'package:toolbox_everything_mobile/core/tool_catalog.dart';
 import 'package:toolbox_everything_mobile/presentation/navigation/unified_navigation.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/about_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/settings_screen.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/expressive_section.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/tool_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,165 +15,114 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   late final List<ToolItem> _allTools;
-  late List<ToolItem> _filtered;
-  final TextEditingController _searchController = TextEditingController();
-  late final AnimationController _stagger;
+  late List<ToolItem> _filteredTools;
+  final _searchController = TextEditingController();
+  Set<String> _favoriteIds = <String>{};
+  ToolCategory? _activeCategory;
   bool _searching = false;
 
   @override
   void initState() {
     super.initState();
     _allTools = ToolCatalog.all();
-    _filtered = _allTools;
-    _searchController.addListener(_onQuery);
-    _stagger = AnimationController(
-      vsync: this,
-      duration: ExpressiveMotion.long2,
-    );
+    _filteredTools = _allTools;
+    _searchController.addListener(_applyFilters);
     _loadFavorites();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (_isLowResource) {
-        _stagger.value = 1.0;
-      } else {
-        Future<void>.delayed(const Duration(milliseconds: 220), () {
-          if (mounted) _stagger.forward();
-        });
-      }
-    });
   }
-
-  bool get _isLowResource => context.read<SettingsProvider>().lowResourceMode;
 
   @override
   void dispose() {
     _searchController.dispose();
-    _stagger.dispose();
     super.dispose();
   }
 
-  void _onQuery() {
-    final q = _searchController.text.trim().toLowerCase();
-    setState(() {
-      if (q.isEmpty) {
-        _filtered = _allTools;
-      } else {
-        _filtered = _allTools.where((t) {
-          final hay =
-              '${t.title} ${t.subtitle ?? ''} '
-                      '${t.category.label} ${t.tags.join(' ')}'
-                  .toLowerCase();
-          return hay.contains(q);
-        }).toList();
-      }
-    });
-    if (_isLowResource) {
-      _stagger.value = 1.0;
-    } else {
-      _stagger
-        ..reset()
-        ..forward();
-    }
-  }
-
   Future<void> _loadFavorites() async {
-    final favs = await UsageStatsService.loadFavorites();
+    await UsageStatsService.migrateLegacyData(ToolCatalog.legacyTitleToId);
+    final favorites = await UsageStatsService.loadFavorites();
     if (!mounted) return;
+    setState(() => _favoriteIds = favorites.toSet());
+  }
+
+  void _applyFilters() {
+    final query = _searchController.text.trim().toLowerCase();
     setState(() {
-      for (final t in _allTools) {
-        t.isFavorite = favs.contains(t.title);
-      }
+      _filteredTools = _allTools.where((tool) {
+        final categoryMatches =
+            _activeCategory == null || tool.category == _activeCategory;
+        final searchable =
+            '${tool.title} ${tool.subtitle ?? ''} ${tool.category.label} '
+                    '${tool.tags.join(' ')} ${tool.id}'
+                .toLowerCase();
+        return categoryMatches && (query.isEmpty || searchable.contains(query));
+      }).toList();
     });
   }
 
-  Future<void> _persistFavorites() async {
-    await UsageStatsService.saveFavorites(
-      _allTools.where((t) => t.isFavorite).map((t) => t.title).toList(),
-    );
+  void _selectCategory(ToolCategory? category) {
+    _activeCategory = category;
+    _applyFilters();
   }
 
-  void _toggleSearch() {
+  void _setFavorite(ToolItem tool, bool selected) {
     setState(() {
-      _searching = !_searching;
-      if (!_searching) {
-        _searchController.clear();
-        _filtered = _allTools;
-      }
+      selected ? _favoriteIds.add(tool.id) : _favoriteIds.remove(tool.id);
     });
+    UsageStatsService.saveFavorites(_favoriteIds);
   }
 
-  void _openScreen(BuildContext context, Widget screen) {
+  void _open(Widget screen) {
     Navigator.of(context).push(unifiedNavigation(context, screen));
-  }
-
-  Map<ToolCategory, List<ToolItem>> _groupByCategory(List<ToolItem> tools) {
-    final map = <ToolCategory, List<ToolItem>>{};
-    for (final t in tools) {
-      map.putIfAbsent(t.category, () => []).add(t);
-    }
-    return map;
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final lowResource = context.select<SettingsProvider, bool>(
-      (s) => s.lowResourceMode,
-    );
-    if (lowResource && _stagger.value != 1.0 && !_stagger.isAnimating) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _stagger.value = 1.0;
-      });
+    final favorites = _allTools
+        .where((tool) => _favoriteIds.contains(tool.id))
+        .toList();
+    final grouped = <ToolCategory, List<ToolItem>>{};
+    for (final tool in _filteredTools) {
+      grouped.putIfAbsent(tool.category, () => []).add(tool);
     }
-    final favorites = _allTools.where((t) => t.isFavorite).toList();
-    final groups = _groupByCategory(_filtered);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
-        physics: const ClampingScrollPhysics(),
+        key: const PageStorageKey('home-scroll'),
         slivers: [
-          SliverAppBar.large(
+          SliverAppBar(
             pinned: true,
-            stretch: true,
-            expandedHeight: 136,
-            elevation: 0,
-            backgroundColor: scheme.surface,
-            surfaceTintColor: Colors.transparent,
+            toolbarHeight: 68,
+            titleSpacing: 16,
+            title: const _Wordmark(),
             actions: [
               IconButton(
-                onPressed: _toggleSearch,
+                onPressed: () {
+                  setState(() => _searching = !_searching);
+                  if (!_searching) _searchController.clear();
+                },
+                tooltip: _searching ? 'Fermer la recherche' : 'Rechercher',
                 icon: Icon(
                   _searching ? Icons.close_rounded : Icons.search_rounded,
                 ),
-                tooltip: _searching ? 'Fermer' : 'Rechercher',
               ),
               IconButton(
-                onPressed: () => _openScreen(context, const SettingsScreen()),
-                icon: const Icon(Icons.tune_rounded),
+                onPressed: () => _open(const SettingsScreen()),
                 tooltip: 'Paramètres',
+                icon: const Icon(Icons.tune_rounded),
               ),
               IconButton(
-                onPressed: () => _openScreen(context, const AboutScreen()),
-                icon: const Icon(Icons.info_outline_rounded),
+                onPressed: () => _open(const AboutScreen()),
                 tooltip: 'À propos',
+                icon: const Icon(Icons.info_outline_rounded),
               ),
               const SizedBox(width: 4),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-              expandedTitleScale: 1.14,
-              title: const _GradientHomeTitle(),
-              background: _HeroBackground(lowResource: lowResource),
-            ),
           ),
           if (_searching)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                 child: SearchBar(
                   controller: _searchController,
                   hintText: 'Rechercher un outil…',
@@ -185,258 +130,160 @@ class _HomeScreenState extends State<HomeScreen>
                   trailing: [
                     if (_searchController.text.isNotEmpty)
                       IconButton(
+                        onPressed: _searchController.clear,
                         icon: const Icon(Icons.clear_rounded),
-                        onPressed: () => _searchController.clear(),
                       ),
                   ],
-                  shape: const WidgetStatePropertyAll(StadiumBorder()),
-                  padding: const WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(horizontal: 16),
-                  ),
                 ),
               ),
             ),
-
-          // Bandeau favoris
-          if (!_searching && favorites.isNotEmpty)
-            SliverToBoxAdapter(
-              child: _FavoritesStrip(
-                favorites: favorites,
-                onChanged: () {
-                  _persistFavorites();
-                  setState(() {});
-                },
+          const SliverToBoxAdapter(child: _HomeCover()),
+          SliverToBoxAdapter(
+            child: _SectionFrame(
+              title: 'Catégories',
+              child: _WorkshopGrid(
+                tools: _allTools,
+                selected: _activeCategory,
+                onSelected: _selectCategory,
               ),
             ),
-
-          if (_filtered.isEmpty)
+          ),
+          if (favorites.isNotEmpty && _activeCategory == null && !_searching)
+            SliverToBoxAdapter(
+              child: _SectionFrame(
+                title: 'Favoris',
+                meta: '${favorites.length} accès rapide(s)',
+                child: _FavoritesRow(favorites: favorites, onOpen: _openTool),
+              ),
+            ),
+          SliverToBoxAdapter(
+            child: _DirectoryHeading(
+              count: _filteredTools.length,
+              activeCategory: _activeCategory,
+              onClear: () => _selectCategory(null),
+            ),
+          ),
+          if (_filteredTools.isEmpty)
             const SliverFillRemaining(
               hasScrollBody: false,
               child: _EmptyResults(),
             )
           else
-            ...groups.entries.expand((entry) {
-              final cat = entry.key;
-              final tools = entry.value;
-              return [
+            ...grouped.entries.expand(
+              (entry) => [
                 SliverToBoxAdapter(
-                  child: ExpressiveSectionHeader(
-                    title: cat.label,
-                    icon: cat.icon,
-                    subtitle: '${tools.length} outil(s)',
+                  child: _CategoryHeading(
+                    category: entry.key,
+                    count: entry.value.length,
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 152,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 1.06,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 420,
+                          mainAxisExtent: 142,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
                     delegate: SliverChildBuilderDelegate((context, index) {
-                      final tool = tools[index];
-                      if (lowResource) {
-                        return ExpressiveToolCard(
-                          tool: tool,
-                          onFavoriteToggle: _persistFavorites,
-                        );
-                      }
-                      final anim = CurvedAnimation(
-                        parent: _stagger,
-                        curve: Interval(
-                          (0.04 * index).clamp(0, 0.8),
-                          (0.04 * index + 0.4).clamp(0.4, 1.0),
-                          curve: ExpressiveMotion.emphasizedDecelerate,
-                        ),
+                      final tool = entry.value[index];
+                      return ExpressiveToolCard(
+                        tool: tool,
+                        index: _allTools.indexOf(tool) + 1,
+                        isFavorite: _favoriteIds.contains(tool.id),
+                        onFavoriteChanged: (selected) =>
+                            _setFavorite(tool, selected),
                       );
-                      return AnimatedBuilder(
-                        animation: anim,
-                        builder: (context, child) {
-                          return Opacity(
-                            opacity: anim.value,
-                            child: Transform.translate(
-                              offset: Offset(0, 24 * (1 - anim.value)),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: ExpressiveToolCard(
-                          tool: tool,
-                          onFavoriteToggle: _persistFavorites,
-                        ),
-                      );
-                    }, childCount: tools.length),
+                    }, childCount: entry.value.length),
                   ),
                 ),
-              ];
-            }),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 56)),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroBackground extends StatelessWidget {
-  final bool lowResource;
-  const _HeroBackground({this.lowResource = false});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ClipRect(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  scheme.surface,
-                  scheme.surfaceContainerLowest,
-                  scheme.surfaceContainerLow,
-                ],
-              ),
-            ),
-          ),
-          if (!lowResource)
-            const Positioned.fill(
-              child: CustomPaint(painter: _RipplePainter()),
+              ],
             ),
         ],
       ),
     );
   }
-}
 
-class _RipplePainter extends CustomPainter {
-  const _RipplePainter();
-
-  static const _start = Color(0xFF5C6FF4);
-  static const _end = Color(0xFFE870C2);
-  static const _alphas = [0.50, 0.36, 0.25, 0.17, 0.11, 0.06];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final origin = Offset(size.width - 30, size.height - 28);
-    final shaderRect = Rect.fromLTWH(0, 0, size.width, size.height);
-
-    final haloPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          _end.withValues(alpha: 0.32),
-          _end.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: origin, radius: 70));
-    canvas.drawCircle(origin, 70, haloPaint);
-
-    for (var i = 0; i < _alphas.length; i++) {
-      final radius = 42.0 + i * 36.0;
-      final paint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = i == 0 ? 2.4 : 1.4
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            _start.withValues(alpha: _alphas[i]),
-            _end.withValues(alpha: _alphas[i]),
-          ],
-        ).createShader(shaderRect);
-      canvas.drawCircle(origin, radius, paint);
-    }
-
-    final dotPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [_start, _end],
-      ).createShader(Rect.fromCircle(center: origin, radius: 12));
-    canvas.drawCircle(origin, 8, dotPaint);
+  void _openTool(ToolItem tool) {
+    UsageStatsService.recordToolUsage(tool.id);
+    _open(tool.screenBuilder(tool.heroTag));
   }
-
-  @override
-  bool shouldRepaint(covariant _RipplePainter oldDelegate) => false;
 }
 
-class _GradientHomeTitle extends StatelessWidget {
-  const _GradientHomeTitle();
-
-  static const _gradient = LinearGradient(
-    colors: [Color(0xFF5c6ff4), Color(0xFFe870c2)],
-  );
+class _Wordmark extends StatelessWidget {
+  const _Wordmark();
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final baseStyle = TextStyle(
-      fontWeight: FontWeight.w900,
-      letterSpacing: 0,
-      color: scheme.onSurface,
-    );
-
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ShaderMask(
-            shaderCallback: (bounds) =>
-                _gradient.createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
-            blendMode: BlendMode.srcIn,
-            child: Text('Toolbox', style: baseStyle.copyWith(color: Colors.white)),
+    return Row(
+      children: [
+        Image.asset(
+          'lib/assets/images/Toolbox Everything Logo Transparent.png',
+          width: 36,
+          height: 36,
+        ),
+        const SizedBox(width: 9),
+        Flexible(
+          child: RichText(
+            overflow: TextOverflow.ellipsis,
+            text: TextSpan(
+              style: Theme.of(context).textTheme.titleLarge,
+              children: const [
+                TextSpan(text: 'Toolbox'),
+                TextSpan(
+                  text: ' Everything',
+                  style: TextStyle(
+                    color: EditorialPalette.brandPinkLight,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
           ),
-          Text(' Everything', style: baseStyle),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _FavoritesStrip extends StatelessWidget {
-  final List<ToolItem> favorites;
-  final VoidCallback onChanged;
-
-  const _FavoritesStrip({required this.favorites, required this.onChanged});
+class _HomeCover extends StatelessWidget {
+  const _HomeCover();
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 0, 0),
+      padding: const EdgeInsets.fromLTRB(16, 30, 16, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.favorite_rounded, color: scheme.error, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'Favoris',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ],
+          RichText(
+            text: TextSpan(
+              style: Theme.of(context).textTheme.displayMedium,
+              children: [
+                const TextSpan(text: 'Tous vos outils,\n'),
+                TextSpan(
+                  text: 'au même endroit.',
+                  style: TextStyle(
+                    color: scheme.brightness == Brightness.dark
+                        ? EditorialPalette.brandVioletDark
+                        : EditorialPalette.brandVioletLight,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 76,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(right: 12),
-              itemCount: favorites.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (_, i) {
-                final t = favorites[i];
-                return _FavoritePill(tool: t, onChanged: onChanged);
-              },
+          const SizedBox(height: 16),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 650),
+            child: Text(
+              'Générer, convertir, inspecter ou mesurer, directement sur votre appareil.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
         ],
@@ -445,78 +292,263 @@ class _FavoritesStrip extends StatelessWidget {
   }
 }
 
-class _FavoritePill extends StatelessWidget {
-  final ToolItem tool;
-  final VoidCallback onChanged;
-  const _FavoritePill({required this.tool, required this.onChanged});
+class _SectionFrame extends StatelessWidget {
+  final String title;
+  final String? meta;
+  final Widget child;
+
+  const _SectionFrame({required this.title, this.meta, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final outline = Theme.of(context).colorScheme.outline;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 52,
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: outline)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                if (meta != null)
+                  Text(meta!, style: Theme.of(context).textTheme.labelSmall),
+              ],
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _WorkshopGrid extends StatelessWidget {
+  final List<ToolItem> tools;
+  final ToolCategory? selected;
+  final ValueChanged<ToolCategory?> onSelected;
+
+  const _WorkshopGrid({
+    required this.tools,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textScale = MediaQuery.textScalerOf(context).scale(1);
+        final columns = constraints.maxWidth >= 850
+            ? 3
+            : constraints.maxWidth >= 560
+            ? 2
+            : 1;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisExtent: 132 + ((textScale - 1).clamp(0, 1) * 64),
+            crossAxisSpacing: 1,
+            mainAxisSpacing: 1,
+          ),
+          itemCount: ToolCategory.values.length,
+          itemBuilder: (context, index) {
+            final category = ToolCategory.values[index];
+            final count = tools
+                .where((tool) => tool.category == category)
+                .length;
+            return _WorkshopCard(
+              index: index + 1,
+              category: category,
+              count: count,
+              selected: selected == category,
+              onTap: () => onSelected(selected == category ? null : category),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _WorkshopCard extends StatelessWidget {
+  final int index;
+  final ToolCategory category;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _WorkshopCard({
+    required this.index,
+    required this.category,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final shape = RoundedRectangleBorder(
-      borderRadius: ExpressiveShapes.asymmetricHero(major: 18, minor: 10),
-      side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.50)),
-    );
-
+    final accent = _categoryColor(category, scheme.brightness);
     return Material(
-      color: scheme.surfaceContainerHigh,
-      shape: shape,
-      clipBehavior: Clip.antiAlias,
+      color: selected
+          ? accent.withValues(alpha: 0.16)
+          : accent.withValues(alpha: 0.07),
       child: InkWell(
-        onTap: () {
-          Navigator.of(
-            context,
-          ).push(unifiedNavigation(context, tool.screenBuilder(tool.heroTag)));
-        },
-        child: SizedBox(
-          width: 132,
-          child: Stack(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Positioned(
-                left: 0,
-                top: 12,
-                bottom: 12,
-                child: Container(
-                  width: 3,
-                  decoration: BoxDecoration(
-                    color: tool.cardColor.withValues(alpha: 0.38),
-                    borderRadius: const BorderRadius.horizontal(
-                      right: Radius.circular(99),
+              Row(
+                children: [
+                  Text(
+                    index.toString().padLeft(2, '0'),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelSmall?.copyWith(color: accent),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '$count outils',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                category.label,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _categoryCaption(category),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(10),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: ShapeDecoration(
-                        color: tool.cardColor.withValues(alpha: 0.11),
-                        shape: const StadiumBorder(),
-                      ),
-                      child: Icon(tool.icon, color: tool.cardColor, size: 16),
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: Text(
-                        tool.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11.5,
-                          height: 1.15,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  Icon(Icons.arrow_forward_rounded, size: 16, color: accent),
+                ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FavoritesRow extends StatelessWidget {
+  final List<ToolItem> favorites;
+  final ValueChanged<ToolItem> onOpen;
+
+  const _FavoritesRow({required this.favorites, required this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 76,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: favorites.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final tool = favorites[index];
+          return ActionChip(
+            onPressed: () => onOpen(tool),
+            avatar: Icon(tool.icon, size: 18, color: tool.cardColor),
+            label: Text(tool.title),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _DirectoryHeading extends StatelessWidget {
+  final int count;
+  final ToolCategory? activeCategory;
+  final VoidCallback onClear;
+
+  const _DirectoryHeading({
+    required this.count,
+    required this.activeCategory,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final outline = Theme.of(context).colorScheme.outline;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: outline)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                activeCategory == null
+                    ? 'Tous les outils'
+                    : activeCategory!.label,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            if (activeCategory != null)
+              TextButton.icon(
+                onPressed: onClear,
+                icon: const Icon(Icons.close_rounded, size: 16),
+                label: const Text('Tout voir'),
+              )
+            else
+              Text(
+                '$count outils',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryHeading extends StatelessWidget {
+  final ToolCategory category;
+  final int count;
+
+  const _CategoryHeading({required this.category, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _categoryColor(category, Theme.of(context).brightness);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 9),
+      child: Row(
+        children: [
+          Icon(category.icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Text(category.label, style: Theme.of(context).textTheme.titleLarge),
+          const Spacer(),
+          Text('$count', style: Theme.of(context).textTheme.labelSmall),
+        ],
       ),
     );
   }
@@ -527,27 +559,22 @@ class _EmptyResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 64,
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
+            const Icon(Icons.search_off_rounded, size: 48),
+            const SizedBox(height: 12),
             Text(
               'Aucun outil trouvé',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               'Essayez une autre recherche.',
-              style: TextStyle(color: scheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
@@ -555,3 +582,26 @@ class _EmptyResults extends StatelessWidget {
     );
   }
 }
+
+Color _categoryColor(ToolCategory category, Brightness brightness) {
+  final dark = brightness == Brightness.dark;
+  return switch (category) {
+    ToolCategory.essentials || ToolCategory.productivity =>
+      dark ? EditorialPalette.brandPinkDark : EditorialPalette.brandPinkLight,
+    ToolCategory.media || ToolCategory.network =>
+      dark
+          ? EditorialPalette.brandVioletDark
+          : EditorialPalette.brandVioletLight,
+    _ =>
+      dark ? EditorialPalette.brandBlueDark : EditorialPalette.brandBlueLight,
+  };
+}
+
+String _categoryCaption(ToolCategory category) => switch (category) {
+  ToolCategory.essentials => 'Générer, encoder, inspecter',
+  ToolCategory.converters => 'Changer de format ou d’unité',
+  ToolCategory.sensors => 'Lire les capteurs de l’appareil',
+  ToolCategory.media => 'Fichiers, audio et vidéo',
+  ToolCategory.network => 'Connectivité et diagnostic',
+  ToolCategory.productivity => 'Notes et gestion du temps',
+};

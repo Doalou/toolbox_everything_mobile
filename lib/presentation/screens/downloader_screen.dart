@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/providers/downloader_provider.dart';
@@ -29,23 +31,9 @@ class _DownloaderView extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Téléchargeur',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-      ),
+    return EditorialToolScaffold(
+      title: 'Téléchargeur',
+      heroTag: heroTag,
       body: Consumer<DownloaderProvider>(
         builder: (context, provider, _) {
           return CustomScrollView(
@@ -105,65 +93,12 @@ class _DownloaderHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: ShapeDecoration(
-          color: scheme.primaryContainer,
-          shape: RoundedRectangleBorder(
-            borderRadius: ExpressiveShapes.asymmetricHero(),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: ShapeDecoration(
-                    color: scheme.surface,
-                    shape: const StadiumBorder(),
-                  ),
-                  child: Icon(
-                    Icons.video_library_rounded,
-                    color: scheme.primary,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'YouTube audio & vidéo',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Collez un lien, inspectez les formats, puis choisissez une sortie claire.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: scheme.onPrimaryContainer.withValues(
-                            alpha: 0.78,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+      child: const EditorialToolIntro(
+        icon: Icons.video_library_rounded,
+        title: 'YouTube audio & vidéo',
+        description: 'Collez un lien, puis choisissez le format de sortie.',
       ),
     );
   }

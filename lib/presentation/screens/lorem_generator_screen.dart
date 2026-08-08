@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:flutter/services.dart';
 import 'dart:math';
 
@@ -148,68 +150,25 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Générateur Lorem Ipsum',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
+    return EditorialToolScaffold(
+      title: 'Générateur Lorem Ipsum',
+      heroTag: widget.heroTag,
+      actions: [
+        IconButton(
+          onPressed: _copyResult,
+          icon: Icon(Icons.content_copy, color: colorScheme.primary),
+          tooltip: 'Copier le texte',
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _copyResult,
-            icon: Icon(Icons.content_copy, color: colorScheme.primary),
-            tooltip: 'Copier le texte',
-          ),
-        ],
-      ),
+      ],
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.text_snippet,
-                    size: 34,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Générateur de texte',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Lorem ipsum pour vos maquettes et prototypes',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onPrimaryContainer.withValues(
-                        alpha: 0.7,
-                      ),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+            const EditorialToolIntro(
+              icon: Icons.text_snippet_rounded,
+              title: 'Générer du texte',
+              description: 'Lorem ipsum pour vos maquettes et prototypes.',
             ),
 
             const SizedBox(height: 16),

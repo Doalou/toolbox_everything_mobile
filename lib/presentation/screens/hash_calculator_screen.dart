@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:flutter/services.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
@@ -189,63 +191,25 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Calculateur de Hash',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
+    return EditorialToolScaffold(
+      title: 'Calculateur de hash',
+      heroTag: widget.heroTag,
+      actions: [
+        IconButton(
+          onPressed: _clearAll,
+          icon: Icon(Icons.clear_all, color: colorScheme.primary),
+          tooltip: 'Effacer tout',
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _clearAll,
-            icon: Icon(Icons.clear_all, color: colorScheme.primary),
-            tooltip: 'Effacer tout',
-          ),
-        ],
-      ),
+      ],
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Icon(Icons.fingerprint, size: 34, color: colorScheme.primary),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Calculateur de Hash',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'MD5 • SHA-256 • SHA-512',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onPrimaryContainer.withValues(
-                        alpha: 0.7,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            const EditorialToolIntro(
+              icon: Icons.fingerprint_rounded,
+              title: 'Calculer une empreinte',
+              description: 'MD5, SHA-256 et SHA-512, localement.',
             ),
 
             const SizedBox(height: 16),

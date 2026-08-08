@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/regex_service.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 
 class RegexTesterScreen extends StatefulWidget {
   final String heroTag;
@@ -52,19 +53,9 @@ class _RegexTesterScreenState extends State<RegexTesterScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Regex tester',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-      ),
+    return EditorialToolScaffold(
+      title: 'Testeur d’expressions régulières',
+      heroTag: widget.heroTag,
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [

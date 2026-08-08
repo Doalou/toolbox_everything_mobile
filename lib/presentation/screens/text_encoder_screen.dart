@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 
 enum EncodingType { base64, url, html, hex }
 
@@ -128,27 +130,16 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Encodeur / Décodeur',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-      ),
+    return EditorialToolScaffold(
+      title: 'Encodeur / Décodeur',
+      heroTag: widget.heroTag,
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.all(AppConstants.defaultPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _IntroCard(scheme: scheme),
+            const _IntroCard(),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
@@ -304,51 +295,14 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
 }
 
 class _IntroCard extends StatelessWidget {
-  final ColorScheme scheme;
-
-  const _IntroCard({required this.scheme});
+  const _IntroCard();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: scheme.surface,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.code, color: scheme.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Encodez et décodez du texte',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Base64, URL, HTML entities, Hexadécimal.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return const EditorialToolIntro(
+      icon: Icons.code_rounded,
+      title: 'Encoder ou décoder du texte',
+      description: 'Base64, URL, entités HTML et hexadécimal.',
     );
   }
 }

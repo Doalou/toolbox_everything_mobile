@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 // Animations retirées pour alléger l'écran et éviter les saccades
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
+
+class _NetworkTestException implements Exception {
+  final String message;
+  const _NetworkTestException(this.message);
+}
 
 class ConnectionTesterScreen extends StatefulWidget {
   final String heroTag;
@@ -16,6 +23,8 @@ class ConnectionTesterScreen extends StatefulWidget {
 
 class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     with TickerProviderStateMixin {
+  static const _requestTimeout = Duration(seconds: 4);
+  static const _testTimeout = Duration(seconds: 18);
   bool _isTesting = false;
   bool _hasInternet = false;
   String _ipv4 = 'Non détecté';
@@ -126,25 +135,30 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
           break;
       }
 
-      // Test de ping
-      double pingTime = await _testPing();
-
-      // Récupération de l'IP et informations
-      final ipInfoFuture = _getIpInfo();
-      final ipv4Future = _getIPv4();
-      final ipv6Future = _getIPv6();
-      final ipInfo = await ipInfoFuture;
-      final ipResults = await Future.wait<String>([ipv4Future, ipv6Future]);
-      final ipv4 = ipResults[0];
-      final ipv6 = ipResults[1];
-
-      // Test de vitesse de téléchargement
-      double downloadSpeed = await _testDownloadSpeed();
+      final results = await Future.wait<Object>([
+        _testPing(),
+        _getIpInfo(),
+        _getIPv4(),
+        _getIPv6(),
+        _testDownloadSpeed(),
+      ]).timeout(_testTimeout);
+      final pingTime = results[0] as double;
+      final ipInfo = results[1] as Map<String, String>;
+      final ipv4 = results[2] as String;
+      final ipv6 = results[3] as String;
+      final downloadSpeed = results[4] as double;
+      final hasInternet =
+          pingTime > 0 || ipv4 != 'Non disponible' || ipv6 != 'Non disponible';
+      if (!hasInternet) {
+        throw const _NetworkTestException(
+          'Aucun accès Internet n’a pu être confirmé.',
+        );
+      }
 
       if (mounted) {
         setState(() {
           _isTesting = false;
-          _hasInternet = true;
+          _hasInternet = hasInternet;
           _ipv4 = ipv4;
           _ipv6 = ipv6;
           _location = ipInfo['location'] ?? 'Non détecté';
@@ -168,13 +182,21 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur de test: ${e.toString()}'),
+            content: Text(_friendlyError(e)),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
     }
+  }
+
+  String _friendlyError(Object error) {
+    if (error is TimeoutException) {
+      return 'Le diagnostic réseau a expiré. Vérifiez la connexion puis réessayez.';
+    }
+    if (error is _NetworkTestException) return error.message;
+    return 'Le diagnostic réseau est indisponible pour le moment.';
   }
 
   Future<String> _getIPv4() async {
@@ -190,7 +212,7 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
               Uri.parse(url),
               headers: {'User-Agent': 'ToolboxEverything/1.0'},
             )
-            .timeout(const Duration(seconds: 6));
+            .timeout(_requestTimeout);
         if (res.statusCode == 200) {
           final text = res.body.trim();
           if (_looksLikeIPv4(text)) return text;
@@ -213,7 +235,7 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
               Uri.parse(url),
               headers: {'User-Agent': 'ToolboxEverything/1.0'},
             )
-            .timeout(const Duration(seconds: 6));
+            .timeout(_requestTimeout);
         if (res.statusCode == 200) {
           final text = res.body.trim();
           if (_looksLikeIPv6(text)) return text;
@@ -249,7 +271,7 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
             Uri.parse('https://www.google.com'),
             headers: {'User-Agent': 'ToolboxEverything/1.0'},
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(_requestTimeout);
       stopwatch.stop();
 
       if (response.statusCode == 200) {
@@ -273,7 +295,7 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
               'User-Agent': 'ToolboxEverything/1.0',
             },
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(_requestTimeout);
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         return {
@@ -294,7 +316,7 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
               'User-Agent': 'ToolboxEverything/1.0',
             },
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(_requestTimeout);
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data['success'] == true || data['ip'] != null) {
@@ -318,7 +340,7 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
               'User-Agent': 'ToolboxEverything/1.0',
             },
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(_requestTimeout);
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         return {
@@ -339,7 +361,7 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
               'User-Agent': 'ToolboxEverything/1.0',
             },
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(_requestTimeout);
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         return {
@@ -363,7 +385,7 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
       final stopwatch = Stopwatch()..start();
       final response = await http
           .get(Uri.parse('https://httpbin.org/bytes/100000'))
-          .timeout(const Duration(seconds: 10));
+          .timeout(_requestTimeout);
       stopwatch.stop();
 
       if (response.statusCode == 200) {
@@ -381,24 +403,9 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Testeur de Connexion',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+    return EditorialToolScaffold(
+      title: 'Testeur de connexion',
+      heroTag: widget.heroTag,
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         child: Padding(
@@ -406,47 +413,14 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // En-tête simplifiée (fond plein)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _hasInternet ? Icons.wifi : Icons.wifi_off,
-                      size: 32,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Statut de la connexion',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _hasInternet
-                                ? 'Connecté à Internet'
-                                : 'Non connecté',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: colorScheme.onPrimaryContainer
-                                      .withValues(alpha: 0.85),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              EditorialToolIntro(
+                icon: _hasInternet
+                    ? Icons.wifi_rounded
+                    : Icons.wifi_off_rounded,
+                title: 'Statut de la connexion',
+                description: _hasInternet
+                    ? 'Connecté à Internet'
+                    : 'Aucune connexion Internet détectée',
               ),
 
               const SizedBox(height: 24),

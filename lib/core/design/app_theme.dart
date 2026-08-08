@@ -1,271 +1,228 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 
-/// Construit un [ThemeData] Material 3 Expressive à partir d'un [ColorScheme].
-/// Aucune dépendance à du state — pur, testable.
-ThemeData buildExpressiveTheme({
+/// Thème éditorial partagé avec Toolbox Everything Web, adapté aux contrôles
+/// et conventions de navigation natives Flutter.
+ThemeData buildEditorialTheme({
   required ColorScheme colorScheme,
   required Brightness brightness,
   bool amoled = false,
 }) {
-  final bool isDark = brightness == Brightness.dark;
-  final bool useAmoled = isDark && amoled;
-  final Color scaffoldBg = useAmoled ? Colors.black : colorScheme.surface;
+  final isDark = brightness == Brightness.dark;
+  final useAmoled = isDark && amoled;
+  final paper = useAmoled
+      ? Colors.black
+      : isDark
+      ? EditorialPalette.paperDark
+      : EditorialPalette.paperLight;
+  final surface = isDark
+      ? EditorialPalette.surfaceDark
+      : EditorialPalette.surfaceLight;
+  final line = isDark ? EditorialPalette.lineDark : EditorialPalette.lineLight;
+  final lineStrong = isDark
+      ? EditorialPalette.lineStrongDark
+      : EditorialPalette.lineStrongLight;
+  final editorialScheme = colorScheme.copyWith(
+    surface: useAmoled ? Colors.black : surface,
+    onSurface: isDark ? EditorialPalette.inkDark : EditorialPalette.inkLight,
+    onSurfaceVariant: isDark
+        ? EditorialPalette.mutedDark
+        : EditorialPalette.mutedLight,
+    surfaceContainerLowest: paper,
+    surfaceContainerLow: useAmoled
+        ? const Color(0xFF08090B)
+        : isDark
+        ? EditorialPalette.surfaceSunkenDark
+        : EditorialPalette.surfaceSunkenLight,
+    surfaceContainer: isDark
+        ? EditorialPalette.surfaceAltDark
+        : EditorialPalette.surfaceAltLight,
+    surfaceContainerHigh: isDark
+        ? EditorialPalette.surfaceAltDark
+        : EditorialPalette.surfaceAltLight,
+    surfaceContainerHighest: line,
+    outline: lineStrong,
+    outlineVariant: line,
+    error: isDark ? EditorialPalette.errorDark : EditorialPalette.errorLight,
+  );
+  final textTheme = _editorialTextTheme(editorialScheme);
+  final controlShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(EditorialTokens.radiusMd),
+  );
 
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,
-    colorScheme: colorScheme,
-    scaffoldBackgroundColor: scaffoldBg,
-    canvasColor: useAmoled ? Colors.black : null,
+    colorScheme: editorialScheme,
+    scaffoldBackgroundColor: paper,
+    canvasColor: paper,
+    fontFamilyFallback: const ['Segoe UI', 'Roboto', 'Helvetica', 'Arial'],
     visualDensity: VisualDensity.standard,
-    splashFactory: InkSparkle.splashFactory,
-    textTheme: _buildExpressiveTextTheme(colorScheme),
-
-    // AppBar
+    splashFactory: InkRipple.splashFactory,
+    textTheme: textTheme,
     appBarTheme: AppBarTheme(
-      backgroundColor: scaffoldBg,
-      surfaceTintColor: colorScheme.surfaceTint,
-      foregroundColor: colorScheme.onSurface,
+      backgroundColor: paper,
+      foregroundColor: editorialScheme.onSurface,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
-      scrolledUnderElevation: ExpressiveTokens.elevation2,
+      scrolledUnderElevation: 0,
       centerTitle: false,
       systemOverlayStyle: isDark
           ? SystemUiOverlayStyle.light
           : SystemUiOverlayStyle.dark,
-      titleTextStyle: TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        color: colorScheme.onSurface,
-        height: 1.2,
-        letterSpacing: -0.2,
+      titleTextStyle: textTheme.titleLarge?.copyWith(
+        fontFamily: 'Fraunces',
+        fontWeight: FontWeight.w600,
+      ),
+      shape: Border(bottom: BorderSide(color: line)),
+    ),
+    cardTheme: CardThemeData(
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      color: editorialScheme.surface,
+      margin: const EdgeInsets.all(8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(EditorialTokens.radiusLg),
+        side: BorderSide(color: lineStrong),
       ),
     ),
-
-    // Cards expressives — rayon généreux, pas d'élévation par défaut.
-    cardTheme: CardThemeData(
-      elevation: ExpressiveTokens.elevation0,
-      shadowColor: Colors.transparent,
-      surfaceTintColor: colorScheme.surfaceTint,
-      shape: ExpressiveShapes.card(),
-      margin: const EdgeInsets.all(ExpressiveTokens.spacingSm),
-      color: colorScheme.surfaceContainerLow,
-    ),
-
-    // Buttons
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        shape: const StadiumBorder(),
-        minimumSize: const Size.fromHeight(52),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        textStyle: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 15,
-          letterSpacing: 0.1,
-        ),
+        minimumSize: const Size.fromHeight(48),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+        shape: controlShape,
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        elevation: ExpressiveTokens.elevation1,
-        shadowColor: colorScheme.shadow.withValues(alpha: 0.15),
-        shape: const StadiumBorder(),
-        minimumSize: const Size.fromHeight(52),
-        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        elevation: 0,
+        minimumSize: const Size.fromHeight(48),
+        shape: controlShape,
+        side: BorderSide(color: lineStrong),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        shape: const StadiumBorder(),
-        side: BorderSide(color: colorScheme.outline, width: 1.2),
-        minimumSize: const Size.fromHeight(52),
-        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        minimumSize: const Size.fromHeight(48),
+        shape: controlShape,
+        side: BorderSide(color: lineStrong),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        shape: const StadiumBorder(),
-        minimumSize: const Size(0, 44),
-        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        minimumSize: const Size(44, 44),
+        shape: controlShape,
+        textStyle: const TextStyle(fontWeight: FontWeight.w700),
       ),
     ),
-
-    // Floating action button — pill shape M3E
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ExpressiveShapes.large),
-      ),
-      backgroundColor: colorScheme.primaryContainer,
-      foregroundColor: colorScheme.onPrimaryContainer,
-      elevation: ExpressiveTokens.elevation2,
-      focusElevation: ExpressiveTokens.elevation3,
-      hoverElevation: ExpressiveTokens.elevation3,
-      highlightElevation: ExpressiveTokens.elevation4,
-      iconSize: ExpressiveTokens.iconMd,
+      elevation: 1,
+      focusElevation: 1,
+      hoverElevation: 1,
+      highlightElevation: 1,
+      shape: controlShape,
+      backgroundColor: editorialScheme.primary,
+      foregroundColor: editorialScheme.onPrimary,
     ),
-
-    // SegmentedButton
-    segmentedButtonTheme: SegmentedButtonThemeData(
-      style: ButtonStyle(
-        padding: WidgetStateProperty.all(
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        ),
-        shape: WidgetStateProperty.all(const StadiumBorder()),
-        textStyle: WidgetStateProperty.all(
-          const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-      ),
-    ),
-
-    // IconButton
     iconButtonTheme: IconButtonThemeData(
       style: IconButton.styleFrom(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ExpressiveShapes.medium),
-        ),
-        padding: const EdgeInsets.all(10),
+        minimumSize: const Size.square(44),
+        shape: controlShape,
       ),
     ),
-
-    // Switches
-    switchTheme: SwitchThemeData(
-      trackOutlineColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return colorScheme.primary;
-        return colorScheme.outline;
-      }),
-      trackOutlineWidth: WidgetStateProperty.all(1.5),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(Size(44, 44)),
+        shape: WidgetStatePropertyAll(controlShape),
+        side: WidgetStatePropertyAll(BorderSide(color: lineStrong)),
+        textStyle: const WidgetStatePropertyAll(
+          TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
+      ),
     ),
-
-    // Inputs — surface containerHighest, sans border par défaut, focus accentué.
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: colorScheme.surfaceContainerHighest,
+      fillColor: editorialScheme.surfaceContainerLow,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(ExpressiveShapes.large),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(EditorialTokens.radiusMd),
+        borderSide: BorderSide(color: lineStrong),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(ExpressiveShapes.large),
-        borderSide: BorderSide(
-          color: colorScheme.outline.withValues(alpha: 0.25),
-        ),
+        borderRadius: BorderRadius.circular(EditorialTokens.radiusMd),
+        borderSide: BorderSide(color: lineStrong),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(ExpressiveShapes.large),
-        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        borderRadius: BorderRadius.circular(EditorialTokens.radiusMd),
+        borderSide: BorderSide(color: editorialScheme.primary, width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: ExpressiveTokens.spacingLg,
-        vertical: ExpressiveTokens.spacing,
-      ),
-      hintStyle: TextStyle(
-        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(EditorialTokens.radiusMd),
+        borderSide: BorderSide(color: editorialScheme.error),
       ),
     ),
-
-    // BottomSheet
-    bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: useAmoled ? Colors.black : colorScheme.surface,
-      surfaceTintColor: colorScheme.surfaceTint,
-      shape: ExpressiveShapes.bottomSheet,
-      elevation: 0,
-      modalElevation: 0,
-      showDragHandle: true,
-      dragHandleColor: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+    searchBarTheme: SearchBarThemeData(
+      backgroundColor: WidgetStatePropertyAll(editorialScheme.surface),
+      elevation: const WidgetStatePropertyAll(0),
+      side: WidgetStatePropertyAll(BorderSide(color: lineStrong)),
+      shape: WidgetStatePropertyAll(controlShape),
     ),
-
-    // Dialog
     dialogTheme: DialogThemeData(
-      backgroundColor: useAmoled ? Colors.black : colorScheme.surface,
-      surfaceTintColor: colorScheme.surfaceTint,
-      shape: ExpressiveShapes.dialog,
+      elevation: 2,
+      backgroundColor: editorialScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(EditorialTokens.radiusXl),
+        side: BorderSide(color: lineStrong),
+      ),
     ),
-
-    // SnackBar
+    bottomSheetTheme: BottomSheetThemeData(
+      elevation: 0,
+      modalElevation: 2,
+      backgroundColor: editorialScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      showDragHandle: true,
+      shape: ExpressiveShapes.bottomSheet,
+    ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: colorScheme.inverseSurface,
-      contentTextStyle: TextStyle(
-        color: colorScheme.onInverseSurface,
-        fontWeight: FontWeight.w500,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ExpressiveShapes.medium),
-      ),
       behavior: SnackBarBehavior.floating,
-      elevation: ExpressiveTokens.elevation2,
+      elevation: 1,
+      shape: controlShape,
+      backgroundColor: editorialScheme.inverseSurface,
+      contentTextStyle: TextStyle(color: editorialScheme.onInverseSurface),
     ),
-
-    // ListTile
     listTileTheme: ListTileThemeData(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: ExpressiveTokens.spacingLg,
-        vertical: ExpressiveTokens.spacingSm,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ExpressiveShapes.medium),
-      ),
-      titleTextStyle: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: colorScheme.onSurface,
-      ),
-      subtitleTextStyle: TextStyle(
-        fontSize: 14,
-        color: colorScheme.onSurfaceVariant,
-      ),
+      minTileHeight: 48,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      shape: controlShape,
     ),
-
-    dividerTheme: DividerThemeData(
-      color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-      thickness: 1,
-      space: ExpressiveTokens.spacingLg,
-    ),
-
-    // Chips expressifs (pill shape)
     chipTheme: ChipThemeData(
-      backgroundColor: colorScheme.surfaceContainer,
-      selectedColor: colorScheme.secondaryContainer,
-      shape: const StadiumBorder(),
-      side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
-      labelStyle: TextStyle(
-        color: colorScheme.onSurface,
-        fontWeight: FontWeight.w500,
-        fontSize: 13,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(EditorialTokens.radiusSm),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      side: BorderSide(color: lineStrong),
+      backgroundColor: editorialScheme.surfaceContainerLow,
+      selectedColor: editorialScheme.primary.withValues(alpha: 0.12),
+      labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
     ),
-
-    // Navigation bar
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: useAmoled ? Colors.black : colorScheme.surface,
-      surfaceTintColor: colorScheme.surfaceTint,
-      indicatorColor: colorScheme.secondaryContainer,
-      indicatorShape: const StadiumBorder(),
-      labelTextStyle: WidgetStateProperty.all(
-        TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface),
-      ),
-      height: 72,
-    ),
-
-    // Slider
-    sliderTheme: SliderThemeData(
-      activeTrackColor: colorScheme.primary,
-      inactiveTrackColor: colorScheme.surfaceContainerHighest,
-      thumbColor: colorScheme.primary,
-      overlayColor: colorScheme.primary.withValues(alpha: 0.12),
-      trackHeight: 12,
-    ),
-
-    // Progress
+    dividerTheme: DividerThemeData(color: line, thickness: 1, space: 20),
     progressIndicatorTheme: ProgressIndicatorThemeData(
-      color: colorScheme.primary,
-      linearTrackColor: colorScheme.surfaceContainerHighest,
-      linearMinHeight: 8,
+      color: editorialScheme.primary,
+      linearTrackColor: line,
+      linearMinHeight: 5,
     ),
-
-    // Page transitions — predictive back sur Android, fade-through partout.
+    sliderTheme: SliderThemeData(
+      activeTrackColor: editorialScheme.primary,
+      inactiveTrackColor: line,
+      thumbColor: editorialScheme.primary,
+      trackHeight: 5,
+    ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
         TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
@@ -275,122 +232,72 @@ ThemeData buildExpressiveTheme({
   );
 }
 
-TextTheme _buildExpressiveTextTheme(ColorScheme colorScheme) {
-  final base = colorScheme.onSurface;
+/// Nom historique conservé pour la compatibilité des appels internes.
+ThemeData buildExpressiveTheme({
+  required ColorScheme colorScheme,
+  required Brightness brightness,
+  bool amoled = false,
+}) => buildEditorialTheme(
+  colorScheme: colorScheme,
+  brightness: brightness,
+  amoled: amoled,
+);
+
+TextTheme _editorialTextTheme(ColorScheme scheme) {
+  final ink = scheme.onSurface;
+  TextStyle display(double size, double height) => TextStyle(
+    fontFamily: 'Fraunces',
+    fontSize: size,
+    fontWeight: FontWeight.w600,
+    color: ink,
+    letterSpacing: -0.7,
+    height: height,
+  );
+
   return TextTheme(
-    // Display — héro, titres marquants
-    displayLarge: TextStyle(
-      fontSize: 40,
-      fontWeight: FontWeight.w800,
-      color: colorScheme.primary,
-      letterSpacing: -1.2,
-      height: 1.1,
-    ),
-    displayMedium: TextStyle(
-      fontSize: 32,
-      fontWeight: FontWeight.w800,
-      color: colorScheme.primary,
-      letterSpacing: -0.8,
-      height: 1.15,
-    ),
-    displaySmall: TextStyle(
-      fontSize: 26,
-      fontWeight: FontWeight.w700,
-      color: colorScheme.primary,
-      letterSpacing: -0.4,
-      height: 1.2,
-    ),
-
-    // Headline — sections
-    headlineLarge: TextStyle(
-      fontSize: 24,
-      fontWeight: FontWeight.w700,
-      color: base,
-      letterSpacing: -0.2,
-      height: 1.3,
-    ),
-    headlineMedium: TextStyle(
-      fontSize: 20,
-      fontWeight: FontWeight.w700,
-      color: base,
-      letterSpacing: 0,
-      height: 1.3,
-    ),
-    headlineSmall: TextStyle(
-      fontSize: 18,
-      fontWeight: FontWeight.w600,
-      color: base,
-      letterSpacing: 0,
-      height: 1.4,
-    ),
-
-    // Title
-    titleLarge: TextStyle(
+    displayLarge: display(48, 0.96),
+    displayMedium: display(38, 1.0),
+    displaySmall: display(30, 1.05),
+    headlineLarge: display(28, 1.08),
+    headlineMedium: display(24, 1.12),
+    headlineSmall: display(21, 1.15),
+    titleLarge: display(19, 1.2),
+    titleMedium: TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.w700,
-      color: base,
-      letterSpacing: 0,
-      height: 1.4,
-    ),
-    titleMedium: TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-      color: base,
-      letterSpacing: 0.1,
-      height: 1.4,
+      color: ink,
+      height: 1.3,
     ),
     titleSmall: TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: base,
-      letterSpacing: 0.1,
-      height: 1.4,
-    ),
-
-    // Body
-    bodyLarge: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      color: base,
-      letterSpacing: 0.1,
-      height: 1.5,
-    ),
-    bodyMedium: TextStyle(
       fontSize: 14,
-      fontWeight: FontWeight.w400,
-      color: base.withValues(alpha: 0.85),
-      letterSpacing: 0.15,
-      height: 1.5,
+      fontWeight: FontWeight.w700,
+      color: ink,
+      height: 1.3,
     ),
+    bodyLarge: TextStyle(fontSize: 16, color: ink, height: 1.55),
+    bodyMedium: TextStyle(fontSize: 14, color: ink, height: 1.5),
     bodySmall: TextStyle(
       fontSize: 12,
-      fontWeight: FontWeight.w400,
-      color: base.withValues(alpha: 0.7),
-      letterSpacing: 0.2,
+      color: scheme.onSurfaceVariant,
       height: 1.45,
     ),
-
-    // Label
     labelLarge: TextStyle(
       fontSize: 14,
-      fontWeight: FontWeight.w600,
-      color: base,
-      letterSpacing: 0.2,
-      height: 1.4,
+      fontWeight: FontWeight.w700,
+      color: ink,
     ),
     labelMedium: TextStyle(
       fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: base,
-      letterSpacing: 0.4,
-      height: 1.35,
+      fontWeight: FontWeight.w700,
+      color: ink,
+      letterSpacing: 0.2,
     ),
     labelSmall: TextStyle(
+      fontFamily: 'monospace',
       fontSize: 10,
-      fontWeight: FontWeight.w600,
-      color: base,
-      letterSpacing: 0.5,
-      height: 1.4,
+      fontWeight: FontWeight.w700,
+      color: scheme.onSurfaceVariant,
+      letterSpacing: 0.8,
     ),
   );
 }

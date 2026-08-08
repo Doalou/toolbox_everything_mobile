@@ -65,6 +65,10 @@ class AboutScreen extends StatelessWidget {
                     context,
                     Uri.parse(AppConstants.privacyPolicyUrl),
                   ),
+                  onTerms: () => _launchUrl(
+                    context,
+                    Uri.parse(AppConstants.termsOfUseUrl),
+                  ),
                   onSource: () => _launchUrl(
                     context,
                     Uri.parse(AppConstants.sourceCodeUrl),
@@ -274,9 +278,14 @@ class _PrivacyCard extends StatelessWidget {
 
 class _ResourceCard extends StatelessWidget {
   final VoidCallback onPrivacy;
+  final VoidCallback onTerms;
   final VoidCallback onSource;
 
-  const _ResourceCard({required this.onPrivacy, required this.onSource});
+  const _ResourceCard({
+    required this.onPrivacy,
+    required this.onTerms,
+    required this.onSource,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -291,6 +300,18 @@ class _ResourceCard extends StatelessWidget {
             title: 'Confidentialité',
             subtitle: 'Consulter la politique de confidentialité',
             onTap: onPrivacy,
+          ),
+          Divider(
+            height: 1,
+            indent: 72,
+            endIndent: 18,
+            color: scheme.outlineVariant.withValues(alpha: 0.55),
+          ),
+          _ResourceTile(
+            icon: Icons.gavel_outlined,
+            title: "Conditions d'utilisation",
+            subtitle: "Consulter les conditions d'utilisation",
+            onTap: onTerms,
           ),
           Divider(
             height: 1,

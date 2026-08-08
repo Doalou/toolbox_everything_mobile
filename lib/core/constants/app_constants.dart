@@ -11,7 +11,7 @@ class AppConstants {
   // Identité
   static const String appName = 'Toolbox Everything';
   static const String appDescription = 'Vos outils numériques essentiels';
-  static const String version = '0.3.2';
+  static const String version = '0.4.0';
   static const String contactEmail = 'contact@doalo.fr';
 
   // Espacements (alias vers ExpressiveTokens)
@@ -41,7 +41,10 @@ class AppConstants {
   static const Curve defaultAnimationCurve = ExpressiveMotion.emphasized;
 
   // Liens
-  static const String privacyPolicyUrl = 'https://doalo.fr/toolbox-everything/';
+  static const String privacyPolicyUrl =
+      'https://toolbox.doalo.fr/confidentialite';
+  static const String termsOfUseUrl =
+      'https://toolbox.doalo.fr/conditions-utilisation';
   static const String sourceCodeUrl =
       'https://github.com/Doalou/toolbox_everything_mobile';
 

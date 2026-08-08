@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toolbox_everything_mobile/core/design/app_theme.dart';
+import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 
-/// Provider du thème : gère les préférences utilisateur (mode, seed, dynamic, AMOLED)
-/// et délègue la construction du [ThemeData] à [buildExpressiveTheme].
 class ThemeProvider with ChangeNotifier {
-  static const String _prefUseDynamic = 'pref_use_dynamic_color';
-  static const String _prefSeedColor = 'pref_seed_color';
-  static const String _prefThemeMode = 'pref_theme_mode';
-  static const String _prefAmoled = 'pref_amoled_black';
+  static const _prefUseDynamic = 'pref_use_dynamic_color';
+  static const _prefSeedColor = 'pref_seed_color';
+  static const _prefThemeMode = 'pref_theme_mode';
+  static const _prefAmoled = 'pref_amoled_black';
+  static const _prefAdvanced = 'pref_advanced_appearance';
 
   SharedPreferences? _prefs;
-
   ThemeMode _themeMode = ThemeMode.system;
-  Color _seedColor = ExpressivePalette.seeds.first;
+  Color _seedColor = EditorialPalette.accentLight;
   bool _useDynamicColor = false;
   bool _useAmoledBlack = false;
+  bool _advancedCustomization = false;
 
   ThemeProvider([SharedPreferences? prefs]) {
-    if (prefs != null) {
+    if (prefs == null) {
+      _init();
+    } else {
       _prefs = prefs;
       _hydrateFromPrefs();
-    } else {
-      _init();
     }
   }
 
@@ -31,54 +31,73 @@ class ThemeProvider with ChangeNotifier {
   Color get seedColor => _seedColor;
   bool get useDynamicColor => _useDynamicColor;
   bool get useAmoledBlack => _useAmoledBlack;
+  bool get advancedCustomization => _advancedCustomization;
 
   ThemeData get lightTheme => _createTheme(Brightness.light);
   ThemeData get darkTheme => _createTheme(Brightness.dark);
 
   void setThemeMode(ThemeMode mode) {
-    if (_themeMode != mode) {
-      _themeMode = mode;
-      _saveThemeMode(mode);
-      notifyListeners();
-    }
+    if (_themeMode == mode) return;
+    _themeMode = mode;
+    _saveThemeMode(mode);
+    notifyListeners();
   }
 
   void setSeedColor(Color color) {
-    if (_seedColor == color && !_useDynamicColor) return;
-    _seedColor = color;
-    _saveSeedColor(color);
-    if (_useDynamicColor) {
-      _useDynamicColor = false;
-      _saveUseDynamic(false);
+    if (_seedColor == color && !_useDynamicColor && _advancedCustomization) {
+      return;
     }
+    _seedColor = color;
+    _advancedCustomization = true;
+    _useDynamicColor = false;
+    _saveSeedColor(color);
+    _saveAdvanced(true);
+    _saveUseDynamic(false);
     notifyListeners();
   }
 
   void setUseDynamicColor(bool enabled) {
-    if (_useDynamicColor != enabled) {
-      _useDynamicColor = enabled;
-      _saveUseDynamic(enabled);
-      notifyListeners();
+    if (_useDynamicColor == enabled) return;
+    _useDynamicColor = enabled;
+    if (enabled) {
+      _advancedCustomization = true;
+      _saveAdvanced(true);
     }
+    _saveUseDynamic(enabled);
+    notifyListeners();
+  }
+
+  void setAdvancedCustomization(bool enabled) {
+    if (_advancedCustomization == enabled) return;
+    _advancedCustomization = enabled;
+    if (!enabled) {
+      _useDynamicColor = false;
+      _seedColor = EditorialPalette.accentLight;
+      _saveUseDynamic(false);
+      _saveSeedColor(_seedColor);
+    }
+    _saveAdvanced(enabled);
+    notifyListeners();
   }
 
   void setUseAmoledBlack(bool enabled) {
-    if (_useAmoledBlack != enabled) {
-      _useAmoledBlack = enabled;
-      _saveAmoled(enabled);
-      notifyListeners();
-    }
+    if (_useAmoledBlack == enabled) return;
+    _useAmoledBlack = enabled;
+    _saveAmoled(enabled);
+    notifyListeners();
   }
 
   void resetAppearance() {
     _themeMode = ThemeMode.system;
-    _seedColor = ExpressivePalette.seeds.first;
+    _seedColor = EditorialPalette.accentLight;
     _useDynamicColor = false;
     _useAmoledBlack = false;
+    _advancedCustomization = false;
     _saveThemeMode(_themeMode);
     _saveSeedColor(_seedColor);
-    _saveUseDynamic(_useDynamicColor);
-    _saveAmoled(_useAmoledBlack);
+    _saveUseDynamic(false);
+    _saveAmoled(false);
+    _saveAdvanced(false);
     notifyListeners();
   }
 
@@ -88,71 +107,67 @@ class ThemeProvider with ChangeNotifier {
   }
 
   void _hydrateFromPrefs() {
-    _useDynamicColor = _prefs?.getBool(_prefUseDynamic) ?? _useDynamicColor;
-    _useAmoledBlack = _prefs?.getBool(_prefAmoled) ?? _useAmoledBlack;
-    final intSeed = _prefs?.getInt(_prefSeedColor);
-    if (intSeed != null) {
-      _seedColor = Color(intSeed);
-    }
-    final mode = _prefs?.getString(_prefThemeMode);
-    if (mode != null) {
-      switch (mode) {
-        case 'light':
-          _themeMode = ThemeMode.light;
-          break;
-        case 'dark':
-          _themeMode = ThemeMode.dark;
-          break;
-        default:
-          _themeMode = ThemeMode.system;
-      }
+    _useDynamicColor = _prefs?.getBool(_prefUseDynamic) ?? false;
+    _useAmoledBlack = _prefs?.getBool(_prefAmoled) ?? false;
+    final storedSeed = _prefs?.getInt(_prefSeedColor);
+    if (storedSeed != null) _seedColor = Color(storedSeed);
+
+    final storedAdvanced = _prefs?.getBool(_prefAdvanced);
+    _advancedCustomization =
+        storedAdvanced ??
+        (_useDynamicColor ||
+            (storedSeed != null &&
+                storedSeed != ExpressivePalette.violetVibrant.toARGB32()));
+
+    switch (_prefs?.getString(_prefThemeMode)) {
+      case 'light':
+        _themeMode = ThemeMode.light;
+      case 'dark':
+        _themeMode = ThemeMode.dark;
+      default:
+        _themeMode = ThemeMode.system;
     }
     notifyListeners();
   }
 
-  Future<void> _saveUseDynamic(bool value) async {
-    final p = _prefs ?? await SharedPreferences.getInstance();
-    await p.setBool(_prefUseDynamic, value);
-  }
+  Future<SharedPreferences> _preferences() async =>
+      _prefs ?? await SharedPreferences.getInstance();
 
-  Future<void> _saveSeedColor(Color color) async {
-    final p = _prefs ?? await SharedPreferences.getInstance();
-    await p.setInt(_prefSeedColor, color.toARGB32());
-  }
+  Future<void> _saveUseDynamic(bool value) async =>
+      (await _preferences()).setBool(_prefUseDynamic, value);
+
+  Future<void> _saveSeedColor(Color color) async =>
+      (await _preferences()).setInt(_prefSeedColor, color.toARGB32());
 
   Future<void> _saveThemeMode(ThemeMode mode) async {
-    final p = _prefs ?? await SharedPreferences.getInstance();
-    final v = mode == ThemeMode.light
+    final value = mode == ThemeMode.light
         ? 'light'
         : mode == ThemeMode.dark
         ? 'dark'
         : 'system';
-    await p.setString(_prefThemeMode, v);
+    await (await _preferences()).setString(_prefThemeMode, value);
   }
 
-  Future<void> _saveAmoled(bool value) async {
-    final p = _prefs ?? await SharedPreferences.getInstance();
-    await p.setBool(_prefAmoled, value);
-  }
+  Future<void> _saveAmoled(bool value) async =>
+      (await _preferences()).setBool(_prefAmoled, value);
+
+  Future<void> _saveAdvanced(bool value) async =>
+      (await _preferences()).setBool(_prefAdvanced, value);
 
   ThemeData _createTheme(Brightness brightness) {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: _seedColor,
-      brightness: brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.expressive,
+    final scheme = EditorialPalette.scheme(
+      brightness,
+      accent: _advancedCustomization ? _seedColor : null,
     );
-    return createThemeFromScheme(colorScheme, brightness);
+    return createThemeFromScheme(scheme, brightness);
   }
 
-  /// Construit un thème à partir d'un [ColorScheme] donné (ex. dynamic color OS).
   ThemeData createThemeFromScheme(
     ColorScheme colorScheme,
     Brightness brightness,
-  ) {
-    return buildExpressiveTheme(
-      colorScheme: colorScheme,
-      brightness: brightness,
-      amoled: _useAmoledBlack,
-    );
-  }
+  ) => buildEditorialTheme(
+    colorScheme: colorScheme,
+    brightness: brightness,
+    amoled: _useAmoledBlack,
+  );
 }

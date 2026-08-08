@@ -37,14 +37,14 @@ class ExpressiveTokens {
 class ExpressivePalette {
   ExpressivePalette._();
 
-  static const Color violetVibrant = Color(0xFF6A4FE0);
-  static const Color magentaPlayful = Color(0xFFE0398B);
-  static const Color tealOptimist = Color(0xFF0FB5A8);
-  static const Color sunsetCoral = Color(0xFFFF6E5A);
-  static const Color lemonZest = Color(0xFFE9C400);
-  static const Color forestNature = Color(0xFF2E9E5B);
-  static const Color skyClarity = Color(0xFF1FA2FF);
-  static const Color amberWarm = Color(0xFFFFA033);
+  static const Color violetVibrant = Color(0xFF2544D8);
+  static const Color magentaPlayful = Color(0xFFCF4B99);
+  static const Color tealOptimist = Color(0xFF0F9D70);
+  static const Color sunsetCoral = Color(0xFFD1442F);
+  static const Color lemonZest = Color(0xFFC67C11);
+  static const Color forestNature = Color(0xFF477A59);
+  static const Color skyClarity = Color(0xFF5C6FF4);
+  static const Color amberWarm = Color(0xFF905FCB);
 
   static const List<Color> seeds = [
     violetVibrant,

@@ -14,14 +14,25 @@ class DownloadsSaver {
     String? mimeType,
     bool deleteOriginal = true,
   }) async {
-    // Non-Android: ne rien faire
+    // Sur iOS, le fichier reste dans Documents et peut être partagé/ouvert par
+    // les mécanismes natifs de l'application.
     if (!Platform.isAndroid) {
       return sourcePath;
     }
     try {
-      // Pré-Android 10: requiert la permission WRITE_EXTERNAL_STORAGE
-      // Sur les versions récentes, cette permission est ignorée, l'appel est no-op.
-      await Permission.storage.request();
+      final requiresLegacyPermission =
+          await _channel.invokeMethod<bool>(
+            'requiresLegacyStoragePermission',
+          ) ??
+          false;
+      if (requiresLegacyPermission) {
+        final status = await Permission.storage.request();
+        if (!status.isGranted) {
+          throw const DownloadsSaveException(
+            'La permission de stockage est nécessaire sur cette version Android.',
+          );
+        }
+      }
       final String? saved = await _channel
           .invokeMethod<String>('saveToDownloads', {
             'sourcePath': sourcePath,
@@ -36,10 +47,19 @@ class DownloadsSaver {
           }
         } catch (_) {}
       }
-      return saved ?? sourcePath;
-    } catch (_) {
-      // En cas d'échec, on retourne le chemin source
-      return sourcePath;
+      if (saved == null || saved.isEmpty) {
+        throw const DownloadsSaveException(
+          'Android n\'a pas confirmé l\'enregistrement du fichier.',
+        );
+      }
+      return saved;
+    } on DownloadsSaveException {
+      rethrow;
+    } catch (error) {
+      throw DownloadsSaveException(
+        'Impossible d\'enregistrer le fichier dans Téléchargements.',
+        cause: error,
+      );
     }
   }
 
@@ -75,4 +95,14 @@ class DownloadsSaver {
     if (name.endsWith('.opus') || name.endsWith('.ogg')) return 'audio/ogg';
     return 'application/octet-stream';
   }
+}
+
+class DownloadsSaveException implements Exception {
+  final String message;
+  final Object? cause;
+
+  const DownloadsSaveException(this.message, {this.cause});
+
+  @override
+  String toString() => message;
 }

@@ -50,6 +50,8 @@ extension ToolCategoryX on ToolCategory {
 }
 
 class ToolItem {
+  /// Identifiant persistant, indépendant du libellé traduit ou renommé.
+  final String id;
   final String title;
   final String? subtitle;
   final IconData icon;
@@ -62,9 +64,8 @@ class ToolItem {
   /// Liste libre de tags affichés dans la carte (« Local », « Offline », « Bêta »…).
   final List<String> tags;
 
-  bool isFavorite;
-
   ToolItem({
+    required this.id,
     required this.title,
     required this.icon,
     required this.screenBuilder,
@@ -73,10 +74,5 @@ class ToolItem {
     this.category = ToolCategory.essentials,
     this.tags = const [],
     this.animates = true,
-    this.isFavorite = false,
   }) : cardColor = AppConstants.expressiveColors.getColorByText(title);
-
-  void toggleFavorite() {
-    isFavorite = !isFavorite;
-  }
 }

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
-import 'package:super_clipboard/super_clipboard.dart';
+import 'package:pasteboard/pasteboard.dart';
 import 'package:pdf/widgets.dart' as pw;
-// import 'package:printing/printing.dart';
+import 'package:toolbox_everything_mobile/core/services/downloads_saver.dart';
 
 class QrCodeScreen extends StatefulWidget {
   final String heroTag;
@@ -47,12 +47,6 @@ class QrCodeScreenState extends State<QrCodeScreen>
     if (_qrData.isEmpty) return;
 
     try {
-      final clipboard = SystemClipboard.instance;
-      if (clipboard == null) {
-        Fluttertoast.showToast(msg: 'Presse-papiers non disponible');
-        return;
-      }
-
       // Rendre le QR en image PNG en mémoire
       final qrPainter = QrPainter(
         data: _qrData,
@@ -69,9 +63,7 @@ class QrCodeScreenState extends State<QrCodeScreen>
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final bytes = byteData!.buffer.asUint8List();
 
-      final item = DataWriterItem();
-      item.add(Formats.png(bytes));
-      await clipboard.write([item]);
+      await Pasteboard.writeImage(bytes);
 
       Fluttertoast.showToast(msg: 'QR Code copié dans le presse-papiers');
     } catch (e) {
@@ -86,46 +78,16 @@ class QrCodeScreenState extends State<QrCodeScreen>
     if (_qrData.isEmpty) return;
 
     try {
-      // Demander les permissions de stockage
-      final status = await Permission.storage.request();
-      if (!status.isGranted) {
-        Fluttertoast.showToast(msg: 'Permission de stockage requise');
-        return;
-      }
-
       final qrPainter = QrPainter(
         data: _qrData,
         version: QrVersions.auto,
         gapless: true,
       );
 
-      // Obtenir le dossier Downloads
-      Directory? downloadsDir;
-      if (Platform.isAndroid) {
-        // Sur Android, essayer d'accéder au dossier Downloads
-        final externalDir = await getExternalStorageDirectory();
-        if (externalDir != null) {
-          downloadsDir = Directory('${externalDir.path}/../Download');
-          if (!await downloadsDir.exists()) {
-            downloadsDir = Directory('${externalDir.path}/../Downloads');
-          }
-        }
-      } else if (Platform.isIOS) {
-        // Sur iOS, utiliser le dossier Documents
-        downloadsDir = await getApplicationDocumentsDirectory();
-      } else {
-        // Sur d'autres plateformes, utiliser le dossier Documents
-        downloadsDir = await getApplicationDocumentsDirectory();
-      }
-
-      if (downloadsDir == null || !await downloadsDir.exists()) {
-        // Fallback vers le dossier Documents
-        downloadsDir = await getApplicationDocumentsDirectory();
-      }
-
+      final workingDirectory = await getApplicationDocumentsDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'qr_code_$timestamp.png';
-      final file = File('${downloadsDir.path}/$fileName');
+      final file = File('${workingDirectory.path}/$fileName');
 
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
@@ -138,9 +100,14 @@ class QrCodeScreenState extends State<QrCodeScreen>
       final bytes = byteData!.buffer.asUint8List();
 
       await file.writeAsBytes(bytes);
+      final savedPath = await DownloadsSaver.saveFileToDownloads(
+        file.path,
+        displayName: fileName,
+        mimeType: 'image/png',
+      );
 
       Fluttertoast.showToast(
-        msg: 'QR Code sauvegardé dans ${downloadsDir.path}',
+        msg: 'QR Code enregistré : $savedPath',
         toastLength: Toast.LENGTH_LONG,
       );
     } catch (e) {
@@ -193,28 +160,21 @@ class QrCodeScreenState extends State<QrCodeScreen>
         ),
       );
 
-      // Choisir un dossier accessible sans permission (dossier app)
-      Directory dir;
-      if (Platform.isAndroid) {
-        final d = await getExternalStorageDirectory();
-        if (d == null) throw 'Dossier externe indisponible';
-        dir = d;
-      } else {
-        dir = await getApplicationDocumentsDirectory();
-      }
-
+      final dir = await getApplicationDocumentsDirectory();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'qr_code_$timestamp.pdf';
       final file = File('${dir.path}/$fileName');
       await file.writeAsBytes(await pdf.save());
-
-      Fluttertoast.showToast(
-        msg: 'PDF exporté dans ${dir.path}',
-        toastLength: Toast.LENGTH_LONG,
+      final savedPath = await DownloadsSaver.saveFileToDownloads(
+        file.path,
+        displayName: fileName,
+        mimeType: 'application/pdf',
       );
 
-      // Optionnel: partage direct du PDF
-      // await Printing.sharePdf(bytes: await pdf.save(), filename: fileName);
+      Fluttertoast.showToast(
+        msg: 'PDF exporté : $savedPath',
+        toastLength: Toast.LENGTH_LONG,
+      );
     } catch (e) {
       Fluttertoast.showToast(
         msg: 'Erreur export PDF: $e',
@@ -225,29 +185,18 @@ class QrCodeScreenState extends State<QrCodeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Générateur/Lecteur de QR Code',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Theme.of(context).colorScheme.primary,
-          labelColor: Theme.of(context).colorScheme.primary,
-          unselectedLabelColor: Colors.grey,
-          tabs: const [
-            Tab(icon: Icon(Icons.create), text: 'Générer'),
-            Tab(icon: Icon(Icons.camera_alt), text: 'Scanner'),
-          ],
-        ),
+    return EditorialToolScaffold(
+      title: 'QR Code',
+      heroTag: widget.heroTag,
+      bottom: TabBar(
+        controller: _tabController,
+        indicatorColor: Theme.of(context).colorScheme.primary,
+        labelColor: Theme.of(context).colorScheme.primary,
+        unselectedLabelColor: Colors.grey,
+        tabs: const [
+          Tab(icon: Icon(Icons.create), text: 'Générer'),
+          Tab(icon: Icon(Icons.camera_alt), text: 'Scanner'),
+        ],
       ),
       body: TabBarView(
         controller: _tabController,

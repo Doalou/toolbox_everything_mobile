@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/diff_service.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 
 class TextDiffScreen extends StatefulWidget {
   final String heroTag;
@@ -34,19 +35,9 @@ class _TextDiffScreenState extends State<TextDiffScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final summary = _service.summary(_diff);
-    return Scaffold(
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Diff texte',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-      ),
+    return EditorialToolScaffold(
+      title: 'Comparateur de textes',
+      heroTag: widget.heroTag,
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [

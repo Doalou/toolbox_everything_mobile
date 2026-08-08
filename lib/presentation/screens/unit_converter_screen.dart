@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:toolbox_everything_mobile/core/models/unit_conversion.dart';
 import 'package:toolbox_everything_mobile/core/services/conversion_service.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 
 class UnitConverterScreen extends StatefulWidget {
   final String heroTag;
@@ -85,29 +87,16 @@ class UnitConverterScreenState extends State<UnitConverterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Convertisseur d\'unités',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-      ),
+    return EditorialToolScaffold(
+      title: 'Convertisseur d\'unités',
+      heroTag: widget.heroTag,
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _IntroCard(scheme: scheme),
+            const _IntroCard(),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
@@ -243,51 +232,14 @@ class UnitConverterScreenState extends State<UnitConverterScreen> {
 }
 
 class _IntroCard extends StatelessWidget {
-  final ColorScheme scheme;
-
-  const _IntroCard({required this.scheme});
+  const _IntroCard();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: scheme.surface,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.swap_horiz, color: scheme.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Convertissez rapidement vos unités',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Choisissez une catégorie, sélectionnez les unités et entrez une valeur.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return const EditorialToolIntro(
+      icon: Icons.swap_horiz_rounded,
+      title: 'Convertir des unités',
+      description: 'Choisissez une catégorie, deux unités et une valeur.',
     );
   }
 }

@@ -19,19 +19,26 @@ class ExpressiveSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      padding: const EdgeInsets.only(top: 12),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: scheme.outline)),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (icon != null) ...[
             Container(
-              padding: const EdgeInsets.all(8),
-              decoration: ShapeDecoration(
-                color: scheme.primaryContainer,
-                shape: const StadiumBorder(),
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(7),
+                border: Border.all(
+                  color: scheme.primary.withValues(alpha: 0.28),
+                ),
               ),
-              child: Icon(icon, color: scheme.onPrimaryContainer, size: 18),
+              child: Icon(icon, color: scheme.primary, size: 18),
             ),
             const SizedBox(width: 10),
           ],
@@ -39,13 +46,7 @@ class ExpressiveSectionHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: theme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    height: 1.2,
-                  ),
-                ),
+                Text(title, style: theme.titleLarge),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(

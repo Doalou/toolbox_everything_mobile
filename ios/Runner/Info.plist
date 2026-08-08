@@ -45,6 +45,10 @@
 		<true/>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
+		<key>UIFileSharingEnabled</key>
+		<true/>
+		<key>LSSupportsOpeningDocumentsInPlace</key>
+		<true/>
 		<key>NSCameraUsageDescription</key>
 		<string>Cette application a besoin d'accéder à la caméra pour scanner les QR codes.</string>
 		<key>UIStatusBarHidden</key>

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
@@ -190,147 +192,93 @@ class _NotesScreenState extends State<NotesScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_isLoading) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      return EditorialToolScaffold(
+        title: 'Bloc-notes',
+        heroTag: widget.heroTag,
         body: Center(
           child: CircularProgressIndicator(color: colorScheme.primary),
         ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    return EditorialToolScaffold(
+      title: 'Bloc-notes',
+      heroTag: widget.heroTag,
       floatingActionButton: FloatingActionButton.small(
         heroTag: "notes_edit",
         onPressed: () => _focusNode.requestFocus(),
         backgroundColor: colorScheme.primary,
         child: Icon(Icons.edit, color: colorScheme.onPrimary),
       ),
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Bloc-notes temporaire',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
+      actions: [
+        AnimatedBuilder(
+          animation: _saveAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: 1 + (_saveAnimation.value * 0.2),
+              child: IconButton(
+                onPressed: _saveNotes,
+                icon: Icon(
+                  _hasUnsavedChanges ? Icons.save : Icons.check_circle,
+                  color: _hasUnsavedChanges
+                      ? colorScheme.primary
+                      : Colors.green,
+                ),
+                tooltip: 'Sauvegarder',
+              ),
+            );
+          },
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          AnimatedBuilder(
-            animation: _saveAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: 1 + (_saveAnimation.value * 0.2),
-                child: IconButton(
-                  onPressed: _saveNotes,
-                  icon: Icon(
-                    _hasUnsavedChanges ? Icons.save : Icons.check_circle,
-                    color: _hasUnsavedChanges
-                        ? colorScheme.primary
-                        : Colors.green,
-                  ),
-                  tooltip: 'Sauvegarder',
-                ),
-              );
-            },
-          ),
-          IconButton(
-            onPressed: _copyNotes,
-            icon: Icon(Icons.content_copy, color: colorScheme.primary),
-            tooltip: 'Copier',
-          ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, color: colorScheme.primary),
-            onSelected: (value) {
-              switch (value) {
-                case 'clear':
-                  _clearNotes();
-                  break;
-                case 'focus':
-                  _focusNode.requestFocus();
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'focus',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit),
-                    SizedBox(width: 8),
-                    Text('Focus écriture'),
-                  ],
-                ),
+        IconButton(
+          onPressed: _copyNotes,
+          icon: Icon(Icons.content_copy, color: colorScheme.primary),
+          tooltip: 'Copier',
+        ),
+        PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, color: colorScheme.primary),
+          onSelected: (value) {
+            switch (value) {
+              case 'clear':
+                _clearNotes();
+                break;
+              case 'focus':
+                _focusNode.requestFocus();
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'focus',
+              child: Row(
+                children: [
+                  Icon(Icons.edit),
+                  SizedBox(width: 8),
+                  Text('Focus écriture'),
+                ],
               ),
-              const PopupMenuItem(
-                value: 'clear',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_outline, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Effacer tout', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
+            ),
+            const PopupMenuItem(
+              value: 'clear',
+              child: Row(
+                children: [
+                  Icon(Icons.delete_outline, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('Effacer tout', style: TextStyle(color: Colors.red)),
+                ],
               ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
       body: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.note_add,
-                    color: colorScheme.primary,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Notes temporaires',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: colorScheme.onPrimaryContainer,
-                            ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '$_characterCount caractères · $_wordCount mots${_hasUnsavedChanges ? ' · non sauvegardé' : ''}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onPrimaryContainer.withValues(
-                            alpha: 0.72,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: EditorialToolIntro(
+              icon: Icons.note_alt_rounded,
+              title: 'Notes locales',
+              description:
+                  '$_characterCount caractères · $_wordCount mots${_hasUnsavedChanges ? ' · non sauvegardé' : ''}',
             ),
           ),
 

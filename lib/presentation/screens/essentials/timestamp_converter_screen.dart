@@ -7,6 +7,7 @@ import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/timestamp_service.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 
 class TimestampConverterScreen extends StatefulWidget {
   final String heroTag;
@@ -80,19 +81,9 @@ class _TimestampConverterScreenState extends State<TimestampConverterScreen> {
     final nowStr = _ms
         ? _service.nowMillis().toString()
         : _service.nowSeconds().toString();
-    return Scaffold(
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Timestamp ↔ Date',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-      ),
+    return EditorialToolScaffold(
+      title: 'Timestamp ↔ date',
+      heroTag: widget.heroTag,
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [

@@ -28,10 +28,17 @@ import 'package:toolbox_everything_mobile/presentation/screens/unit_converter_sc
 class ToolCatalog {
   ToolCatalog._();
 
+  /// Correspondance utilisée une seule fois pour migrer les préférences des
+  /// versions qui stockaient les titres visibles au lieu d'identifiants.
+  static Map<String, String> get legacyTitleToId => {
+    for (final tool in all()) tool.title: tool.id,
+  };
+
   static List<ToolItem> all() {
     final List<ToolItem> tools = [
       // --- Essentiels ---------------------------------------------------
       ToolItem(
+        id: 'password-generator',
         title: 'Générateur de MDP',
         subtitle: 'Mots de passe robustes',
         icon: Icons.password_rounded,
@@ -41,6 +48,7 @@ class ToolCatalog {
         tags: const ['Local', 'Offline'],
       ),
       ToolItem(
+        id: 'qr-code',
         title: 'QR Code',
         subtitle: 'Générer & scanner',
         icon: Icons.qr_code_rounded,
@@ -50,6 +58,7 @@ class ToolCatalog {
         tags: const ['Local'],
       ),
       ToolItem(
+        id: 'hash-calculator',
         title: 'Calculateur Hash',
         subtitle: 'MD5, SHA-1, SHA-256…',
         icon: Icons.fingerprint_rounded,
@@ -59,6 +68,7 @@ class ToolCatalog {
         tags: const ['Local', 'Offline'],
       ),
       ToolItem(
+        id: 'text-encoder',
         title: 'Encodeur / Décodeur',
         subtitle: 'Base64, URL, HTML',
         icon: Icons.code_rounded,
@@ -69,6 +79,7 @@ class ToolCatalog {
       ),
       if (AppFeatureFlags.jsonFormatter)
         ToolItem(
+          id: 'json-formatter',
           title: 'JSON Formatter',
           subtitle: 'Indenter, minifier',
           icon: Icons.data_object_rounded,
@@ -79,6 +90,7 @@ class ToolCatalog {
         ),
       if (AppFeatureFlags.uuidGenerator)
         ToolItem(
+          id: 'uuid-generator',
           title: 'UUID',
           subtitle: 'Générateur v4',
           icon: Icons.qr_code_2_rounded,
@@ -89,6 +101,7 @@ class ToolCatalog {
         ),
       if (AppFeatureFlags.timestampConverter)
         ToolItem(
+          id: 'timestamp-converter',
           title: 'Timestamp',
           subtitle: 'Epoch ↔ date',
           icon: Icons.schedule_rounded,
@@ -99,6 +112,7 @@ class ToolCatalog {
         ),
       if (AppFeatureFlags.jwtDecoder)
         ToolItem(
+          id: 'jwt-decoder',
           title: 'JWT Decoder',
           subtitle: 'Header & payload',
           icon: Icons.vpn_key_rounded,
@@ -109,6 +123,7 @@ class ToolCatalog {
         ),
       if (AppFeatureFlags.regexTester)
         ToolItem(
+          id: 'regex-tester',
           title: 'Regex tester',
           subtitle: 'Tester des patterns',
           icon: Icons.find_in_page_rounded,
@@ -119,6 +134,7 @@ class ToolCatalog {
         ),
       if (AppFeatureFlags.textDiff)
         ToolItem(
+          id: 'text-diff',
           title: 'Diff texte',
           subtitle: 'Comparer 2 textes',
           icon: Icons.compare_arrows_rounded,
@@ -128,6 +144,7 @@ class ToolCatalog {
           tags: const ['Offline', 'Nouveau'],
         ),
       ToolItem(
+        id: 'lorem-generator',
         title: 'Lorem Ipsum',
         subtitle: 'Texte de remplissage',
         icon: Icons.text_snippet_rounded,
@@ -137,6 +154,7 @@ class ToolCatalog {
         tags: const ['Offline'],
       ),
       ToolItem(
+        id: 'color-picker',
         title: 'Sélecteur Couleurs',
         subtitle: 'HEX, RGB, HSL',
         icon: Icons.palette_rounded,
@@ -148,6 +166,7 @@ class ToolCatalog {
 
       // --- Convertisseurs ----------------------------------------------
       ToolItem(
+        id: 'unit-converter',
         title: 'Convertisseur d\'unités',
         subtitle: 'Longueur, masse, temp.',
         icon: Icons.swap_horiz_rounded,
@@ -157,6 +176,7 @@ class ToolCatalog {
         tags: const ['Offline'],
       ),
       ToolItem(
+        id: 'number-converter',
         title: 'Convertisseur binaire',
         subtitle: 'Texte ↔ bin/hex/dec',
         icon: Icons.transform_rounded,
@@ -169,6 +189,7 @@ class ToolCatalog {
       // --- Capteurs (Android/iOS uniquement) ---------------------------
       if (AppFeatureFlags.compass)
         ToolItem(
+          id: 'compass',
           title: 'Boussole',
           subtitle: 'Magnétomètre',
           icon: Icons.explore_rounded,
@@ -179,6 +200,7 @@ class ToolCatalog {
         ),
       if (AppFeatureFlags.bubbleLevel)
         ToolItem(
+          id: 'bubble-level',
           title: 'Niveau à bulle',
           subtitle: 'Accéléromètre',
           icon: Icons.architecture_rounded,
@@ -190,6 +212,7 @@ class ToolCatalog {
 
       // --- Médias -------------------------------------------------------
       ToolItem(
+        id: 'file-converter',
         title: 'Convertisseur de fichiers',
         subtitle: 'JSON, YAML, CSV, MD…',
         icon: Icons.file_copy_rounded,
@@ -200,6 +223,7 @@ class ToolCatalog {
       ),
       if (AppFeatureFlags.youtubeDownloader)
         ToolItem(
+          id: 'youtube-downloader',
           title: 'Téléchargeur',
           subtitle: 'YouTube audio/vidéo',
           icon: Icons.download_rounded,
@@ -211,6 +235,7 @@ class ToolCatalog {
 
       // --- Réseau ------------------------------------------------------
       ToolItem(
+        id: 'connection-tester',
         title: 'Testeur de Connexion',
         subtitle: 'Type & latence HTTP',
         icon: Icons.wifi_rounded,
@@ -222,6 +247,7 @@ class ToolCatalog {
 
       // --- Productivité ------------------------------------------------
       ToolItem(
+        id: 'notes',
         title: 'Bloc-notes',
         subtitle: 'Notes locales',
         icon: Icons.note_alt_rounded,
@@ -231,6 +257,7 @@ class ToolCatalog {
         tags: const ['Local'],
       ),
       ToolItem(
+        id: 'timer',
         title: 'Minuteur',
         subtitle: 'Compte à rebours',
         icon: Icons.timer_rounded,

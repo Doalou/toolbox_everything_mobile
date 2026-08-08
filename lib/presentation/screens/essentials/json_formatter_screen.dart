@@ -5,6 +5,7 @@ import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/json_formatter_service.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 
 class JsonFormatterScreen extends StatefulWidget {
   final String heroTag;
@@ -57,19 +58,9 @@ class _JsonFormatterScreenState extends State<JsonFormatterScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: Hero(
-          tag: widget.heroTag,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Text(
-              'Formateur JSON',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
-            ),
-          ),
-        ),
-      ),
+    return EditorialToolScaffold(
+      title: 'Formateur JSON',
+      heroTag: widget.heroTag,
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [
@@ -86,7 +77,7 @@ class _JsonFormatterScreenState extends State<JsonFormatterScreen> {
                   style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
                   decoration: const InputDecoration(
                     hintText:
-                        '{\n  "name": "Toolbox",\n  "version": "0.3.0"\n}',
+                        '{\n  "name": "Toolbox",\n  "version": "0.4.0"\n}',
                   ),
                 ),
                 const SizedBox(height: 12),
