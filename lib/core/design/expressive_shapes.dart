@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 
-/// Alias historiques vers l'échelle de formes éditoriale resserrée.
+/// Échelle de formes Material 3 Expressive (M3E).
+/// Formes généreuses, coins asymétriques « Hero » et composants pilules.
 class ExpressiveShapes {
   ExpressiveShapes._();
 
-  // Rayons standards (extension de la corner-shape scale M3).
+  // Rayons M3 Expressive (corner-shape scale étendue)
   static const double none = 0;
-  static const double extraSmall = 5;
-  static const double small = 7;
-  static const double medium = 10;
-  static const double large = 14;
-  static const double largeIncreased = 18;
-  static const double extraLarge = 22;
-  static const double extraLargeIncreased = 24;
-  static const double extraExtraLarge = 28;
+  static const double extraSmall = 6;
+  static const double small = 10;
+  static const double medium = 16;
+  static const double large = 20;
+  static const double largeIncreased = 24;
+  static const double extraLarge = 28;
+  static const double extraLargeIncreased = 32;
+  static const double extraExtraLarge = 36;
   static const double full = 999;
 
-  // Forme expressive par défaut (cards, sheets, dialogs).
+  // Formes expressives par défaut (cards, sheets, dialogs)
   static const Radius radiusMedium = Radius.circular(medium);
   static const Radius radiusLarge = Radius.circular(large);
   static const Radius radiusExtraLarge = Radius.circular(extraLarge);
@@ -24,7 +25,7 @@ class ExpressiveShapes {
 
   static BorderRadius all(double r) => BorderRadius.circular(r);
 
-  static BorderRadius asymmetricHero({double major = 14, double minor = 10}) =>
+  static BorderRadius asymmetricHero({double major = 28, double minor = 12}) =>
       BorderRadius.only(
         topLeft: Radius.circular(major),
         topRight: Radius.circular(minor),
@@ -32,11 +33,11 @@ class ExpressiveShapes {
         bottomRight: Radius.circular(major),
       );
 
-  /// Bottom sheet expressif (top arrondi large).
+  /// Bottom sheet expressif (top arrondi extra-large).
   static const RoundedRectangleBorder bottomSheet = RoundedRectangleBorder(
     borderRadius: BorderRadius.only(
-      topLeft: radiusExtraLarge,
-      topRight: radiusExtraLarge,
+      topLeft: Radius.circular(extraLargeIncreased),
+      topRight: Radius.circular(extraLargeIncreased),
     ),
   );
 
@@ -44,7 +45,7 @@ class ExpressiveShapes {
   static RoundedRectangleBorder card({double radius = largeIncreased}) =>
       RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius));
 
-  /// Carte hero (asymétrique).
+  /// Carte hero (asymétrique M3E).
   static RoundedRectangleBorder cardHero() =>
       RoundedRectangleBorder(borderRadius: asymmetricHero());
 

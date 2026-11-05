@@ -1,9 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
-import 'package:flutter/services.dart';
 import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
+import 'package:toolbox_everything_mobile/core/services/haptics_service.dart';
 import 'package:toolbox_everything_mobile/core/services/notification_service.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 
 class TimerScreen extends StatefulWidget {
   final String heroTag;
@@ -20,17 +24,17 @@ class _TimerScreenState extends State<TimerScreen> {
   // Timer variables
   Timer? _activeTimer;
   Timer? _stopwatchUpdater;
-  int _timerSeconds = 0;
+  int _timerSeconds = 300;
   int _initialTimerSeconds = 300; // 5 minutes par défaut
   bool _timerRunning = false;
-  int? _timerEndEpochMs; // pour restauration/background
+  int? _timerEndEpochMs;
 
   // Stopwatch variables
   final Stopwatch _stopwatch = Stopwatch();
   String _stopwatchDisplay = '00:00:00';
   final List<String> _laps = [];
-  int _stopwatchBaseMs = 0; // accumulation quand l'écran est quitté
-  int? _stopwatchStartEpochMs; // pour restauration
+  int _stopwatchBaseMs = 0;
+  int? _stopwatchStartEpochMs;
 
   @override
   void initState() {
@@ -40,8 +44,6 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   void _startStopwatchUpdater() {
-    // Réduit la fréquence d'update pour éviter les saccades et la charge CPU,
-    // et conserve une bonne précision visuelle (centièmes)
     _stopwatchUpdater = Timer.periodic(const Duration(milliseconds: 50), (
       timer,
     ) {
@@ -74,20 +76,41 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
+    final hrs = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
     final remainingSeconds = seconds % 60;
+    if (hrs > 0) {
+      return '${hrs.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+    }
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   void _setTimerDuration(int seconds) {
+    HapticsService.perform(context, HapticType.selection);
     setState(() {
       _initialTimerSeconds = seconds;
       _timerSeconds = seconds;
     });
+    _persistTimerState(running: false);
+  }
+
+  void _addSeconds(int delta) {
+    HapticsService.perform(context, HapticType.light);
+    setState(() {
+      _timerSeconds = (_timerSeconds + delta).clamp(0, 24 * 3600);
+      if (_timerSeconds > _initialTimerSeconds) {
+        _initialTimerSeconds = _timerSeconds;
+      }
+      if (_timerRunning && _timerEndEpochMs != null) {
+        _timerEndEpochMs = _timerEndEpochMs! + (delta * 1000);
+      }
+    });
+    _persistTimerState(running: _timerRunning);
   }
 
   void _startTimer() {
     if (_timerSeconds <= 0) return;
+    HapticsService.perform(context, HapticType.medium);
 
     setState(() {
       _timerRunning = true;
@@ -97,24 +120,27 @@ class _TimerScreenState extends State<TimerScreen> {
     _timerEndEpochMs = now + (_timerSeconds * 1000);
     _persistTimerState(running: true);
 
+    _activeTimer?.cancel();
     _activeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          _timerSeconds--;
-        });
+      if (!mounted) return;
+      final remainingMs =
+          (_timerEndEpochMs ?? DateTime.now().millisecondsSinceEpoch) -
+          DateTime.now().millisecondsSinceEpoch;
+      final nextSeconds = (remainingMs / 1000).ceil().clamp(0, 24 * 3600);
+      setState(() {
+        _timerSeconds = nextSeconds;
+      });
 
-        if (_timerSeconds <= 0) {
-          _stopTimer();
-          _showTimerNotification();
-          HapticFeedback.heavyImpact();
-        }
+      if (_timerSeconds <= 0) {
+        _stopTimer();
+        _showTimerNotification();
+        HapticFeedback.heavyImpact();
       }
     });
   }
 
   void _stopTimer() {
     _activeTimer?.cancel();
-
     setState(() {
       _timerRunning = false;
     });
@@ -122,6 +148,7 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   void _resetTimer() {
+    HapticsService.perform(context, HapticType.light);
     _stopTimer();
     setState(() {
       _timerSeconds = _initialTimerSeconds;
@@ -130,6 +157,7 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   void _startStopwatch() {
+    HapticsService.perform(context, HapticType.medium);
     setState(() {
       _stopwatch.start();
     });
@@ -138,6 +166,7 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   void _stopStopwatch() {
+    HapticsService.perform(context, HapticType.light);
     setState(() {
       _stopwatch.stop();
       _stopwatchBaseMs += _stopwatch.elapsedMilliseconds;
@@ -147,6 +176,7 @@ class _TimerScreenState extends State<TimerScreen> {
   }
 
   void _resetStopwatch() {
+    HapticsService.perform(context, HapticType.light);
     setState(() {
       _stopwatch.reset();
       _stopwatchDisplay = '00:00:00';
@@ -158,9 +188,87 @@ class _TimerScreenState extends State<TimerScreen> {
 
   void _addLap() {
     if (_stopwatch.isRunning) {
+      HapticsService.perform(context, HapticType.selection);
       setState(() {
-        _laps.insert(0, 'Tour ${_laps.length + 1}: $_stopwatchDisplay');
+        _laps.insert(0, 'Tour ${_laps.length + 1} · $_stopwatchDisplay');
       });
+    }
+  }
+
+  Future<void> _showCustomDurationDialog() async {
+    int minutes = _initialTimerSeconds ~/ 60;
+    int seconds = _initialTimerSeconds % 60;
+    final minController = TextEditingController(text: minutes.toString());
+    final secController = TextEditingController(
+      text: seconds.toString().padLeft(2, '0'),
+    );
+
+    final result = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            12,
+            24,
+            MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Durée personnalisée',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: minController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(
+                        labelText: 'Minutes',
+                        suffixText: 'min',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: secController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(
+                        labelText: 'Secondes',
+                        suffixText: 's',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () {
+                  final m = int.tryParse(minController.text) ?? 0;
+                  final s = int.tryParse(secController.text) ?? 0;
+                  final total = (m * 60 + s).clamp(1, 24 * 3600);
+                  Navigator.pop(context, total);
+                },
+                icon: const Icon(Icons.check_rounded),
+                label: const Text('Appliquer'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result != null && result > 0) {
+      _setTimerDuration(result);
     }
   }
 
@@ -192,7 +300,6 @@ class _TimerScreenState extends State<TimerScreen> {
 
   Future<void> _restoreState() async {
     final prefs = await SharedPreferences.getInstance();
-    // Timer
     final wasTimerRunning = prefs.getBool('timer_running') ?? false;
     _initialTimerSeconds =
         prefs.getInt('timer_initial') ?? _initialTimerSeconds;
@@ -218,7 +325,6 @@ class _TimerScreenState extends State<TimerScreen> {
           }
         });
       } else {
-        // Timer complet pendant l'absence
         setState(() {
           _timerSeconds = 0;
           _timerRunning = false;
@@ -230,7 +336,6 @@ class _TimerScreenState extends State<TimerScreen> {
       _timerSeconds = _initialTimerSeconds;
     }
 
-    // Stopwatch
     _stopwatchBaseMs = prefs.getInt('stopwatch_base_ms') ?? 0;
     final wasStopwatchRunning = prefs.getBool('stopwatch_running') ?? false;
     final startEpoch = prefs.getInt('stopwatch_start_epoch');
@@ -243,6 +348,7 @@ class _TimerScreenState extends State<TimerScreen> {
         ..reset()
         ..start();
     }
+    if (!mounted) return;
     setState(() {
       _stopwatchDisplay = _formatDuration(
         Duration(milliseconds: _stopwatchBaseMs) + _stopwatch.elapsed,
@@ -257,14 +363,14 @@ class _TimerScreenState extends State<TimerScreen> {
       heroTag: widget.heroTag,
       body: Column(
         children: [
-          // Mode selector
           Container(
+            width: double.infinity,
             margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: SegmentedButton<TimerMode>(
               segments: const [
                 ButtonSegment(
                   value: TimerMode.timer,
-                  icon: Icon(Icons.timer, size: 20),
+                  icon: Icon(Icons.timer_rounded, size: 20),
                   label: Text('Minuteur'),
                 ),
                 ButtonSegment(
@@ -275,16 +381,13 @@ class _TimerScreenState extends State<TimerScreen> {
               ],
               selected: {_currentMode},
               onSelectionChanged: (newSelection) {
+                HapticsService.perform(context, HapticType.selection);
                 setState(() {
                   _currentMode = newSelection.first;
                 });
-                // Stop any running timers when switching modes
-                _stopTimer();
-                _stopStopwatch();
               },
             ),
           ),
-
           Expanded(
             child: _currentMode == TimerMode.timer
                 ? _buildTimerView()
@@ -298,120 +401,160 @@ class _TimerScreenState extends State<TimerScreen> {
   Widget _buildTimerView() {
     final colorScheme = Theme.of(context).colorScheme;
     final progress = _initialTimerSeconds > 0
-        ? (_initialTimerSeconds - _timerSeconds) / _initialTimerSeconds
+        ? ((_initialTimerSeconds - _timerSeconds) / _initialTimerSeconds).clamp(
+            0.0,
+            1.0,
+          )
         : 0.0;
+    final isUrgent = _timerRunning && _timerSeconds <= 10;
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       child: Column(
         children: [
-          // Timer display
-          Container(
-            width: 250,
-            height: 250,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: colorScheme.primaryContainer,
-            ),
-            child: Stack(
-              alignment: Alignment.center,
+          ExpressiveCard.hero(
+            color: colorScheme.primaryContainer.withValues(alpha: 0.65),
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
+            child: Column(
               children: [
-                // Progress indicator
                 SizedBox(
-                  width: 220,
-                  height: 220,
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 8,
-                    backgroundColor: colorScheme.outline.withValues(alpha: 0.2),
-                    valueColor: AlwaysStoppedAnimation(
-                      _timerSeconds <= 10 ? Colors.red : colorScheme.primary,
-                    ),
-                  ),
-                ),
-                // Time display
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _formatTime(_timerSeconds),
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: _timerSeconds <= 10
-                            ? Colors.red
-                            : colorScheme.onPrimaryContainer,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _timerRunning ? 'En cours...' : 'Minuteur',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onPrimaryContainer.withValues(
-                          alpha: 0.7,
+                  width: 196,
+                  height: 196,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 184,
+                        height: 184,
+                        child: CircularProgressIndicator(
+                          value: progress,
+                          strokeWidth: 9,
+                          backgroundColor: colorScheme.surface.withValues(
+                            alpha: 0.5,
+                          ),
+                          valueColor: AlwaysStoppedAnimation(
+                            isUrgent ? colorScheme.error : colorScheme.primary,
+                          ),
                         ),
                       ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                _formatTime(_timerSeconds),
+                                style: Theme.of(context).textTheme.displayMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: isUrgent
+                                          ? colorScheme.error
+                                          : colorScheme.onPrimaryContainer,
+                                      fontFamily: 'monospace',
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _timerRunning ? 'En cours…' : 'Prêt',
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    color: colorScheme.onPrimaryContainer
+                                        .withValues(alpha: 0.78),
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 10,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    ActionChip(
+                      onPressed: () => _addSeconds(30),
+                      avatar: const Icon(Icons.add_rounded, size: 16),
+                      label: const Text('+30 s'),
                     ),
+                    ActionChip(
+                      onPressed: () => _addSeconds(60),
+                      avatar: const Icon(Icons.add_rounded, size: 16),
+                      label: const Text('+1 min'),
+                    ),
+                    if (!_timerRunning)
+                      ActionChip(
+                        onPressed: _showCustomDurationDialog,
+                        avatar: const Icon(Icons.edit_rounded, size: 16),
+                        label: const Text('Personnaliser'),
+                      ),
                   ],
                 ),
               ],
             ),
           ),
-
-          const SizedBox(height: 40),
-
-          // Preset buttons
+          const SizedBox(height: 20),
           if (!_timerRunning) ...[
-            Text(
-              'Durées prédéfinies',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ExpressiveCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Durées prédéfinies',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _buildPresetChip('1 min', 60),
+                      _buildPresetChip('3 min', 180),
+                      _buildPresetChip('5 min', 300),
+                      _buildPresetChip('10 min', 600),
+                      _buildPresetChip('15 min', 900),
+                      _buildPresetChip('30 min', 1800),
+                      _buildPresetChip('1 h', 3600),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _buildPresetButton('1 min', 60),
-                _buildPresetButton('5 min', 300),
-                _buildPresetButton('10 min', 600),
-                _buildPresetButton('15 min', 900),
-                _buildPresetButton('30 min', 1800),
-                _buildPresetButton('1 heure', 3600),
-              ],
-            ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
           ],
-
-          // Control buttons
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (!_timerRunning) ...[
-                FloatingActionButton.large(
-                  heroTag: "timer_start",
-                  onPressed: _timerSeconds > 0 ? _startTimer : null,
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  child: const Icon(Icons.play_arrow, size: 32),
+              FloatingActionButton.large(
+                heroTag: _timerRunning ? 'timer_stop' : 'timer_start',
+                onPressed: _timerRunning
+                    ? _stopTimer
+                    : (_timerSeconds > 0 ? _startTimer : null),
+                backgroundColor: _timerRunning
+                    ? colorScheme.errorContainer
+                    : colorScheme.primary,
+                foregroundColor: _timerRunning
+                    ? colorScheme.onErrorContainer
+                    : colorScheme.onPrimary,
+                child: Icon(
+                  _timerRunning
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                  size: 36,
                 ),
-              ] else ...[
-                FloatingActionButton.large(
-                  heroTag: "timer_stop",
-                  onPressed: _stopTimer,
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  child: const Icon(Icons.pause, size: 32),
-                ),
-              ],
+              ),
+              const SizedBox(width: 20),
               FloatingActionButton(
-                heroTag: "timer_reset",
+                heroTag: 'timer_reset',
                 onPressed: _resetTimer,
-                backgroundColor: colorScheme.surfaceContainer,
-                foregroundColor: colorScheme.onSurface,
-                child: const Icon(Icons.refresh),
+                backgroundColor: colorScheme.secondaryContainer,
+                foregroundColor: colorScheme.onSecondaryContainer,
+                child: const Icon(Icons.refresh_rounded),
               ),
             ],
           ),
@@ -425,128 +568,134 @@ class _TimerScreenState extends State<TimerScreen> {
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       child: Column(
         children: [
-          // Stopwatch display
-          Container(
-            width: 280,
-            height: 200,
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(24),
-            ),
+          ExpressiveCard.hero(
+            color: colorScheme.primaryContainer.withValues(alpha: 0.65),
+            padding: const EdgeInsets.symmetric(vertical: 26, horizontal: 20),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  _stopwatchDisplay,
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onPrimaryContainer,
-                    fontFamily: 'monospace',
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    _stopwatchDisplay,
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onPrimaryContainer,
+                      fontFamily: 'monospace',
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  _stopwatch.isRunning ? 'En cours...' : 'Chronomètre',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  _stopwatch.isRunning ? 'En cours…' : 'Chronomètre prêt',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onPrimaryContainer.withValues(
-                      alpha: 0.7,
+                      alpha: 0.75,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-
-          const SizedBox(height: 32),
-
-          // Control buttons
+          const SizedBox(height: 24),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (!_stopwatch.isRunning) ...[
-                FloatingActionButton.large(
-                  heroTag: "stopwatch_start",
-                  onPressed: _startStopwatch,
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  child: const Icon(Icons.play_arrow, size: 32),
+              FloatingActionButton.large(
+                heroTag: _stopwatch.isRunning
+                    ? 'stopwatch_stop'
+                    : 'stopwatch_start',
+                onPressed: _stopwatch.isRunning
+                    ? _stopStopwatch
+                    : _startStopwatch,
+                backgroundColor: _stopwatch.isRunning
+                    ? colorScheme.errorContainer
+                    : colorScheme.primary,
+                foregroundColor: _stopwatch.isRunning
+                    ? colorScheme.onErrorContainer
+                    : colorScheme.onPrimary,
+                child: Icon(
+                  _stopwatch.isRunning
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                  size: 36,
                 ),
-              ] else ...[
-                FloatingActionButton.large(
-                  heroTag: "stopwatch_stop",
-                  onPressed: _stopStopwatch,
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  child: const Icon(Icons.pause, size: 32),
-                ),
-              ],
+              ),
+              const SizedBox(width: 16),
               FloatingActionButton(
-                heroTag: "stopwatch_lap",
+                heroTag: 'stopwatch_lap',
                 onPressed: _stopwatch.isRunning ? _addLap : null,
                 backgroundColor: colorScheme.secondaryContainer,
                 foregroundColor: colorScheme.onSecondaryContainer,
-                child: const Icon(Icons.flag),
+                tooltip: 'Tour',
+                child: const Icon(Icons.flag_rounded),
               ),
+              const SizedBox(width: 16),
               FloatingActionButton(
-                heroTag: "stopwatch_reset",
+                heroTag: 'stopwatch_reset',
                 onPressed: _resetStopwatch,
-                backgroundColor: colorScheme.surfaceContainer,
+                backgroundColor: colorScheme.surfaceContainerHigh,
                 foregroundColor: colorScheme.onSurface,
-                child: const Icon(Icons.refresh),
+                tooltip: 'Réinitialiser',
+                child: const Icon(Icons.refresh_rounded),
               ),
             ],
           ),
-
           if (_laps.isNotEmpty) ...[
-            const SizedBox(height: 32),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.1),
-                ),
-              ),
+            const SizedBox(height: 24),
+            ExpressiveCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.flag, color: colorScheme.primary, size: 20),
+                      Icon(
+                        Icons.flag_rounded,
+                        color: colorScheme.primary,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
-                        'Tours enregistrés',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        'Tours enregistrés (${_laps.length})',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  ...(_laps
-                      .take(5)
-                      .map(
-                        (lap) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            lap,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(fontFamily: 'monospace'),
-                          ),
+                  const SizedBox(height: 12),
+                  ..._laps.map(
+                    (lap) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(
+                          ExpressiveShapes.medium,
                         ),
-                      )),
-                  if (_laps.length > 5)
-                    Text(
-                      '... et ${_laps.length - 5} autres tours',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.timer_outlined,
+                            size: 16,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              lap,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(fontFamily: 'monospace'),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
@@ -556,37 +705,13 @@ class _TimerScreenState extends State<TimerScreen> {
     );
   }
 
-  Widget _buildPresetButton(String label, int seconds) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isSelected = _timerSeconds == seconds;
-
-    return InkWell(
-      onTap: () => _setTimerDuration(seconds),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primaryContainer
-              : colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? colorScheme.primary
-                : colorScheme.outline.withValues(alpha: 0.2),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isSelected
-                ? colorScheme.onPrimaryContainer
-                : colorScheme.onSurface,
-          ),
-        ),
-      ),
+  Widget _buildPresetChip(String label, int seconds) {
+    final isSelected =
+        _initialTimerSeconds == seconds && _timerSeconds == seconds;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (_) => _setTimerDuration(seconds),
     );
   }
 }

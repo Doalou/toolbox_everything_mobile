@@ -2,11 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
 import 'package:toolbox_everything_mobile/core/services/jwt_service.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/status_badge.dart';
 
 class JwtDecoderScreen extends StatefulWidget {
@@ -53,7 +54,8 @@ class _JwtDecoderScreenState extends State<JwtDecoderScreen> {
   Future<void> _copy(Map<String, dynamic> map) async {
     final str = const JsonEncoder.withIndent('  ').convert(map);
     await Clipboard.setData(ClipboardData(text: str));
-    Fluttertoast.showToast(msg: 'Copié');
+    if (!mounted) return;
+    AppFeedback.copied(context, 'Section JWT copiée');
   }
 
   @override
@@ -65,6 +67,13 @@ class _JwtDecoderScreenState extends State<JwtDecoderScreen> {
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [
+          const EditorialToolIntro(
+            icon: Icons.vpn_key_rounded,
+            title: 'Inspecter un token JWT',
+            description:
+                'Décodez Header, Payload et date d’expiration hors-ligne.',
+          ),
+          const SizedBox(height: ExpressiveTokens.spacingLg),
           ExpressiveCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

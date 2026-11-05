@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
 import 'package:toolbox_everything_mobile/core/services/uuid_service.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 
 class UuidGeneratorScreen extends StatefulWidget {
   final String heroTag;
@@ -34,12 +35,14 @@ class _UuidGeneratorScreenState extends State<UuidGeneratorScreen> {
 
   Future<void> _copy(String value) async {
     await Clipboard.setData(ClipboardData(text: value));
-    Fluttertoast.showToast(msg: 'UUID copié');
+    if (!mounted) return;
+    AppFeedback.copied(context, 'UUID copié');
   }
 
   Future<void> _copyAll() async {
     await Clipboard.setData(ClipboardData(text: _uuids.join('\n')));
-    Fluttertoast.showToast(msg: '${_uuids.length} UUID copiés');
+    if (!mounted) return;
+    AppFeedback.copied(context, '${_uuids.length} UUID copiés');
   }
 
   @override
@@ -58,6 +61,12 @@ class _UuidGeneratorScreenState extends State<UuidGeneratorScreen> {
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [
+          const EditorialToolIntro(
+            icon: Icons.fingerprint_rounded,
+            title: 'Identifiants uniques v4',
+            description: 'Générez jusqu’à 100 UUID v4 cryptographiques.',
+          ),
+          const SizedBox(height: ExpressiveTokens.spacingLg),
           ExpressiveCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

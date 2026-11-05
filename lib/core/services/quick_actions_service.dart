@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:quick_actions/quick_actions.dart';
+import 'package:toolbox_everything_mobile/core/feature_flags/app_feature_flags.dart';
 import 'package:toolbox_everything_mobile/presentation/navigation/unified_navigation.dart';
-import 'package:toolbox_everything_mobile/presentation/screens/qr_code_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/downloader_screen.dart';
+import 'package:toolbox_everything_mobile/presentation/screens/qr_code_screen.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/unit_converter_screen.dart';
 
 class QuickActionsService {
@@ -16,9 +17,9 @@ class QuickActionsService {
   String? _pendingAction;
 
   Future<void> initialize() async {
+    if (!AppFeatureFlags.quickActions) return;
+
     await _qa.initialize((type) {
-      // Tente de gérer l'action immédiatement. Si le navigateur n'est pas prêt,
-      // l'action sera stockée dans _pendingAction.
       _handleAction(type);
     });
 
@@ -28,11 +29,12 @@ class QuickActionsService {
         localizedTitle: 'QR Code',
         icon: 'ic_shortcut_qr',
       ),
-      const ShortcutItem(
-        type: 'action_downloader',
-        localizedTitle: 'Téléchargeur',
-        icon: 'ic_shortcut_download',
-      ),
+      if (AppFeatureFlags.youtubeDownloader)
+        const ShortcutItem(
+          type: 'action_downloader',
+          localizedTitle: 'Téléchargeur',
+          icon: 'ic_shortcut_download',
+        ),
       const ShortcutItem(
         type: 'action_convert',
         localizedTitle: 'Convertisseur',
@@ -46,22 +48,20 @@ class QuickActionsService {
   void processPendingAction() {
     if (_pendingAction != null) {
       _handleAction(_pendingAction!);
-      _pendingAction = null; // L'action est consommée
+      _pendingAction = null;
     }
   }
 
   void _handleAction(String type) {
     final nav = navigatorKey.currentState;
     if (nav == null) {
-      // Le navigateur n'est pas encore prêt, on stocke l'action.
       _pendingAction = type;
       return;
     }
 
-    // S'assurer que le frame est bien rendu avant de naviguer
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (navigatorKey.currentState == null) {
-        _pendingAction = type; // Sécurité supplémentaire
+        _pendingAction = type;
         return;
       }
       switch (type) {
@@ -74,6 +74,7 @@ class QuickActionsService {
           );
           break;
         case 'action_downloader':
+          if (!AppFeatureFlags.youtubeDownloader) break;
           nav.push(
             unifiedNavigation(
               nav.context,

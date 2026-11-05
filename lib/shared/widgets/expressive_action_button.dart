@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
+import 'package:toolbox_everything_mobile/core/services/haptics_service.dart';
 
-/// Bouton d'action principal adapté au langage éditorial.
+/// Bouton d'action Material 3 Expressive (forme pilule, spring rebondissant et
+/// retour haptique intégré).
 class ExpressiveActionButton extends StatefulWidget {
   final VoidCallback? onPressed;
   final Widget child;
@@ -50,6 +52,12 @@ class ExpressiveActionButton extends StatefulWidget {
 class _ExpressiveActionButtonState extends State<ExpressiveActionButton> {
   bool _pressed = false;
 
+  void _handleTap() {
+    if (widget.onPressed == null || widget.loading) return;
+    HapticsService.perform(context, HapticType.selection);
+    widget.onPressed!();
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -64,23 +72,27 @@ class _ExpressiveActionButtonState extends State<ExpressiveActionButton> {
     if (widget.icon != null && widget.label != null) {
       content = Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (widget.loading)
             SizedBox(
-              width: 20,
-              height: 20,
+              width: 18,
+              height: 18,
               child: CircularProgressIndicator(strokeWidth: 2, color: fg),
             )
           else
-            Icon(widget.icon, color: fg, size: 20),
-          const SizedBox(width: 10),
-          Text(
-            widget.label!,
-            style: TextStyle(
-              color: fg,
-              fontWeight: FontWeight.w700,
-              fontSize: 15,
-              letterSpacing: 0.1,
+            Icon(widget.icon, color: fg, size: 19),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              widget.label!,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: fg,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                letterSpacing: 0.1,
+              ),
             ),
           ),
         ],
@@ -90,13 +102,11 @@ class _ExpressiveActionButtonState extends State<ExpressiveActionButton> {
     }
 
     final material = Material(
-      color: disabled ? bg.withValues(alpha: 0.5) : bg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ExpressiveShapes.medium),
-      ),
+      color: disabled ? bg.withValues(alpha: 0.45) : bg,
+      shape: ExpressiveShapes.pill,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: disabled ? null : widget.onPressed,
+        onTap: disabled ? null : _handleTap,
         onHighlightChanged: lowResource
             ? null
             : (v) {
@@ -109,7 +119,7 @@ class _ExpressiveActionButtonState extends State<ExpressiveActionButton> {
             ? Colors.transparent
             : fg.withValues(alpha: 0.10),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
           child: content,
         ),
       ),
@@ -118,9 +128,9 @@ class _ExpressiveActionButtonState extends State<ExpressiveActionButton> {
     if (lowResource) return material;
 
     return AnimatedScale(
-      scale: _pressed ? 0.99 : 1.0,
-      duration: ExpressiveMotion.short3,
-      curve: Curves.easeOut,
+      scale: _pressed ? 0.96 : 1.0,
+      duration: ExpressiveMotion.short4,
+      curve: ExpressiveMotion.springStandard,
       child: material,
     );
   }

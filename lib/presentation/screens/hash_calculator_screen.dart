@@ -1,9 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
-import 'package:flutter/services.dart';
-import 'package:crypto/crypto.dart';
 import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
+import 'package:toolbox_everything_mobile/core/services/haptics_service.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 
 class HashCalculatorScreen extends StatefulWidget {
   final String heroTag;
@@ -14,8 +20,7 @@ class HashCalculatorScreen extends StatefulWidget {
   State<HashCalculatorScreen> createState() => _HashCalculatorScreenState();
 }
 
-class _HashCalculatorScreenState extends State<HashCalculatorScreen>
-    with TickerProviderStateMixin {
+class _HashCalculatorScreenState extends State<HashCalculatorScreen> {
   final TextEditingController _inputController = TextEditingController();
   final Map<HashType, TextEditingController> _resultControllers = {
     HashType.md5: TextEditingController(),
@@ -23,32 +28,18 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
     HashType.sha512: TextEditingController(),
   };
 
-  late AnimationController _calculateController;
-  late Animation<double> _calculateAnimation;
-
   InputType _inputType = InputType.text;
-  bool _isCalculating = false;
 
   @override
   void initState() {
     super.initState();
-
-    _calculateController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _calculateAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _calculateController, curve: Curves.easeInOut),
-    );
-
     _inputController.addListener(_onInputChanged);
   }
 
   @override
   void dispose() {
-    _calculateController.dispose();
     _inputController.dispose();
-    for (var controller in _resultControllers.values) {
+    for (final controller in _resultControllers.values) {
       controller.dispose();
     }
     super.dispose();
@@ -62,27 +53,20 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
     }
   }
 
-  Future<void> _calculateHashes() async {
+  void _calculateHashes() {
     if (_inputController.text.isEmpty) return;
-
-    setState(() {
-      _isCalculating = true;
-    });
-
-    _calculateController.forward();
 
     try {
       Uint8List bytes;
 
       if (_inputType == InputType.text) {
-        bytes = utf8.encode(_inputController.text);
+        bytes = Uint8List.fromList(utf8.encode(_inputController.text));
       } else {
-        // Hexadécimal input
         final cleanHex = _inputController.text
             .replaceAll(' ', '')
             .replaceAll('0x', '');
-        if (cleanHex.length % 2 != 0) {
-          _showError('Format hexadécimal invalide');
+        if (cleanHex.length.isOdd) {
+          _clearResults();
           return;
         }
         bytes = Uint8List.fromList(
@@ -93,7 +77,6 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
         );
       }
 
-      // Calcul des hash
       final md5Hash = md5.convert(bytes);
       final sha256Hash = sha256.convert(bytes);
       final sha512Hash = sha512.convert(bytes);
@@ -102,90 +85,54 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
         _resultControllers[HashType.md5]!.text = md5Hash.toString();
         _resultControllers[HashType.sha256]!.text = sha256Hash.toString();
         _resultControllers[HashType.sha512]!.text = sha512Hash.toString();
-        _isCalculating = false;
       });
     } catch (e) {
-      _showError('Erreur lors du calcul: $e');
-      setState(() {
-        _isCalculating = false;
-      });
+      AppFeedback.show(
+        context,
+        'Erreur lors du calcul : $e',
+        tone: FeedbackTone.error,
+      );
     }
-
-    await Future.delayed(const Duration(milliseconds: 300));
-    _calculateController.reverse();
   }
 
   void _clearResults() {
-    for (var controller in _resultControllers.values) {
+    for (final controller in _resultControllers.values) {
       controller.clear();
     }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ),
-    );
+    setState(() {});
   }
 
   void _copyHash(HashType type) {
     final text = _resultControllers[type]!.text;
     if (text.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: text));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Hash ${_getHashName(type)} copié !'),
-          duration: const Duration(seconds: 1),
-        ),
-      );
+      AppFeedback.copied(context, 'Hash ${_getHashName(type)} copié !');
     }
   }
 
   void _clearAll() {
+    HapticsService.perform(context, HapticType.light);
     _inputController.clear();
     _clearResults();
   }
 
-  String _getHashName(HashType type) {
-    switch (type) {
-      case HashType.md5:
-        return 'MD5';
-      case HashType.sha256:
-        return 'SHA-256';
-      case HashType.sha512:
-        return 'SHA-512';
-    }
-  }
+  String _getHashName(HashType type) => switch (type) {
+    HashType.md5 => 'MD5',
+    HashType.sha256 => 'SHA-256',
+    HashType.sha512 => 'SHA-512',
+  };
 
-  IconData _getHashIcon(HashType type) {
-    switch (type) {
-      case HashType.md5:
-        return Icons.fingerprint;
-      case HashType.sha256:
-        return Icons.security;
-      case HashType.sha512:
-        return Icons.enhanced_encryption;
-    }
-  }
+  IconData _getHashIcon(HashType type) => switch (type) {
+    HashType.md5 => Icons.fingerprint_rounded,
+    HashType.sha256 => Icons.security_rounded,
+    HashType.sha512 => Icons.enhanced_encryption_rounded,
+  };
 
-  Color _getHashColor(HashType type, ColorScheme colorScheme) {
-    switch (type) {
-      case HashType.md5:
-        return Colors.orange;
-      case HashType.sha256:
-        return Colors.blue;
-      case HashType.sha512:
-        return Colors.green;
-    }
-  }
+  Color _getHashSeed(HashType type) => switch (type) {
+    HashType.md5 => ExpressivePalette.lemonZest,
+    HashType.sha256 => ExpressivePalette.violetVibrant,
+    HashType.sha512 => ExpressivePalette.tealOptimist,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -197,112 +144,68 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
       actions: [
         IconButton(
           onPressed: _clearAll,
-          icon: Icon(Icons.clear_all, color: colorScheme.primary),
+          icon: Icon(Icons.clear_all_rounded, color: colorScheme.primary),
           tooltip: 'Effacer tout',
         ),
       ],
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const EditorialToolIntro(
               icon: Icons.fingerprint_rounded,
               title: 'Calculer une empreinte',
-              description: 'MD5, SHA-256 et SHA-512, localement.',
+              description: 'MD5, SHA-256 et SHA-512 calculés en temps réel.',
             ),
-
             const SizedBox(height: 16),
-
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.1),
+            SegmentedButton<InputType>(
+              segments: const [
+                ButtonSegment(
+                  value: InputType.text,
+                  icon: Icon(Icons.text_fields_rounded, size: 18),
+                  label: Text('Texte UTF-8'),
                 ),
-              ),
+                ButtonSegment(
+                  value: InputType.hex,
+                  icon: Icon(Icons.code_rounded, size: 18),
+                  label: Text('Hexadécimal'),
+                ),
+              ],
+              selected: {_inputType},
+              onSelectionChanged: (newSelection) {
+                HapticsService.perform(context, HapticType.selection);
+                setState(() {
+                  _inputType = newSelection.first;
+                });
+                _onInputChanged();
+              },
+            ),
+            const SizedBox(height: 16),
+            ExpressiveCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Type d\'entrée',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SegmentedButton<InputType>(
-                    segments: const [
-                      ButtonSegment(
-                        value: InputType.text,
-                        icon: Icon(Icons.text_fields, size: 16),
-                        label: Text('Texte'),
+                  Row(
+                    children: [
+                      Icon(
+                        _inputType == InputType.text
+                            ? Icons.text_fields_rounded
+                            : Icons.code_rounded,
+                        color: colorScheme.primary,
+                        size: 20,
                       ),
-                      ButtonSegment(
-                        value: InputType.hex,
-                        icon: Icon(Icons.code, size: 16),
-                        label: Text('Hexadécimal'),
+                      const SizedBox(width: 8),
+                      Text(
+                        _inputType == InputType.text
+                            ? 'Texte à hasher'
+                            : 'Données hexadécimales',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ],
-                    selected: {_inputType},
-                    onSelectionChanged: (newSelection) {
-                      setState(() {
-                        _inputType = newSelection.first;
-                      });
-                      _onInputChanged();
-                    },
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.1),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _inputType == InputType.text
-                              ? Icons.text_fields
-                              : Icons.code,
-                          color: colorScheme.primary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _inputType == InputType.text
-                              ? 'Texte à hasher'
-                              : 'Données hexadécimales',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const Spacer(),
-                        if (_isCalculating)
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: colorScheme.primary,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: _inputController,
                     maxLines: 4,
@@ -313,10 +216,8 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
                     ),
                     decoration: InputDecoration(
                       hintText: _inputType == InputType.text
-                          ? 'Saisissez votre texte ici...'
-                          : 'Saisissez vos données en hexadécimal (ex: 48656C6C6F)',
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          ? 'Saisissez votre texte ici…'
+                          : 'Ex : 48656C6C6F',
                     ),
                     inputFormatters: _inputType == InputType.hex
                         ? [
@@ -329,28 +230,12 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
                 ],
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            AnimatedBuilder(
-              animation: _calculateAnimation,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: 1 + (_calculateAnimation.value * 0.02),
-                  child: Column(
-                    children: HashType.values.map((type) {
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        child: _buildHashResult(type),
-                      );
-                    }).toList(),
-                  ),
-                );
-              },
-            ),
-
             const SizedBox(height: 16),
-
+            for (final type in HashType.values) ...[
+              _buildHashResult(type),
+              const SizedBox(height: 12),
+            ],
+            const SizedBox(height: 4),
             _buildQuickExamples(),
           ],
         ),
@@ -359,78 +244,66 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
   }
 
   Widget _buildHashResult(HashType type) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final hashColor = _getHashColor(type, colorScheme);
+    final baseScheme = Theme.of(context).colorScheme;
+    final hashScheme = ColorScheme.fromSeed(
+      seedColor: _getHashSeed(type),
+      brightness: baseScheme.brightness,
+      dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+    );
     final result = _resultControllers[type]!.text;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: result.isNotEmpty
-              ? hashColor.withValues(alpha: 0.3)
-              : colorScheme.outline.withValues(alpha: 0.1),
-          width: result.isNotEmpty ? 2 : 1,
-        ),
-        boxShadow: result.isNotEmpty
-            ? [
-                BoxShadow(
-                  color: hashColor.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
+    return ExpressiveCard(
+      onTap: result.isNotEmpty ? () => _copyHash(type) : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: hashColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: hashScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(ExpressiveShapes.small),
                 ),
-                child: Icon(_getHashIcon(type), size: 16, color: hashColor),
+                child: Icon(
+                  _getHashIcon(type),
+                  size: 18,
+                  color: hashScheme.onSecondaryContainer,
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Text(
                 _getHashName(type),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
-                ),
+                style: Theme.of(context).textTheme.titleSmall,
               ),
               const Spacer(),
               if (result.isNotEmpty)
-                IconButton(
+                IconButton.filledTonal(
                   onPressed: () => _copyHash(type),
-                  icon: Icon(Icons.content_copy, size: 18, color: hashColor),
+                  icon: const Icon(Icons.content_copy_rounded, size: 16),
                   tooltip: 'Copier',
+                  visualDensity: VisualDensity.compact,
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(8),
+              color: baseScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(ExpressiveShapes.medium),
             ),
             child: SelectableText(
               result.isNotEmpty
                   ? result
-                  : 'Hash ${_getHashName(type)} apparaîtra ici...',
+                  : 'Hash ${_getHashName(type)} apparaîtra ici…',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontFamily: 'monospace',
                 color: result.isNotEmpty
-                    ? colorScheme.onSurface
-                    : colorScheme.onSurface.withValues(alpha: 0.5),
+                    ? baseScheme.onSurface
+                    : baseScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -442,79 +315,44 @@ class _HashCalculatorScreenState extends State<HashCalculatorScreen>
   Widget _buildQuickExamples() {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final examples = [
+    const examples = [
       {'text': 'Hello World', 'label': 'Texte simple'},
       {'text': 'password123', 'label': 'Mot de passe'},
-      {'text': 'Lorem ipsum dolor', 'label': 'Texte long'},
+      {'text': 'Lorem ipsum dolor', 'label': 'Phrase'},
       {'text': '{"key": "value"}', 'label': 'JSON'},
     ];
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-      ),
+    return ExpressiveCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.flash_on, color: colorScheme.primary, size: 20),
+              Icon(
+                Icons.flash_on_rounded,
+                color: colorScheme.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Exemples rapides',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: 8,
+            runSpacing: 8,
             children: examples.map((example) {
-              return InkWell(
-                onTap: () {
+              return ActionChip(
+                onPressed: () {
+                  HapticsService.perform(context, HapticType.selection);
+                  setState(() => _inputType = InputType.text);
                   _inputController.text = example['text']!;
-                  _onInputChanged();
                 },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: colorScheme.primary.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        example['label']!,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.primary,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        example['text']!,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          color: colorScheme.onSurface.withValues(alpha: 0.8),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                avatar: const Icon(Icons.bolt_rounded, size: 16),
+                label: Text('${example['label']} (${example['text']})'),
               );
             }).toList(),
           ),

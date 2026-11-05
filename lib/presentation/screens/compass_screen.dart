@@ -1,8 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
-import 'package:flutter_compass/flutter_compass.dart';
 import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_compass/flutter_compass.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/status_badge.dart';
 
 class CompassScreen extends StatefulWidget {
   final String heroTag;
@@ -13,66 +18,90 @@ class CompassScreen extends StatefulWidget {
   CompassScreenState createState() => CompassScreenState();
 }
 
-class CompassScreenState extends State<CompassScreen>
-    with TickerProviderStateMixin {
-  bool _isCalibrating = true;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Simuler la calibration
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isCalibrating = false;
-        });
-      }
-    });
-  }
-
+class CompassScreenState extends State<CompassScreen> {
   String _getDirection(double heading) {
-    if (heading >= 337.5 || heading < 22.5) {
-      return 'Nord';
-    }
-    if (heading >= 22.5 && heading < 67.5) {
-      return 'Nord-Est';
-    }
-    if (heading >= 67.5 && heading < 112.5) {
-      return 'Est';
-    }
-    if (heading >= 112.5 && heading < 157.5) {
-      return 'Sud-Est';
-    }
-    if (heading >= 157.5 && heading < 202.5) {
-      return 'Sud';
-    }
-    if (heading >= 202.5 && heading < 247.5) {
-      return 'Sud-Ouest';
-    }
-    if (heading >= 247.5 && heading < 292.5) {
-      return 'Ouest';
-    }
-    if (heading >= 292.5 && heading < 337.5) {
-      return 'Nord-Ouest';
-    }
-    return 'Inconnu';
+    final normalized = (heading % 360 + 360) % 360;
+    if (normalized >= 337.5 || normalized < 22.5) return 'Nord';
+    if (normalized >= 22.5 && normalized < 67.5) return 'Nord-Est';
+    if (normalized >= 67.5 && normalized < 112.5) return 'Est';
+    if (normalized >= 112.5 && normalized < 157.5) return 'Sud-Est';
+    if (normalized >= 157.5 && normalized < 202.5) return 'Sud';
+    if (normalized >= 202.5 && normalized < 247.5) return 'Sud-Ouest';
+    if (normalized >= 247.5 && normalized < 292.5) return 'Ouest';
+    return 'Nord-Ouest';
   }
 
-  Color _getDirectionColor(double heading) {
-    if (heading >= 337.5 || heading < 22.5) {
-      return const Color(0xFFE53E3E); // Nord - Rouge
+  Color _getDirectionSeed(double heading) {
+    final normalized = (heading % 360 + 360) % 360;
+    if (normalized >= 337.5 || normalized < 22.5) {
+      return ExpressivePalette.sunsetCoral;
     }
-    if (heading >= 67.5 && heading < 112.5) {
-      return const Color(0xFFFF9500); // Est - Orange
+    if (normalized >= 67.5 && normalized < 112.5) {
+      return ExpressivePalette.lemonZest;
     }
-    if (heading >= 157.5 && heading < 202.5) {
-      return const Color(0xFF38A169); // Sud - Vert
+    if (normalized >= 157.5 && normalized < 202.5) {
+      return ExpressivePalette.tealOptimist;
     }
-    if (heading >= 247.5 && heading < 292.5) {
-      return const Color(0xFF3182CE); // Ouest - Bleu
+    if (normalized >= 247.5 && normalized < 292.5) {
+      return ExpressivePalette.violetVibrant;
     }
-    return const Color(0xFF805AD5); // Directions intermédiaires - Violet
+    return ExpressivePalette.amberWarm;
+  }
+
+  void _showCalibrationGuide(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: ShapeDecoration(
+                      color: scheme.primaryContainer,
+                      shape: const StadiumBorder(),
+                    ),
+                    child: Icon(
+                      Icons.compass_calibration_rounded,
+                      color: scheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Calibrer le magnétomètre',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Si l’orientation semble imprécise, effectuez un mouvement en forme de 8 dans les airs avec votre téléphone pendant quelques secondes et éloignez-vous des coques magnétiques ou objets métalliques.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Compris'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -84,20 +113,12 @@ class CompassScreenState extends State<CompassScreen>
       heroTag: widget.heroTag,
       actions: [
         IconButton(
-          onPressed: () {
-            setState(() {
-              _isCalibrating = true;
-            });
-            Future.delayed(const Duration(seconds: 2), () {
-              if (mounted) {
-                setState(() {
-                  _isCalibrating = false;
-                });
-              }
-            });
-          },
-          icon: Icon(Icons.refresh, color: colorScheme.primary),
-          tooltip: 'Recalibrer',
+          onPressed: () => _showCalibrationGuide(context),
+          icon: Icon(
+            Icons.compass_calibration_rounded,
+            color: colorScheme.primary,
+          ),
+          tooltip: 'Aide à la calibration',
         ),
       ],
       body: StreamBuilder<CompassEvent>(
@@ -111,106 +132,124 @@ class CompassScreenState extends State<CompassScreen>
             return _buildLoadingView();
           }
 
-          double? direction = snapshot.data?.heading;
+          final event = snapshot.data;
+          final direction = event?.heading;
 
           if (direction == null) {
             return _buildUnsupportedView();
           }
 
-          return _buildCompassView(direction, colorScheme);
+          final normalizedHeading = (direction % 360 + 360) % 360;
+          return _buildCompassView(
+            normalizedHeading,
+            event?.accuracy,
+            colorScheme,
+          );
         },
       ),
     );
   }
 
-  Widget _buildCompassView(double direction, ColorScheme colorScheme) {
+  Widget _buildCompassView(
+    double direction,
+    double? accuracy,
+    ColorScheme colorScheme,
+  ) {
     final directionName = _getDirection(direction);
-    final directionColor = _getDirectionColor(direction);
+    final seed = _getDirectionSeed(direction);
+    final dirScheme = ColorScheme.fromSeed(
+      seedColor: seed,
+      brightness: colorScheme.brightness,
+      dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+    );
+    final directionColor = dirScheme.primary;
+    final needsCalibration = accuracy != null && accuracy > 25;
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       child: Column(
         children: [
           EditorialToolIntro(
             icon: Icons.explore_rounded,
             title: 'Boussole numérique',
-            description: _isCalibrating
-                ? 'Calibration en cours…'
+            description: needsCalibration
+                ? 'Précision réduite (±${accuracy.toStringAsFixed(0)}°) · mouvement en 8 conseillé.'
                 : 'Pointez l’appareil vers la direction souhaitée.',
             accent: directionColor,
+            trailing: StatusBadge(
+              label: '${direction.toStringAsFixed(0)}°',
+              icon: Icons.navigation_rounded,
+              tone: needsCalibration ? BadgeTone.warning : BadgeTone.accent,
+            ),
           ),
-
-          const SizedBox(height: 40),
-
-          // Boussole principale
-          _buildCompassRose(direction, directionColor),
-
-          const SizedBox(height: 40),
-
-          // Informations détaillées
-          _buildDirectionInfo(
-            direction,
-            directionName,
-            directionColor,
-            colorScheme,
+          const SizedBox(height: 18),
+          ExpressiveCard(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            child: Center(
+              child: _buildCompassRose(direction, directionColor, dirScheme),
+            ),
           ),
-
-          const SizedBox(height: 24),
-
-          // Coordonnées et conseils
+          const SizedBox(height: 16),
+          _buildDirectionInfo(direction, directionName, accuracy, dirScheme),
+          const SizedBox(height: 16),
           _buildAdditionalInfo(direction, colorScheme),
         ],
       ),
     );
   }
 
-  Widget _buildCompassRose(double direction, Color directionColor) {
+  Widget _buildCompassRose(
+    double direction,
+    Color directionColor,
+    ColorScheme dirScheme,
+  ) {
     return Container(
-      width: 280,
-      height: 280,
+      width: 232,
+      height: 232,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
+        color: dirScheme.primaryContainer.withValues(alpha: 0.25),
         border: Border.all(
-          color: directionColor.withValues(alpha: 0.3),
-          width: 2,
+          color: directionColor.withValues(alpha: 0.35),
+          width: 2.5,
         ),
-        color: Colors.transparent,
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Rose de la boussole qui tourne (laisse l'aiguille fixe)
           Transform.rotate(
             angle: -direction * (math.pi / 180),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Graduations et étiquettes cardinales
                 ...List.generate(8, (index) {
                   final angle = index * 45.0;
                   final isCardinal = index % 2 == 0;
+                  final isNorth = index == 0;
                   return Transform.rotate(
                     angle: angle * (math.pi / 180),
                     child: Align(
                       alignment: Alignment.topCenter,
                       child: Container(
-                        margin: const EdgeInsets.only(top: 10),
+                        margin: const EdgeInsets.only(top: 12),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
                               width: isCardinal ? 4 : 2,
-                              height: isCardinal ? 20 : 12,
+                              height: isCardinal ? 18 : 10,
                               decoration: BoxDecoration(
-                                color: isCardinal
+                                color: isNorth
+                                    ? dirScheme.error
+                                    : isCardinal
                                     ? directionColor
-                                    : directionColor.withValues(alpha: 0.6),
+                                    : directionColor.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
                             if (isCardinal) ...[
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               Transform.rotate(
                                 angle: -angle * (math.pi / 180),
                                 child: Text(
@@ -225,8 +264,10 @@ class CompassScreenState extends State<CompassScreen>
                                     'NO',
                                   ][index],
                                   style: TextStyle(
-                                    color: directionColor,
-                                    fontWeight: FontWeight.w700,
+                                    color: isNorth
+                                        ? dirScheme.error
+                                        : directionColor,
+                                    fontWeight: FontWeight.w800,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -241,32 +282,23 @@ class CompassScreenState extends State<CompassScreen>
               ],
             ),
           ),
-
-          // Aiguille principale (fixe, pointe vers le haut)
+          // Aiguille principale
           Container(
             width: 6,
-            height: 120,
+            height: 112,
             decoration: BoxDecoration(
               color: directionColor,
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(99),
             ),
           ),
-
-          // Centre de la boussole
+          // Centre
           Container(
-            width: 16,
-            height: 16,
+            width: 18,
+            height: 18,
             decoration: BoxDecoration(
               color: directionColor,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: directionColor.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: Border.all(color: dirScheme.surface, width: 3),
             ),
           ),
         ],
@@ -277,53 +309,55 @@ class CompassScreenState extends State<CompassScreen>
   Widget _buildDirectionInfo(
     double direction,
     String directionName,
-    Color directionColor,
-    ColorScheme colorScheme,
+    double? accuracy,
+    ColorScheme dirScheme,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: directionColor.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: directionColor.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    final lowAccuracy = accuracy != null && accuracy > 25;
+    final accuracyText = accuracy == null
+        ? 'Capteur magnétique actif'
+        : lowAccuracy
+        ? 'Précision faible (±${accuracy.toStringAsFixed(0)}°)'
+        : 'Précision élevée (±${accuracy.toStringAsFixed(0)}°)';
+
+    return ExpressiveCard.hero(
+      color: dirScheme.primaryContainer.withValues(alpha: 0.55),
       child: Column(
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: directionColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: dirScheme.primary.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(ExpressiveShapes.medium),
                 ),
-                child: Icon(Icons.navigation, color: directionColor, size: 24),
+                child: Icon(
+                  Icons.navigation_rounded,
+                  color: dirScheme.primary,
+                  size: 24,
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Direction actuelle',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: dirScheme.onPrimaryContainer.withValues(
+                          alpha: 0.78,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       directionName,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: directionColor,
+                            fontWeight: FontWeight.w800,
+                            color: dirScheme.onPrimaryContainer,
                           ),
                     ),
                   ],
@@ -331,42 +365,43 @@ class CompassScreenState extends State<CompassScreen>
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
+                  horizontal: 14,
                   vertical: 8,
                 ),
-                decoration: BoxDecoration(
-                  color: directionColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
+                decoration: ShapeDecoration(
+                  color: dirScheme.surface.withValues(alpha: 0.78),
+                  shape: const StadiumBorder(),
                 ),
                 child: Text(
                   '${direction.toStringAsFixed(1)}°',
                   style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    color: directionColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 17,
+                    color: dirScheme.primary,
                     fontFamily: 'monospace',
                   ),
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 20),
-
-          // Indicateur de précision
+          const SizedBox(height: 14),
           Row(
             children: [
               Icon(
-                _isCalibrating ? Icons.warning_amber : Icons.gps_fixed,
-                color: _isCalibrating ? Colors.orange : Colors.green,
-                size: 20,
+                lowAccuracy
+                    ? Icons.warning_amber_rounded
+                    : Icons.gps_fixed_rounded,
+                color: lowAccuracy ? dirScheme.error : dirScheme.primary,
+                size: 18,
               ),
               const SizedBox(width: 8),
-              Text(
-                _isCalibrating ? 'Calibration en cours...' : 'Précision élevée',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: _isCalibrating ? Colors.orange : Colors.green,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  accuracyText,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: dirScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -377,81 +412,42 @@ class CompassScreenState extends State<CompassScreen>
   }
 
   Widget _buildAdditionalInfo(double direction, ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-      ),
+    return ExpressiveCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, color: colorScheme.primary, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Informations complémentaires',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              Icon(
+                Icons.info_outline_rounded,
+                color: colorScheme.primary,
+                size: 20,
               ),
+              const SizedBox(width: 8),
+              Text('Repères', style: Theme.of(context).textTheme.titleMedium),
             ],
           ),
-
-          const SizedBox(height: 16),
-
-          // Grille d'informations
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: _buildInfoTile(
                   'Azimut',
                   '${direction.toStringAsFixed(0)}°',
-                  Icons.rotate_right,
+                  Icons.rotate_right_rounded,
                   colorScheme,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildInfoTile(
-                  'Magnétique',
-                  'Nord Mag.',
-                  Icons.explore,
+                  'Cap opposé',
+                  '${((direction + 180) % 360).toStringAsFixed(0)}°',
+                  Icons.swap_calls_rounded,
                   colorScheme,
                 ),
               ),
             ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Conseils d'utilisation
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.lightbulb_outline,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Tenez votre appareil à plat et loin des objets métalliques pour une meilleure précision.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -465,29 +461,25 @@ class CompassScreenState extends State<CompassScreen>
     ColorScheme colorScheme,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(ExpressiveShapes.large),
       ),
       child: Column(
         children: [
-          Icon(icon, color: colorScheme.primary, size: 24),
-          const SizedBox(height: 8),
+          Icon(icon, color: colorScheme.primary, size: 22),
+          const SizedBox(height: 6),
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'monospace',
               color: colorScheme.primary,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
+          const SizedBox(height: 2),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
@@ -510,80 +502,66 @@ class CompassScreenState extends State<CompassScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Center(
-      child: Container(
-        margin: const EdgeInsets.all(20),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: ExpressiveCard(
           color: colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.error_outline,
-              color: colorScheme.onErrorContainer,
-              size: 48,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Erreur de la boussole',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
                 color: colorScheme.onErrorContainer,
-                fontWeight: FontWeight.w700,
+                size: 48,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onErrorContainer,
+              const SizedBox(height: 16),
+              Text(
+                'Erreur de la boussole',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: colorScheme.onErrorContainer,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                error,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onErrorContainer,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildUnsupportedView() {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Center(
-      child: Container(
-        margin: const EdgeInsets.all(20),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.compass_calibration,
-              color: colorScheme.primary,
-              size: 48,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Boussole non disponible',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w700,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: ExpressiveCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.compass_calibration_rounded,
+                color: Theme.of(context).colorScheme.primary,
+                size: 48,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Votre appareil ne dispose pas des capteurs nécessaires pour utiliser la boussole.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
+              const SizedBox(height: 16),
+              Text(
+                'Boussole non disponible',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                'Votre appareil ne dispose pas de magnétomètre compatible.',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

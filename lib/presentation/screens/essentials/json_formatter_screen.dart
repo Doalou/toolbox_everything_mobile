@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
 import 'package:toolbox_everything_mobile/core/services/json_formatter_service.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 
 class JsonFormatterScreen extends StatefulWidget {
   final String heroTag;
@@ -52,7 +53,8 @@ class _JsonFormatterScreenState extends State<JsonFormatterScreen> {
   Future<void> _copy() async {
     if (_output.text.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: _output.text));
-    Fluttertoast.showToast(msg: 'JSON copié');
+    if (!mounted) return;
+    AppFeedback.copied(context, 'JSON copié');
   }
 
   @override
@@ -64,6 +66,12 @@ class _JsonFormatterScreenState extends State<JsonFormatterScreen> {
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [
+          const EditorialToolIntro(
+            icon: Icons.data_object_rounded,
+            title: 'Valider et indenter',
+            description: 'Formatez, minifiez et vérifiez vos structures JSON.',
+          ),
+          const SizedBox(height: ExpressiveTokens.spacingLg),
           ExpressiveCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,6 +96,7 @@ class _JsonFormatterScreenState extends State<JsonFormatterScreen> {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     SegmentedButton<int>(
+                      showSelectedIcon: false,
                       segments: const [
                         ButtonSegment(value: 2, label: Text('2')),
                         ButtonSegment(value: 4, label: Text('4')),

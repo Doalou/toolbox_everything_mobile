@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:async';
+import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/status_badge.dart';
 
 class NotesScreen extends StatefulWidget {
   final String heroTag;
@@ -27,17 +31,18 @@ class _NotesScreenState extends State<NotesScreen>
   String _lastSavedText = '';
   int _characterCount = 0;
   int _wordCount = 0;
+  Timer? _autoSaveTimer;
 
   @override
   void initState() {
     super.initState();
 
     _saveController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
     _saveAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _saveController, curve: Curves.elasticOut),
+      CurvedAnimation(parent: _saveController, curve: Curves.easeOutBack),
     );
 
     _textController.addListener(_onTextChanged);
@@ -65,16 +70,14 @@ class _NotesScreenState extends State<NotesScreen>
           : text.trim().split(RegExp(r'\s+')).length;
     });
 
-    // Auto-save après 2 secondes d'inactivité
     _debounceAutoSave();
   }
 
-  Timer? _autoSaveTimer;
   void _debounceAutoSave() {
     _autoSaveTimer?.cancel();
     _autoSaveTimer = Timer(const Duration(seconds: 2), () {
       if (_hasUnsavedChanges) {
-        _saveNotes();
+        _saveNotes(showFeedback: false);
       }
     });
   }
@@ -84,6 +87,7 @@ class _NotesScreenState extends State<NotesScreen>
       final prefs = await SharedPreferences.getInstance();
       final savedText = prefs.getString('temp_notes') ?? '';
 
+      if (!mounted) return;
       setState(() {
         _textController.text = savedText;
         _lastSavedText = savedText;
@@ -93,51 +97,43 @@ class _NotesScreenState extends State<NotesScreen>
             : savedText.trim().split(RegExp(r'\s+')).length;
         _isLoading = false;
       });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  Future<void> _saveNotes() async {
+  Future<void> _saveNotes({bool showFeedback = true}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('temp_notes', _textController.text);
 
+      if (!mounted) return;
       setState(() {
         _lastSavedText = _textController.text;
         _hasUnsavedChanges = false;
       });
 
       _saveController.forward().then((_) {
-        Future.delayed(const Duration(milliseconds: 1000), () {
+        Future.delayed(const Duration(milliseconds: 600), () {
           if (mounted) _saveController.reverse();
         });
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text('Notes sauvegardées automatiquement'),
-              ],
-            ),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
+      if (showFeedback) {
+        AppFeedback.show(
+          context,
+          'Notes enregistrées',
+          tone: FeedbackTone.success,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors de la sauvegarde: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
+        AppFeedback.show(
+          context,
+          'Erreur lors de la sauvegarde : $e',
+          tone: FeedbackTone.error,
         );
       }
     }
@@ -159,8 +155,9 @@ class _NotesScreenState extends State<NotesScreen>
           FilledButton(
             onPressed: () {
               _textController.clear();
-              _saveNotes();
+              _saveNotes(showFeedback: false);
               Navigator.pop(context);
+              AppFeedback.show(this.context, 'Notes effacées');
             },
             child: const Text('Effacer'),
           ),
@@ -172,18 +169,7 @@ class _NotesScreenState extends State<NotesScreen>
   void _copyNotes() {
     if (_textController.text.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: _textController.text));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.content_copy, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text('Notes copiées dans le presse-papiers'),
-            ],
-          ),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      AppFeedback.copied(context, 'Notes copiées dans le presse-papiers');
     }
   }
 
@@ -204,25 +190,27 @@ class _NotesScreenState extends State<NotesScreen>
     return EditorialToolScaffold(
       title: 'Bloc-notes',
       heroTag: widget.heroTag,
-      floatingActionButton: FloatingActionButton.small(
-        heroTag: "notes_edit",
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'notes_edit',
         onPressed: () => _focusNode.requestFocus(),
-        backgroundColor: colorScheme.primary,
-        child: Icon(Icons.edit, color: colorScheme.onPrimary),
+        tooltip: 'Écrire',
+        child: const Icon(Icons.edit_rounded),
       ),
       actions: [
         AnimatedBuilder(
           animation: _saveAnimation,
           builder: (context, child) {
             return Transform.scale(
-              scale: 1 + (_saveAnimation.value * 0.2),
+              scale: 1 + (_saveAnimation.value * 0.15),
               child: IconButton(
-                onPressed: _saveNotes,
+                onPressed: () => _saveNotes(showFeedback: true),
                 icon: Icon(
-                  _hasUnsavedChanges ? Icons.save : Icons.check_circle,
+                  _hasUnsavedChanges
+                      ? Icons.save_rounded
+                      : Icons.check_circle_rounded,
                   color: _hasUnsavedChanges
                       ? colorScheme.primary
-                      : Colors.green,
+                      : colorScheme.tertiary,
                 ),
                 tooltip: 'Sauvegarder',
               ),
@@ -231,19 +219,17 @@ class _NotesScreenState extends State<NotesScreen>
         ),
         IconButton(
           onPressed: _copyNotes,
-          icon: Icon(Icons.content_copy, color: colorScheme.primary),
+          icon: Icon(Icons.content_copy_rounded, color: colorScheme.primary),
           tooltip: 'Copier',
         ),
         PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert, color: colorScheme.primary),
+          icon: Icon(Icons.more_vert_rounded, color: colorScheme.primary),
           onSelected: (value) {
             switch (value) {
               case 'clear':
                 _clearNotes();
-                break;
               case 'focus':
                 _focusNode.requestFocus();
-                break;
             }
           },
           itemBuilder: (context) => [
@@ -251,19 +237,22 @@ class _NotesScreenState extends State<NotesScreen>
               value: 'focus',
               child: Row(
                 children: [
-                  Icon(Icons.edit),
-                  SizedBox(width: 8),
+                  Icon(Icons.edit_rounded),
+                  SizedBox(width: 10),
                   Text('Focus écriture'),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'clear',
               child: Row(
                 children: [
-                  Icon(Icons.delete_outline, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Effacer tout', style: TextStyle(color: Colors.red)),
+                  Icon(Icons.delete_outline_rounded, color: colorScheme.error),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Effacer tout',
+                    style: TextStyle(color: colorScheme.error),
+                  ),
                 ],
               ),
             ),
@@ -277,32 +266,30 @@ class _NotesScreenState extends State<NotesScreen>
             child: EditorialToolIntro(
               icon: Icons.note_alt_rounded,
               title: 'Notes locales',
-              description:
-                  '$_characterCount caractères · $_wordCount mots${_hasUnsavedChanges ? ' · non sauvegardé' : ''}',
+              description: '$_characterCount caractères · $_wordCount mots',
+              trailing: StatusBadge(
+                label: _hasUnsavedChanges ? 'En cours…' : 'Sauvegardé',
+                icon: _hasUnsavedChanges
+                    ? Icons.sync_rounded
+                    : Icons.cloud_done_rounded,
+                tone: _hasUnsavedChanges ? BadgeTone.accent : BadgeTone.success,
+              ),
             ),
           ),
-
-          // Zone de texte principale
           Expanded(
             child: Container(
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(16),
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(
+                  ExpressiveShapes.largeIncreased,
+                ),
                 border: Border.all(
                   color: _focusNode.hasFocus
                       ? colorScheme.primary
-                      : colorScheme.outline.withValues(alpha: 0.2),
+                      : colorScheme.outlineVariant,
                   width: _focusNode.hasFocus ? 2 : 1,
                 ),
-                boxShadow: [
-                  if (_focusNode.hasFocus)
-                    BoxShadow(
-                      color: colorScheme.primary.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                ],
               ),
               child: TextField(
                 controller: _textController,
@@ -314,13 +301,12 @@ class _NotesScreenState extends State<NotesScreen>
                   context,
                 ).textTheme.bodyLarge?.copyWith(height: 1.6, fontSize: 16),
                 decoration: InputDecoration(
-                  hintText: 'Écrivez vos notes temporaires ici...',
-                  hintStyle: TextStyle(
-                    color: colorScheme.onSurface.withValues(alpha: 0.4),
-                    height: 1.6,
-                  ),
+                  hintText: 'Écrivez vos notes locales ici…',
+                  filled: false,
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(18),
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(20),
                 ),
               ),
             ),

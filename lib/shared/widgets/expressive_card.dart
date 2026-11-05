@@ -5,7 +5,8 @@ import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 
-/// Panneau éditorial bordé ; nom historique conservé pour compatibilité.
+/// Panneau Material 3 Expressive : surfaces tonales, coins généreux (ou
+/// asymétriques en mode `.hero`) et micro-interaction spring au toucher.
 class ExpressiveCard extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
@@ -24,7 +25,7 @@ class ExpressiveCard extends StatefulWidget {
     this.dense = false,
   });
 
-  /// Carte hero — coins asymétriques (signature M3E).
+  /// Carte hero — coins asymétriques (signature M3 Expressive).
   factory ExpressiveCard.hero({
     Key? key,
     required Widget child,
@@ -62,10 +63,12 @@ class _ExpressiveCardState extends State<ExpressiveCard> {
         RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(
             widget.dense
-                ? ExpressiveShapes.medium
+                ? ExpressiveShapes.large
                 : ExpressiveShapes.largeIncreased,
           ),
-          side: BorderSide(color: scheme.outline),
+          side: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 0.65),
+          ),
         );
 
     final material = Material(
@@ -74,7 +77,7 @@ class _ExpressiveCardState extends State<ExpressiveCard> {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: widget.onTap,
-        onHighlightChanged: lowResource
+        onHighlightChanged: lowResource || widget.onTap == null
             ? null
             : (v) {
                 if (mounted) setState(() => _pressed = v);
@@ -89,12 +92,12 @@ class _ExpressiveCardState extends State<ExpressiveCard> {
       ),
     );
 
-    if (lowResource) return material;
+    if (lowResource || widget.onTap == null) return material;
 
     return AnimatedScale(
-      scale: _pressed ? 0.99 : 1.0,
-      duration: ExpressiveMotion.short3,
-      curve: Curves.easeOut,
+      scale: _pressed ? 0.975 : 1.0,
+      duration: ExpressiveMotion.short4,
+      curve: ExpressiveMotion.springStandard,
       child: material,
     );
   }

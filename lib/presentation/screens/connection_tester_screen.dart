@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
-// Animations retirées pour alléger l'écran et éviter les saccades
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 
-class _NetworkTestException implements Exception {
-  final String message;
-  const _NetworkTestException(this.message);
-}
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/material.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
+import 'package:toolbox_everything_mobile/core/services/network_diagnostic_service.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/status_badge.dart';
 
 class ConnectionTesterScreen extends StatefulWidget {
   final String heroTag;
@@ -21,10 +21,10 @@ class ConnectionTesterScreen extends StatefulWidget {
   State<ConnectionTesterScreen> createState() => _ConnectionTesterScreenState();
 }
 
-class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
-    with TickerProviderStateMixin {
-  static const _requestTimeout = Duration(seconds: 4);
-  static const _testTimeout = Duration(seconds: 18);
+class _ConnectionTesterScreenState extends State<ConnectionTesterScreen> {
+  final NetworkDiagnosticService _diagnosticService =
+      const NetworkDiagnosticService();
+
   bool _isTesting = false;
   bool _hasInternet = false;
   String _ipv4 = 'Non détecté';
@@ -34,49 +34,20 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
   double _pingTime = 0.0;
   double _downloadSpeed = 0.0;
   String _connectionType = 'Non détecté';
-  Stream<List<ConnectivityResult>>? _connectivityStream;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   @override
   void initState() {
     super.initState();
-    // Test automatique au démarrage
     _runConnectionTest();
 
-    // Ecoute en direct du type de connexion
-    _connectivityStream = Connectivity().onConnectivityChanged;
-    _connectivitySub = _connectivityStream!.listen((results) {
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
       if (!mounted) return;
       final result = results.isNotEmpty
           ? results.first
           : ConnectivityResult.none;
       setState(() {
-        switch (result) {
-          case ConnectivityResult.wifi:
-            _connectionType = 'WiFi';
-            break;
-          case ConnectivityResult.mobile:
-            _connectionType = 'Données mobiles';
-            break;
-          case ConnectivityResult.ethernet:
-            _connectionType = 'Ethernet';
-            break;
-          case ConnectivityResult.vpn:
-            _connectionType = 'VPN';
-            break;
-          case ConnectivityResult.bluetooth:
-            _connectionType = 'Bluetooth';
-            break;
-          case ConnectivityResult.other:
-            _connectionType = 'Autre';
-            break;
-          case ConnectivityResult.satellite:
-            _connectionType = 'Satellite';
-            break;
-          case ConnectivityResult.none:
-            _connectionType = 'Non connecté';
-            break;
-        }
+        _connectionType = _labelForConnectivity(result);
       });
     });
   }
@@ -87,84 +58,49 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     super.dispose();
   }
 
+  String _labelForConnectivity(ConnectivityResult result) => switch (result) {
+    ConnectivityResult.wifi => 'Wi-Fi',
+    ConnectivityResult.mobile => 'Données mobiles',
+    ConnectivityResult.ethernet => 'Ethernet',
+    ConnectivityResult.vpn => 'VPN',
+    ConnectivityResult.bluetooth => 'Bluetooth',
+    ConnectivityResult.other => 'Autre',
+    ConnectivityResult.satellite => 'Satellite',
+    ConnectivityResult.none => 'Non connecté',
+  };
+
   Future<void> _runConnectionTest() async {
     setState(() {
       _isTesting = true;
       _hasInternet = false;
-      _ipv4 = 'Test en cours...';
-      _ipv6 = 'Test en cours...';
-      _location = 'Test en cours...';
-      _isp = 'Test en cours...';
+      _ipv4 = 'Test en cours…';
+      _ipv6 = 'Test en cours…';
+      _location = 'Test en cours…';
+      _isp = 'Test en cours…';
       _pingTime = 0.0;
       _downloadSpeed = 0.0;
-      _connectionType = 'Test en cours...';
+      _connectionType = 'Test en cours…';
     });
 
     try {
-      // Test de connectivité (peut retourner plusieurs types simultanés)
       final resultsConnectivity = await Connectivity().checkConnectivity();
       final connectivityResult = resultsConnectivity.isNotEmpty
           ? resultsConnectivity.first
           : ConnectivityResult.none;
-      String connectionType = 'Non connecté';
+      final connectionType = _labelForConnectivity(connectivityResult);
 
-      switch (connectivityResult) {
-        case ConnectivityResult.wifi:
-          connectionType = 'WiFi';
-          break;
-        case ConnectivityResult.mobile:
-          connectionType = 'Données mobiles';
-          break;
-        case ConnectivityResult.ethernet:
-          connectionType = 'Ethernet';
-          break;
-        case ConnectivityResult.vpn:
-          connectionType = 'VPN';
-          break;
-        case ConnectivityResult.bluetooth:
-          connectionType = 'Bluetooth';
-          break;
-        case ConnectivityResult.other:
-          connectionType = 'Autre';
-          break;
-        case ConnectivityResult.satellite:
-          connectionType = 'Satellite';
-          break;
-        case ConnectivityResult.none:
-          connectionType = 'Non connecté';
-          break;
-      }
-
-      final results = await Future.wait<Object>([
-        _testPing(),
-        _getIpInfo(),
-        _getIPv4(),
-        _getIPv6(),
-        _testDownloadSpeed(),
-      ]).timeout(_testTimeout);
-      final pingTime = results[0] as double;
-      final ipInfo = results[1] as Map<String, String>;
-      final ipv4 = results[2] as String;
-      final ipv6 = results[3] as String;
-      final downloadSpeed = results[4] as double;
-      final hasInternet =
-          pingTime > 0 || ipv4 != 'Non disponible' || ipv6 != 'Non disponible';
-      if (!hasInternet) {
-        throw const _NetworkTestException(
-          'Aucun accès Internet n’a pu être confirmé.',
-        );
-      }
+      final diagnostic = await _diagnosticService.runDiagnostics();
 
       if (mounted) {
         setState(() {
           _isTesting = false;
-          _hasInternet = hasInternet;
-          _ipv4 = ipv4;
-          _ipv6 = ipv6;
-          _location = ipInfo['location'] ?? 'Non détecté';
-          _isp = ipInfo['isp'] ?? 'Non détecté';
-          _pingTime = pingTime;
-          _downloadSpeed = downloadSpeed;
+          _hasInternet = diagnostic.hasInternet;
+          _ipv4 = diagnostic.ipv4;
+          _ipv6 = diagnostic.ipv6;
+          _location = diagnostic.location;
+          _isp = diagnostic.isp;
+          _pingTime = diagnostic.pingMs;
+          _downloadSpeed = diagnostic.downloadSpeedKbps;
           _connectionType = connectionType;
         });
       }
@@ -173,6 +109,8 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
         setState(() {
           _isTesting = false;
           _hasInternet = false;
+          _ipv4 = 'Non disponible';
+          _ipv6 = 'Non disponible';
           _location = 'Non disponible';
           _isp = 'Non disponible';
           _pingTime = 0.0;
@@ -180,13 +118,7 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
           _connectionType = 'Non connecté';
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_friendlyError(e)),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppFeedback.show(context, _friendlyError(e), tone: FeedbackTone.error);
       }
     }
   }
@@ -195,208 +127,8 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     if (error is TimeoutException) {
       return 'Le diagnostic réseau a expiré. Vérifiez la connexion puis réessayez.';
     }
-    if (error is _NetworkTestException) return error.message;
+    if (error is NetworkDiagnosticException) return error.message;
     return 'Le diagnostic réseau est indisponible pour le moment.';
-  }
-
-  Future<String> _getIPv4() async {
-    final endpoints = <String>[
-      'https://api.ipify.org',
-      'https://ipv4.icanhazip.com',
-      'https://v4.ident.me',
-    ];
-    for (final url in endpoints) {
-      try {
-        final res = await http
-            .get(
-              Uri.parse(url),
-              headers: {'User-Agent': 'ToolboxEverything/1.0'},
-            )
-            .timeout(_requestTimeout);
-        if (res.statusCode == 200) {
-          final text = res.body.trim();
-          if (_looksLikeIPv4(text)) return text;
-        }
-      } catch (_) {}
-    }
-    return 'Non disponible';
-  }
-
-  Future<String> _getIPv6() async {
-    final endpoints = <String>[
-      'https://api64.ipify.org',
-      'https://ipv6.icanhazip.com',
-      'https://v6.ident.me',
-    ];
-    for (final url in endpoints) {
-      try {
-        final res = await http
-            .get(
-              Uri.parse(url),
-              headers: {'User-Agent': 'ToolboxEverything/1.0'},
-            )
-            .timeout(_requestTimeout);
-        if (res.statusCode == 200) {
-          final text = res.body.trim();
-          if (_looksLikeIPv6(text)) return text;
-        }
-      } catch (_) {}
-    }
-    return 'Non disponible';
-  }
-
-  bool _looksLikeIPv4(String s) {
-    // Simple validation IPv4
-    final parts = s.split('.');
-    if (parts.length != 4) return false;
-    for (final p in parts) {
-      final n = int.tryParse(p);
-      if (n == null || n < 0 || n > 255) return false;
-    }
-    return true;
-  }
-
-  bool _looksLikeIPv6(String s) {
-    // Validation grossière IPv6: présence de ':' et caractères hex
-    if (!s.contains(':')) return false;
-    final hex = RegExp(r'^[0-9a-fA-F:]+$');
-    return hex.hasMatch(s);
-  }
-
-  Future<double> _testPing() async {
-    try {
-      final stopwatch = Stopwatch()..start();
-      final response = await http
-          .get(
-            Uri.parse('https://www.google.com'),
-            headers: {'User-Agent': 'ToolboxEverything/1.0'},
-          )
-          .timeout(_requestTimeout);
-      stopwatch.stop();
-
-      if (response.statusCode == 200) {
-        return stopwatch.elapsedMilliseconds.toDouble();
-      }
-      return 0.0;
-    } catch (e) {
-      return 0.0;
-    }
-  }
-
-  Future<Map<String, String>> _getIpInfo() async {
-    // Essaye plusieurs fournisseurs pour maximiser les chances en conditions réelles
-    // 1) ipapi.co
-    try {
-      final res = await http
-          .get(
-            Uri.parse('https://ipapi.co/json/'),
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'ToolboxEverything/1.0',
-            },
-          )
-          .timeout(_requestTimeout);
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        return {
-          'ip': data['ip'] ?? 'Non détecté',
-          'location': '${data['city'] ?? ''}, ${data['country_name'] ?? ''}',
-          'isp': data['org'] ?? 'Non détecté',
-        };
-      }
-    } catch (_) {}
-
-    // 2) ipwho.is
-    try {
-      final res = await http
-          .get(
-            Uri.parse('https://ipwho.is/'),
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'ToolboxEverything/1.0',
-            },
-          )
-          .timeout(_requestTimeout);
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        if (data['success'] == true || data['ip'] != null) {
-          final conn = data['connection'] as Map<String, dynamic>?;
-          return {
-            'ip': (data['ip'] ?? 'Non détecté').toString(),
-            'location': '${data['city'] ?? ''}, ${data['country'] ?? ''}',
-            'isp': (conn != null ? conn['isp'] : null) ?? 'Non détecté',
-          };
-        }
-      }
-    } catch (_) {}
-
-    // 3) ipinfo.io
-    try {
-      final res = await http
-          .get(
-            Uri.parse('https://ipinfo.io/json'),
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'ToolboxEverything/1.0',
-            },
-          )
-          .timeout(_requestTimeout);
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        return {
-          'ip': data['ip'] ?? 'Non détecté',
-          'location': '${data['city'] ?? ''}, ${data['country'] ?? ''}',
-          'isp': data['org'] ?? 'Non détecté',
-        };
-      }
-    } catch (_) {}
-
-    // 4) ifconfig.co (ip seulement)
-    try {
-      final res = await http
-          .get(
-            Uri.parse('https://ifconfig.co/json'),
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'ToolboxEverything/1.0',
-            },
-          )
-          .timeout(_requestTimeout);
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        return {
-          'ip': data['ip'] ?? 'Non détecté',
-          'location': 'Non disponible',
-          'isp': data['asn_org'] ?? 'Non détecté',
-        };
-      }
-    } catch (_) {}
-
-    // Fallback final
-    return {
-      'ip': 'Non détecté',
-      'location': 'Non disponible',
-      'isp': 'Non disponible',
-    };
-  }
-
-  Future<double> _testDownloadSpeed() async {
-    try {
-      final stopwatch = Stopwatch()..start();
-      final response = await http
-          .get(Uri.parse('https://httpbin.org/bytes/100000'))
-          .timeout(_requestTimeout);
-      stopwatch.stop();
-
-      if (response.statusCode == 200) {
-        final bytes = response.bodyBytes.length;
-        final seconds = stopwatch.elapsedMilliseconds / 1000;
-        return (bytes / 1024) / seconds; // KB/s
-      }
-      return 0.0;
-    } catch (e) {
-      return 0.0;
-    }
   }
 
   @override
@@ -408,162 +140,125 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
       heroTag: widget.heroTag,
       body: SingleChildScrollView(
         physics: const ClampingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              EditorialToolIntro(
-                icon: _hasInternet
-                    ? Icons.wifi_rounded
-                    : Icons.wifi_off_rounded,
-                title: 'Statut de la connexion',
-                description: _hasInternet
-                    ? 'Connecté à Internet'
-                    : 'Aucune connexion Internet détectée',
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            EditorialToolIntro(
+              icon: _hasInternet ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+              title: 'Statut de la connexion',
+              description: _isTesting
+                  ? 'Analyse de la connectivité et de la latence…'
+                  : _hasInternet
+                  ? 'Connecté à Internet ($_connectionType)'
+                  : 'Aucune connexion Internet confirmée',
+              accent: _hasInternet ? colorScheme.tertiary : colorScheme.primary,
+              trailing: StatusBadge(
+                label: _isTesting
+                    ? 'Test…'
+                    : _hasInternet
+                    ? 'En ligne'
+                    : 'Hors ligne',
+                tone: _isTesting
+                    ? BadgeTone.accent
+                    : _hasInternet
+                    ? BadgeTone.success
+                    : BadgeTone.danger,
               ),
-
-              const SizedBox(height: 24),
-
-              // Informations IP (IPv4 + IPv6 affichées côte à côte)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.1),
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.language,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Adresses IP publiques',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: colorScheme.onSurface.withValues(
-                                    alpha: 0.7,
-                                  ),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Expanded(child: _buildKeyValue('IPv4', _ipv4)),
-                              const SizedBox(width: 12),
-                              Expanded(child: _buildKeyValue('IPv6', _ipv6)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Localisation
-              _buildInfoCard(
-                'Localisation',
-                _location,
-                Icons.location_on,
-                Colors.orange,
-              ),
-
-              const SizedBox(height: 16),
-
-              // FAI
-              _buildInfoCard(
-                'Fournisseur Internet',
-                _isp,
-                Icons.business,
-                Colors.purple,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Type de connexion
-              _buildInfoCard(
-                'Type de connexion',
-                _connectionType,
-                Icons.router,
-                Colors.teal,
-              ),
-
-              const SizedBox(height: 24),
-
-              // Métriques de performance
-              Row(
+            ),
+            const SizedBox(height: 16),
+            ExpressiveCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Ping',
-                      '${_pingTime.toStringAsFixed(0)} ms',
-                      Icons.speed,
-                      Colors.green,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(
+                            ExpressiveShapes.small,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.language_rounded,
+                          color: colorScheme.onPrimaryContainer,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Adresses IP publiques',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Vitesse',
-                      '${_downloadSpeed.toStringAsFixed(1)} KB/s',
-                      Icons.download,
-                      Colors.blue,
-                    ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(child: _buildKeyValue('IPv4', _ipv4)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildKeyValue('IPv6', _ipv6)),
+                    ],
                   ),
                 ],
               ),
-
-              const SizedBox(height: 40),
-
-              // Bouton de test
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isTesting ? null : _runConnectionTest,
-                  icon: _isTesting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.refresh),
-                  label: Text(
-                    _isTesting ? 'Test en cours...' : 'Relancer le test',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+            ),
+            const SizedBox(height: 12),
+            _buildInfoCard(
+              'Localisation',
+              _location,
+              Icons.location_on_rounded,
+              ExpressivePalette.lemonZest,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoCard(
+              'Fournisseur Internet',
+              _isp,
+              Icons.business_rounded,
+              ExpressivePalette.amberWarm,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoCard(
+              'Type de connexion',
+              _connectionType,
+              Icons.router_rounded,
+              ExpressivePalette.tealOptimist,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMetricCard(
+                    'Ping HTTP',
+                    '${_pingTime.toStringAsFixed(0)} ms',
+                    Icons.speed_rounded,
+                    ExpressivePalette.tealOptimist,
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildMetricCard(
+                    'Débit mesuré',
+                    '${_downloadSpeed.toStringAsFixed(1)} KB/s',
+                    Icons.download_rounded,
+                    ExpressivePalette.violetVibrant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            ExpressiveActionButton.iconLabel(
+              icon: Icons.refresh_rounded,
+              label: _isTesting ? 'Test en cours…' : 'Relancer le diagnostic',
+              loading: _isTesting,
+              onPressed: _isTesting ? null : _runConnectionTest,
+            ),
+          ],
         ),
       ),
     );
@@ -573,45 +268,40 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     String title,
     String value,
     IconData icon,
-    Color color,
+    Color seedColor,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final baseScheme = Theme.of(context).colorScheme;
+    final cardScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: baseScheme.brightness,
+      dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+    );
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-      ),
+    return ExpressiveCard(
+      dense: true,
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: cardScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(ExpressiveShapes.medium),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: cardScheme.onSecondaryContainer, size: 20),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text(title, style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: 2),
                 Text(
                   value,
                   style: Theme.of(
                     context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -625,41 +315,44 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     String title,
     String value,
     IconData icon,
-    Color color,
+    Color seedColor,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final baseScheme = Theme.of(context).colorScheme;
+    final metricScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: baseScheme.brightness,
+      dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+    );
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
+    return ExpressiveCard(
+      color: metricScheme.primaryContainer.withValues(
+        alpha: baseScheme.brightness == Brightness.dark ? 0.42 : 0.65,
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+            width: 40,
+            height: 40,
+            decoration: ShapeDecoration(
+              color: metricScheme.primary.withValues(alpha: 0.16),
+              shape: const StadiumBorder(),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: metricScheme.primary, size: 20),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             title,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w500,
+              color: metricScheme.onPrimaryContainer.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: color,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              fontFamily: 'monospace',
+              color: metricScheme.onPrimaryContainer,
             ),
           ),
         ],
@@ -672,26 +365,26 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outline.withValues(alpha: 0.06)),
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(ExpressiveShapes.medium),
+        border: Border.all(color: cs.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             key,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: cs.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: cs.primary),
           ),
           const SizedBox(height: 6),
           SelectableText(
             value,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              fontFamily: 'monospace',
+            ),
           ),
         ],
       ),

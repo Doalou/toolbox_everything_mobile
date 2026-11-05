@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 
 class ColorPickerScreen extends StatefulWidget {
   final String heroTag;
@@ -32,6 +32,7 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
   Future<void> _loadRecentColors() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getStringList(_prefsKey) ?? [];
+    if (!mounted) return;
     setState(() {
       _recentColors = saved
           .map((hex) => Color(int.parse(hex, radix: 16)))
@@ -57,21 +58,26 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
       }
     });
     _saveRecentColors();
+    AppFeedback.show(
+      context,
+      'Couleur enregistrée dans les récents',
+      icon: Icons.bookmark_added_rounded,
+    );
   }
 
   void _copyToClipboard(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    Fluttertoast.showToast(msg: '$label copié !');
+    AppFeedback.copied(context, '$label copié ($text)');
   }
 
   String get _hexValue =>
       '#${_selectedColor.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
 
   String get _rgbValue =>
-      'rgb(${_selectedColor.r.round()}, ${_selectedColor.g.round()}, ${_selectedColor.b.round()})';
+      'rgb(${(_selectedColor.r * 255).round()}, ${(_selectedColor.g * 255).round()}, ${(_selectedColor.b * 255).round()})';
 
   String get _rgbaValue =>
-      'rgba(${_selectedColor.r.round()}, ${_selectedColor.g.round()}, ${_selectedColor.b.round()}, ${_selectedColor.a.toStringAsFixed(2)})';
+      'rgba(${(_selectedColor.r * 255).round()}, ${(_selectedColor.g * 255).round()}, ${(_selectedColor.b * 255).round()}, ${_selectedColor.a.toStringAsFixed(2)})';
 
   String get _hslValue {
     final hsl = HSLColor.fromColor(_selectedColor);
@@ -96,7 +102,6 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
               title: 'Choisissez une couleur',
               description: 'Sélectionnez et copiez en HEX, RGB ou HSL.',
             ),
-
             const SizedBox(height: 16),
 
             // Color picker card
@@ -123,7 +128,7 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: () => _addToRecent(_selectedColor),
-                    icon: const Icon(Icons.save),
+                    icon: const Icon(Icons.bookmark_add_rounded),
                     label: const Text('Enregistrer dans les récents'),
                   ),
                 ],
@@ -144,13 +149,11 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
                         height: 60,
                         decoration: BoxDecoration(
                           color: _selectedColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: colorScheme.outline.withValues(alpha: 0.3),
-                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: colorScheme.outlineVariant),
                           boxShadow: [
                             BoxShadow(
-                              color: _selectedColor.withValues(alpha: 0.4),
+                              color: _selectedColor.withValues(alpha: 0.35),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -200,7 +203,7 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _CardTitle(
-                      icon: Icons.history,
+                      icon: Icons.history_rounded,
                       title: 'Couleurs récentes',
                       subtitle: 'Touchez une couleur pour la reprendre.',
                       color: colorScheme.primary,
@@ -210,27 +213,22 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: _recentColors.map((color) {
+                        final isSelected =
+                            color.toARGB32() == _selectedColor.toARGB32();
                         return GestureDetector(
                           onTap: () => setState(() => _selectedColor = color),
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
                               color: color,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color:
-                                    color.toARGB32() ==
-                                        _selectedColor.toARGB32()
+                                color: isSelected
                                     ? colorScheme.primary
-                                    : colorScheme.outline.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                width:
-                                    color.toARGB32() ==
-                                        _selectedColor.toARGB32()
-                                    ? 3
-                                    : 1,
+                                    : colorScheme.outlineVariant,
+                                width: isSelected ? 3 : 1,
                               ),
                             ),
                           ),
@@ -254,12 +252,12 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
       child: Row(
         children: [
           SizedBox(
-            width: 50,
+            width: 54,
             child: Text(
               label,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: colorScheme.primary,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -273,7 +271,7 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
           ),
           IconButton(
             onPressed: () => _copyToClipboard(value, label),
-            icon: const Icon(Icons.copy, size: 18),
+            icon: const Icon(Icons.copy_rounded, size: 18),
             tooltip: 'Copier $label',
             visualDensity: VisualDensity.compact,
           ),

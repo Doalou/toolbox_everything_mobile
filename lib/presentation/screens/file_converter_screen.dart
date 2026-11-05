@@ -1,14 +1,20 @@
-import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
-import 'package:flutter/services.dart';
-import 'package:yaml/yaml.dart';
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'dart:convert';
-import 'dart:io';
+import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
+import 'package:toolbox_everything_mobile/core/feature_flags/app_feature_flags.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
+import 'package:toolbox_everything_mobile/core/services/file_conversion_service.dart';
+import 'package:toolbox_everything_mobile/core/services/haptics_service.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 
 enum ConversionType {
   jsonToYaml,
@@ -30,334 +36,93 @@ class FileConverterScreen extends StatefulWidget {
   FileConverterScreenState createState() => FileConverterScreenState();
 }
 
-class FileConverterScreenState extends State<FileConverterScreen>
-    with TickerProviderStateMixin {
+class FileConverterScreenState extends State<FileConverterScreen> {
   final TextEditingController _inputController = TextEditingController();
   final TextEditingController _outputController = TextEditingController();
-
-  late AnimationController _convertController;
-  late Animation<double> _convertAnimation;
+  final FileConversionService _conversionService =
+      const FileConversionService();
 
   ConversionType _selectedConversion = ConversionType.jsonToYaml;
   bool _isConverting = false;
   String? _lastConvertedFile;
 
-  @override
-  void initState() {
-    super.initState();
-
-    _convertController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _convertAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _convertController, curve: Curves.easeOutCubic),
-    );
-  }
+  List<ConversionType> get _availableConversions => [
+    ConversionType.jsonToYaml,
+    ConversionType.yamlToJson,
+    ConversionType.csvToJson,
+    ConversionType.jsonToCsv,
+    ConversionType.markdownToHtml,
+    ConversionType.htmlToMarkdown,
+    if (AppFeatureFlags.pdfExport) ...[
+      ConversionType.textToPdf,
+      ConversionType.csvToPdf,
+    ],
+  ];
 
   @override
   void dispose() {
-    _convertController.dispose();
     _inputController.dispose();
     _outputController.dispose();
     super.dispose();
   }
 
   Future<void> _performConversion() async {
-    if (_inputController.text.trim().isEmpty) return;
+    final rawInput = _inputController.text;
+    if (rawInput.trim().isEmpty) return;
 
     setState(() {
       _isConverting = true;
     });
-
-    _convertController.forward();
 
     try {
       String result = '';
 
       switch (_selectedConversion) {
         case ConversionType.jsonToYaml:
-          result = _convertJsonToYaml(_inputController.text);
-          break;
+          result = _conversionService.jsonToYaml(rawInput);
         case ConversionType.yamlToJson:
-          result = _convertYamlToJson(_inputController.text);
-          break;
+          result = _conversionService.yamlToJson(rawInput);
         case ConversionType.csvToJson:
-          result = _convertCsvToJson(_inputController.text);
-          break;
+          result = _conversionService.csvToJson(rawInput);
         case ConversionType.jsonToCsv:
-          result = _convertJsonToCsv(_inputController.text);
-          break;
+          result = _conversionService.jsonToCsv(rawInput);
         case ConversionType.markdownToHtml:
-          result = _convertMarkdownToHtml(_inputController.text);
-          break;
+          result = _conversionService.markdownToHtml(rawInput);
         case ConversionType.htmlToMarkdown:
-          result = _convertHtmlToMarkdown(_inputController.text);
-          break;
+          result = _conversionService.htmlToMarkdown(rawInput);
         case ConversionType.textToPdf:
-          await _convertTextToPdf(_inputController.text);
+          await _convertTextToPdf(rawInput);
           result = 'PDF généré avec succès !';
-          break;
         case ConversionType.csvToPdf:
-          await _convertCsvToPdf(_inputController.text);
+          await _convertCsvToPdf(rawInput);
           result = 'PDF généré avec succès !';
-          break;
       }
 
+      if (!mounted) return;
       setState(() {
         _outputController.text = result;
         _isConverting = false;
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                const Text('Conversion réussie !'),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
+      AppFeedback.show(
+        context,
+        'Conversion réussie !',
+        tone: FeedbackTone.success,
+      );
+    } on FormatException catch (e) {
+      if (!mounted) return;
       setState(() {
-        _outputController.text = 'Erreur de conversion: $e';
+        _outputController.text = 'Erreur : ${e.message}';
         _isConverting = false;
       });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Expanded(child: Text('Erreur: $e')),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-
-    _convertController.reverse();
-  }
-
-  String _convertJsonToYaml(String jsonText) {
-    try {
-      final dynamic jsonData = json.decode(jsonText);
-      return _toYamlString(jsonData);
+      AppFeedback.show(context, e.message, tone: FeedbackTone.error);
     } catch (e) {
-      throw 'JSON invalide: $e';
-    }
-  }
-
-  String _toYamlString(dynamic data, {int indent = 0}) {
-    String yaml = '';
-    String indentStr = '  ' * indent;
-
-    if (data is Map) {
-      for (var key in data.keys) {
-        if (data[key] is Map || data[key] is List) {
-          yaml += '$indentStr$key:\n';
-          yaml += _toYamlString(data[key], indent: indent + 1);
-        } else {
-          yaml += '$indentStr$key: ${data[key]}\n';
-        }
-      }
-    } else if (data is List) {
-      for (var item in data) {
-        if (item is Map || item is List) {
-          yaml += '$indentStr-\n';
-          yaml += _toYamlString(item, indent: indent + 1);
-        } else {
-          yaml += '$indentStr- $item\n';
-        }
-      }
-    }
-
-    return yaml;
-  }
-
-  String _convertYamlToJson(String yamlText) {
-    try {
-      final dynamic yamlData = loadYaml(yamlText);
-      const jsonEncoder = JsonEncoder.withIndent('  ');
-      return jsonEncoder.convert(yamlData);
-    } catch (e) {
-      throw 'YAML invalide: $e';
-    }
-  }
-
-  String _convertCsvToJson(String csvText) {
-    try {
-      final lines = csvText.trim().split('\n');
-      if (lines.isEmpty) throw 'CSV vide';
-
-      final headers = lines[0].split(',').map((e) => e.trim()).toList();
-      final jsonArray = <Map<String, String>>[];
-
-      for (int i = 1; i < lines.length; i++) {
-        final values = lines[i].split(',').map((e) => e.trim()).toList();
-        final jsonObject = <String, String>{};
-
-        for (int j = 0; j < headers.length && j < values.length; j++) {
-          jsonObject[headers[j]] = values[j];
-        }
-
-        jsonArray.add(jsonObject);
-      }
-
-      const jsonEncoder = JsonEncoder.withIndent('  ');
-      return jsonEncoder.convert(jsonArray);
-    } catch (e) {
-      throw 'CSV invalide: $e';
-    }
-  }
-
-  String _convertJsonToCsv(String jsonText) {
-    try {
-      final dynamic jsonData = json.decode(jsonText);
-
-      if (jsonData is! List) {
-        throw 'Le JSON doit être un tableau d\'objets pour la conversion CSV';
-      }
-
-      if (jsonData.isEmpty) return '';
-
-      final firstObject = jsonData[0];
-      if (firstObject is! Map) {
-        throw 'Les éléments du tableau doivent être des objets';
-      }
-
-      final headers = firstObject.keys.toList();
-      final csvLines = <String>[];
-
-      // En-têtes
-      csvLines.add(headers.join(','));
-
-      // Données
-      for (final item in jsonData) {
-        if (item is Map) {
-          final values = headers
-              .map((header) => item[header]?.toString() ?? '')
-              .toList();
-          csvLines.add(values.join(','));
-        }
-      }
-
-      return csvLines.join('\n');
-    } catch (e) {
-      throw 'Erreur de conversion JSON vers CSV: $e';
-    }
-  }
-
-  String _convertMarkdownToHtml(String markdownText) {
-    try {
-      // Conversion basique Markdown vers HTML
-      String html = markdownText
-          .replaceAllMapped(
-            RegExp(r'^# (.+)$', multiLine: true),
-            (match) => '<h1>${match.group(1)}</h1>',
-          )
-          .replaceAllMapped(
-            RegExp(r'^## (.+)$', multiLine: true),
-            (match) => '<h2>${match.group(1)}</h2>',
-          )
-          .replaceAllMapped(
-            RegExp(r'^### (.+)$', multiLine: true),
-            (match) => '<h3>${match.group(1)}</h3>',
-          )
-          .replaceAllMapped(
-            RegExp(r'\*\*(.+?)\*\*'),
-            (match) => '<strong>${match.group(1)}</strong>',
-          )
-          .replaceAllMapped(
-            RegExp(r'\*(.+?)\*'),
-            (match) => '<em>${match.group(1)}</em>',
-          )
-          .replaceAllMapped(
-            RegExp(r'`(.+?)`'),
-            (match) => '<code>${match.group(1)}</code>',
-          )
-          .replaceAllMapped(
-            RegExp(r'\[(.+?)\]\((.+?)\)'),
-            (match) => '<a href="${match.group(2)}">${match.group(1)}</a>',
-          );
-
-      // Ajouter structure HTML de base
-      return '''
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Document converti</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        h1, h2, h3 { color: #333; }
-        code { background: #f5f5f5; padding: 2px 4px; border-radius: 3px; }
-        a { color: #007bff; }
-    </style>
-</head>
-<body>
-$html
-</body>
-</html>
-      ''';
-    } catch (e) {
-      throw 'Erreur de conversion Markdown vers HTML: $e';
-    }
-  }
-
-  String _convertHtmlToMarkdown(String htmlText) {
-    try {
-      // Conversion basique HTML vers Markdown
-      return htmlText
-          .replaceAllMapped(
-            RegExp(r'<h1[^>]*>(.+?)</h1>'),
-            (match) => '# ${match.group(1)}\n',
-          )
-          .replaceAllMapped(
-            RegExp(r'<h2[^>]*>(.+?)</h2>'),
-            (match) => '## ${match.group(1)}\n',
-          )
-          .replaceAllMapped(
-            RegExp(r'<h3[^>]*>(.+?)</h3>'),
-            (match) => '### ${match.group(1)}\n',
-          )
-          .replaceAllMapped(
-            RegExp(r'<strong[^>]*>(.+?)</strong>'),
-            (match) => '**${match.group(1)}**',
-          )
-          .replaceAllMapped(
-            RegExp(r'<em[^>]*>(.+?)</em>'),
-            (match) => '*${match.group(1)}*',
-          )
-          .replaceAllMapped(
-            RegExp(r'<code[^>]*>(.+?)</code>'),
-            (match) => '`${match.group(1)}`',
-          )
-          .replaceAllMapped(
-            RegExp(r'<a[^>]*href="([^"]*)"[^>]*>(.+?)</a>'),
-            (match) => '[${match.group(2)}](${match.group(1)})',
-          )
-          .replaceAll(
-            RegExp(r'<[^>]+>'),
-            '',
-          ) // Supprimer les autres balises HTML
-          .replaceAll(
-            RegExp(r'\n\s*\n\s*\n'),
-            '\n\n',
-          ); // Nettoyer les lignes vides
-    } catch (e) {
-      throw 'Erreur de conversion HTML vers Markdown: $e';
+      if (!mounted) return;
+      setState(() {
+        _outputController.text = 'Erreur de conversion : $e';
+        _isConverting = false;
+      });
+      AppFeedback.show(context, 'Erreur : $e', tone: FeedbackTone.error);
     }
   }
 
@@ -388,7 +153,10 @@ $html
               pw.Spacer(),
               pw.Text(
                 'Généré le ${DateTime.now().toString().split('.')[0]}',
-                style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+                style: const pw.TextStyle(
+                  fontSize: 10,
+                  color: PdfColors.grey600,
+                ),
               ),
             ];
           },
@@ -399,21 +167,17 @@ $html
         onLayout: (PdfPageFormat format) async => pdf.save(),
       );
     } catch (e) {
-      throw 'Erreur de génération PDF: $e';
+      throw FormatException('Erreur de génération PDF : $e');
     }
   }
 
   Future<void> _convertCsvToPdf(String csvText) async {
     try {
-      final lines = csvText.trim().split('\n');
-      if (lines.isEmpty) throw 'CSV vide';
+      final rows = _conversionService.parseCsv(csvText);
+      if (rows.isEmpty) throw const FormatException('CSV vide');
 
-      final headers = lines[0].split(',').map((e) => e.trim()).toList();
-      final data = <List<String>>[];
-
-      for (int i = 1; i < lines.length; i++) {
-        data.add(lines[i].split(',').map((e) => e.trim()).toList());
-      }
+      final headers = rows.first.map((e) => e.trim()).toList();
+      final data = rows.skip(1).toList();
 
       final pdf = pw.Document();
 
@@ -455,43 +219,40 @@ $html
         onLayout: (PdfPageFormat format) async => pdf.save(),
       );
     } catch (e) {
-      throw 'Erreur de génération PDF depuis CSV: $e';
+      throw FormatException('Erreur de génération PDF depuis CSV : $e');
     }
   }
 
   Future<void> _pickFile() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['txt', 'json', 'yaml', 'yml', 'csv', 'md', 'html'],
       );
 
-      if (result != null) {
-        File file = File(result.files.single.path!);
-        String content = await file.readAsString();
+      if (result.isNotEmpty && result.single.path != null) {
+        final file = File(result.single.path!);
+        final content = await file.readAsString();
 
+        if (!mounted) return;
         setState(() {
           _inputController.text = content;
-          _lastConvertedFile = result.files.single.name;
+          _lastConvertedFile = result.single.name;
         });
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Fichier chargé: ${result.files.single.name}'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+        AppFeedback.show(
+          context,
+          'Fichier chargé : ${result.single.name}',
+          tone: FeedbackTone.success,
+          icon: Icons.upload_file_rounded,
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors du chargement: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppFeedback.show(
+          context,
+          'Erreur lors du chargement : $e',
+          tone: FeedbackTone.error,
         );
       }
     }
@@ -500,22 +261,12 @@ $html
   void _copyOutput() {
     if (_outputController.text.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: _outputController.text));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.content_copy, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text('Résultat copié !'),
-            ],
-          ),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      AppFeedback.copied(context, 'Résultat copié !');
     }
   }
 
   void _clearAll() {
+    HapticsService.perform(context, HapticType.light);
     _inputController.clear();
     _outputController.clear();
     setState(() {
@@ -533,40 +284,36 @@ $html
       actions: [
         IconButton(
           onPressed: _clearAll,
-          icon: Icon(Icons.clear_all, color: colorScheme.primary),
+          icon: Icon(Icons.clear_all_rounded, color: colorScheme.primary),
           tooltip: 'Effacer tout',
         ),
       ],
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        physics: const ClampingScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const EditorialToolIntro(
               icon: Icons.transform_rounded,
               title: 'Convertir un fichier',
-              description: 'Passez d’un format pris en charge à un autre.',
+              description: 'JSON, YAML, CSV, Markdown, HTML et export PDF.',
             ),
-
             const SizedBox(height: 16),
-
-            // Sélecteur de type de conversion
             _buildConversionSelector(),
-
-            const SizedBox(height: 24),
-
-            // Zone d'entrée
+            const SizedBox(height: 16),
             _buildInputSection(),
-
-            const SizedBox(height: 24),
-
-            // Bouton de conversion
-            _buildConvertButton(),
-
-            const SizedBox(height: 24),
-
-            // Zone de sortie
-            if (_outputController.text.isNotEmpty) _buildOutputSection(),
+            const SizedBox(height: 16),
+            ExpressiveActionButton.iconLabel(
+              icon: Icons.transform_rounded,
+              label: _isConverting ? 'Conversion…' : 'Convertir maintenant',
+              loading: _isConverting,
+              onPressed: _isConverting ? null : _performConversion,
+            ),
+            if (_outputController.text.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _buildOutputSection(),
+            ],
           ],
         ),
       ),
@@ -576,81 +323,47 @@ $html
   Widget _buildConversionSelector() {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-      ),
+    return ExpressiveCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.swap_horiz, color: colorScheme.primary, size: 20),
+              Icon(
+                Icons.swap_horiz_rounded,
+                color: colorScheme.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
-                'Type de conversion',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                'Format de conversion',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ConversionType.values.map((type) {
+            children: _availableConversions.map((type) {
               final isSelected = _selectedConversion == type;
-              return InkWell(
-                onTap: () {
+              return ChoiceChip(
+                avatar: Icon(
+                  _getConversionIcon(type),
+                  size: 16,
+                  color: isSelected
+                      ? colorScheme.onSecondaryContainer
+                      : colorScheme.primary,
+                ),
+                label: Text(_getConversionName(type)),
+                selected: isSelected,
+                onSelected: (_) {
+                  HapticsService.perform(context, HapticType.selection);
                   setState(() {
                     _selectedConversion = type;
                     _outputController.clear();
                   });
                 },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? colorScheme.primaryContainer
-                        : colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected
-                          ? colorScheme.primary
-                          : colorScheme.outline.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _getConversionIcon(type),
-                        size: 16,
-                        color: isSelected
-                            ? colorScheme.onPrimaryContainer
-                            : colorScheme.onSurface,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _getConversionName(type),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: isSelected
-                              ? colorScheme.onPrimaryContainer
-                              : colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               );
             }).toList(),
           ),
@@ -662,143 +375,84 @@ $html
   Widget _buildInputSection() {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-      ),
+    return ExpressiveCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(Icons.input, color: colorScheme.primary, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _lastConvertedFile != null
-                        ? 'Fichier: $_lastConvertedFile'
-                        : 'Données d\'entrée',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+          Row(
+            children: [
+              Icon(Icons.input_rounded, color: colorScheme.primary, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _lastConvertedFile != null
+                      ? 'Fichier : $_lastConvertedFile'
+                      : 'Données d’entrée',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                IconButton(
-                  onPressed: _pickFile,
-                  icon: Icon(Icons.file_upload, color: colorScheme.primary),
-                  tooltip: 'Charger un fichier',
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            height: 200,
-            child: TextField(
-              controller: _inputController,
-              maxLines: null,
-              expands: true,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
-              decoration: InputDecoration(
-                hintText: _getInputHint(_selectedConversion),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               ),
+              FilledButton.tonalIcon(
+                onPressed: _pickFile,
+                icon: const Icon(Icons.upload_file_rounded, size: 18),
+                label: const Text('Importer'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _inputController,
+            minLines: 7,
+            maxLines: 14,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+            decoration: InputDecoration(
+              hintText: _getInputHint(_selectedConversion),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildConvertButton() {
-    return AnimatedBuilder(
-      animation: _convertAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: 1 + (_convertAnimation.value * 0.05),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isConverting ? null : _performConversion,
-              icon: _isConverting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.transform, size: 20),
-              label: Text(
-                _isConverting ? 'Conversion...' : 'Convertir',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: const Color(0xFF673AB7),
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
   Widget _buildOutputSection() {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-      ),
+    return ExpressiveCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(Icons.output, color: colorScheme.primary, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Résultat de la conversion',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+          Row(
+            children: [
+              Icon(Icons.output_rounded, color: colorScheme.primary, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Résultat de la conversion',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                IconButton(
-                  onPressed: _copyOutput,
-                  icon: Icon(Icons.content_copy, color: colorScheme.primary),
-                  tooltip: 'Copier',
-                ),
-              ],
-            ),
+              ),
+              IconButton.filledTonal(
+                onPressed: _copyOutput,
+                icon: const Icon(Icons.content_copy_rounded, size: 18),
+                tooltip: 'Copier',
+              ),
+            ],
           ),
-          SizedBox(
-            height: 200,
-            child: TextField(
-              controller: _outputController,
-              maxLines: null,
-              expands: true,
-              readOnly: true,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(ExpressiveShapes.large),
+              border: Border.all(color: colorScheme.outlineVariant),
+            ),
+            child: SelectableText(
+              _outputController.text,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontFamily: 'monospace',
+                height: 1.45,
               ),
             ),
           ),
@@ -807,62 +461,36 @@ $html
     );
   }
 
-  IconData _getConversionIcon(ConversionType type) {
-    switch (type) {
-      case ConversionType.jsonToYaml:
-      case ConversionType.yamlToJson:
-        return Icons.code;
-      case ConversionType.csvToJson:
-      case ConversionType.jsonToCsv:
-        return Icons.table_chart;
-      case ConversionType.markdownToHtml:
-      case ConversionType.htmlToMarkdown:
-        return Icons.web;
-      case ConversionType.textToPdf:
-      case ConversionType.csvToPdf:
-        return Icons.picture_as_pdf;
-    }
-  }
+  String _getConversionName(ConversionType type) => switch (type) {
+    ConversionType.jsonToYaml => 'JSON → YAML',
+    ConversionType.yamlToJson => 'YAML → JSON',
+    ConversionType.csvToJson => 'CSV → JSON',
+    ConversionType.jsonToCsv => 'JSON → CSV',
+    ConversionType.markdownToHtml => 'MD → HTML',
+    ConversionType.htmlToMarkdown => 'HTML → MD',
+    ConversionType.textToPdf => 'Texte → PDF',
+    ConversionType.csvToPdf => 'CSV → PDF',
+  };
 
-  String _getConversionName(ConversionType type) {
-    switch (type) {
-      case ConversionType.jsonToYaml:
-        return 'JSON → YAML';
-      case ConversionType.yamlToJson:
-        return 'YAML → JSON';
-      case ConversionType.csvToJson:
-        return 'CSV → JSON';
-      case ConversionType.jsonToCsv:
-        return 'JSON → CSV';
-      case ConversionType.markdownToHtml:
-        return 'Markdown → HTML';
-      case ConversionType.htmlToMarkdown:
-        return 'HTML → Markdown';
-      case ConversionType.textToPdf:
-        return 'Texte → PDF';
-      case ConversionType.csvToPdf:
-        return 'CSV → PDF';
-    }
-  }
+  IconData _getConversionIcon(ConversionType type) => switch (type) {
+    ConversionType.jsonToYaml ||
+    ConversionType.yamlToJson => Icons.data_object_rounded,
+    ConversionType.csvToJson ||
+    ConversionType.jsonToCsv => Icons.table_chart_rounded,
+    ConversionType.markdownToHtml ||
+    ConversionType.htmlToMarkdown => Icons.code_rounded,
+    ConversionType.textToPdf ||
+    ConversionType.csvToPdf => Icons.picture_as_pdf_rounded,
+  };
 
-  String _getInputHint(ConversionType type) {
-    switch (type) {
-      case ConversionType.jsonToYaml:
-        return '{"nom": "exemple", "valeur": 123}';
-      case ConversionType.yamlToJson:
-        return 'nom: exemple\nvaleur: 123';
-      case ConversionType.csvToJson:
-        return 'nom,age,ville\nJean,30,Paris\nMarie,25,Lyon';
-      case ConversionType.jsonToCsv:
-        return '[{"nom": "Jean", "age": 30}, {"nom": "Marie", "age": 25}]';
-      case ConversionType.markdownToHtml:
-        return '# Titre\n\n**Texte en gras** et *italique*';
-      case ConversionType.htmlToMarkdown:
-        return '<h1>Titre</h1>\n<p><strong>Texte en gras</strong></p>';
-      case ConversionType.textToPdf:
-        return 'Entrez votre texte à convertir en PDF...';
-      case ConversionType.csvToPdf:
-        return 'nom,age,ville\nJean,30,Paris\nMarie,25,Lyon';
-    }
-  }
+  String _getInputHint(ConversionType type) => switch (type) {
+    ConversionType.jsonToYaml => '{\n  "nom": "Jean",\n  "age": 30\n}',
+    ConversionType.yamlToJson => 'nom: Jean\nage: 30\nville: Paris',
+    ConversionType.csvToJson => 'nom,age,ville\n"Jean, Jr.",30,Paris',
+    ConversionType.jsonToCsv => '[\n  {"nom": "Jean", "age": "30"}\n]',
+    ConversionType.markdownToHtml => '# Titre\n\nTexte en **gras**.',
+    ConversionType.htmlToMarkdown => '<h1>Titre</h1>\n<p>Texte</p>',
+    ConversionType.textToPdf => 'Saisissez votre texte à exporter en PDF…',
+    ConversionType.csvToPdf => 'nom,age,ville\nJean,30,Paris',
+  };
 }

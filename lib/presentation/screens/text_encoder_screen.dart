@@ -2,11 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
+import 'package:toolbox_everything_mobile/core/services/haptics_service.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 
 enum EncodingType { base64, url, html, hex }
 
@@ -42,7 +43,7 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
     try {
       _outputController.text = _isEncoding ? _encode(input) : _decode(input);
     } catch (e) {
-      _outputController.text = 'Erreur: ${e.toString()}';
+      _outputController.text = 'Erreur : ${e.toString()}';
     }
   }
 
@@ -61,8 +62,9 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
             .replaceAll("'", '&#39;')
             .replaceAll(' ', '&nbsp;');
       case EncodingType.hex:
-        return input.codeUnits
-            .map((c) => c.toRadixString(16).padLeft(2, '0'))
+        return utf8
+            .encode(input)
+            .map((b) => b.toRadixString(16).padLeft(2, '0'))
             .join();
     }
   }
@@ -70,36 +72,41 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
   String _decode(String input) {
     switch (_selectedType) {
       case EncodingType.base64:
-        return utf8.decode(base64Decode(input));
+        return utf8.decode(base64Decode(input.trim()));
       case EncodingType.url:
         return Uri.decodeComponent(input);
       case EncodingType.html:
         return input
-            .replaceAll('&amp;', '&')
-            .replaceAll('&lt;', '<')
-            .replaceAll('&gt;', '>')
-            .replaceAll('&quot;', '"')
+            .replaceAll('&nbsp;', ' ')
             .replaceAll('&#39;', "'")
-            .replaceAll('&nbsp;', ' ');
+            .replaceAll('&quot;', '"')
+            .replaceAll('&gt;', '>')
+            .replaceAll('&lt;', '<')
+            .replaceAll('&amp;', '&');
       case EncodingType.hex:
-        final cleanHex = input.replaceAll(' ', '').replaceAll('\n', '');
+        final cleanHex = input
+            .replaceAll(' ', '')
+            .replaceAll('\n', '')
+            .replaceAll('0x', '');
+        if (cleanHex.length.isOdd) {
+          throw const FormatException('Longueur hexadécimale impaire');
+        }
         final bytes = <int>[];
         for (var i = 0; i < cleanHex.length; i += 2) {
-          if (i + 2 <= cleanHex.length) {
-            bytes.add(int.parse(cleanHex.substring(i, i + 2), radix: 16));
-          }
+          bytes.add(int.parse(cleanHex.substring(i, i + 2), radix: 16));
         }
-        return String.fromCharCodes(bytes);
+        return utf8.decode(bytes, allowMalformed: true);
     }
   }
 
   void _copyOutput() {
     if (_outputController.text.isEmpty) return;
     Clipboard.setData(ClipboardData(text: _outputController.text));
-    Fluttertoast.showToast(msg: AppConstants.copySuccessMessage);
+    AppFeedback.copied(context, AppConstants.copySuccessMessage);
   }
 
   void _swapFields() {
+    HapticsService.perform(context, HapticType.selection);
     final temp = _inputController.text;
     _inputController.text = _outputController.text;
     _outputController.text = temp;
@@ -108,23 +115,18 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
   }
 
   void _clearAll() {
+    HapticsService.perform(context, HapticType.light);
     _inputController.clear();
     _outputController.clear();
     setState(() {});
   }
 
-  String get _typeLabel {
-    switch (_selectedType) {
-      case EncodingType.base64:
-        return 'Base64';
-      case EncodingType.url:
-        return 'URL';
-      case EncodingType.html:
-        return 'HTML';
-      case EncodingType.hex:
-        return 'Hexadécimal';
-    }
-  }
+  String get _typeLabel => switch (_selectedType) {
+    EncodingType.base64 => 'Base64',
+    EncodingType.url => 'URL',
+    EncodingType.html => 'HTML',
+    EncodingType.hex => 'Hexadécimal',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -150,6 +152,7 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                   label: Text(_getTypeLabel(type)),
                   selected: selected,
                   onSelected: (_) {
+                    HapticsService.perform(context, HapticType.selection);
                     setState(() => _selectedType = type);
                     _process();
                   },
@@ -162,23 +165,24 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                 ButtonSegment(
                   value: true,
                   label: Text('Encoder'),
-                  icon: Icon(Icons.lock),
+                  icon: Icon(Icons.lock_rounded),
                 ),
                 ButtonSegment(
                   value: false,
                   label: Text('Décoder'),
-                  icon: Icon(Icons.lock_open),
+                  icon: Icon(Icons.lock_open_rounded),
                 ),
               ],
               selected: {_isEncoding},
               onSelectionChanged: (selection) {
+                HapticsService.perform(context, HapticType.selection);
                 setState(() => _isEncoding = selection.first);
                 _process();
               },
             ),
             const SizedBox(height: 16),
             ExpressiveCard(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -187,32 +191,35 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                     title: _isEncoding ? 'Texte à encoder' : 'Texte à décoder',
                     action: IconButton(
                       onPressed: _clearAll,
-                      icon: const Icon(Icons.clear, size: 18),
+                      icon: const Icon(Icons.clear_rounded, size: 18),
                       tooltip: 'Effacer',
                       visualDensity: VisualDensity.compact,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: _inputController,
                     maxLines: 4,
                     decoration: const InputDecoration(
-                      hintText: 'Entrez votre texte ici...',
+                      hintText: 'Entrez votre texte ici…',
                     ),
                     onChanged: (_) => _process(),
                   ),
                 ],
               ),
             ),
-            Center(
-              child: IconButton.filled(
-                onPressed: _swapFields,
-                icon: const Icon(Icons.swap_vert),
-                tooltip: 'Inverser',
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: IconButton.filledTonal(
+                  onPressed: _swapFields,
+                  icon: const Icon(Icons.swap_vert_rounded),
+                  tooltip: 'Inverser',
+                ),
               ),
             ),
             ExpressiveCard(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -221,18 +228,19 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                     title: 'Résultat ($_typeLabel)',
                     action: IconButton(
                       onPressed: _copyOutput,
-                      icon: const Icon(Icons.copy, size: 18),
+                      icon: const Icon(Icons.copy_rounded, size: 18),
                       tooltip: 'Copier',
                       visualDensity: VisualDensity.compact,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: _outputController,
                     maxLines: 4,
                     readOnly: true,
+                    style: const TextStyle(fontFamily: 'monospace'),
                     decoration: InputDecoration(
-                      hintText: 'Le résultat apparaîtra ici...',
+                      hintText: 'Le résultat apparaîtra ici…',
                       filled: true,
                       fillColor: scheme.surfaceContainerLow,
                     ),
@@ -243,12 +251,12 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
             const SizedBox(height: 16),
             ExpressiveCard(
               dense: true,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const _CardHeader(
-                    icon: Icons.lightbulb_outline,
+                    icon: Icons.lightbulb_outline_rounded,
                     title: 'À propos',
                   ),
                   const SizedBox(height: 8),
@@ -267,31 +275,23 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
     );
   }
 
-  String _getTypeLabel(EncodingType type) {
-    switch (type) {
-      case EncodingType.base64:
-        return 'Base64';
-      case EncodingType.url:
-        return 'URL';
-      case EncodingType.html:
-        return 'HTML';
-      case EncodingType.hex:
-        return 'Hex';
-    }
-  }
+  String _getTypeLabel(EncodingType type) => switch (type) {
+    EncodingType.base64 => 'Base64',
+    EncodingType.url => 'URL',
+    EncodingType.html => 'HTML',
+    EncodingType.hex => 'Hex (UTF-8)',
+  };
 
-  String _getDescription() {
-    switch (_selectedType) {
-      case EncodingType.base64:
-        return 'Base64 encode du texte en caractères ASCII sûrs pour le transfert. Utilisé dans les emails, données JSON, etc.';
-      case EncodingType.url:
-        return 'URL encoding remplace les caractères spéciaux par des séquences %XX. Essentiel pour les paramètres d\'URL.';
-      case EncodingType.html:
-        return 'HTML entities convertit les caractères spéciaux (<, >, &, etc.) pour affichage sûr dans les pages web.';
-      case EncodingType.hex:
-        return 'Hexadécimal représente chaque caractère par sa valeur en base 16. Utilisé en programmation et debug.';
-    }
-  }
+  String _getDescription() => switch (_selectedType) {
+    EncodingType.base64 =>
+      'Base64 encode les octets UTF-8 en caractères ASCII sûrs pour le transfert.',
+    EncodingType.url =>
+      'URL encoding remplace les caractères réservés par des séquences %XX.',
+    EncodingType.html =>
+      'Les entités HTML échappent les balises (<, >, &, ") pour un rendu sûr.',
+    EncodingType.hex =>
+      'Hexadécimal convertit chaque octet UTF-8 en sa représentation base 16.',
+  };
 }
 
 class _IntroCard extends StatelessWidget {
@@ -302,7 +302,7 @@ class _IntroCard extends StatelessWidget {
     return const EditorialToolIntro(
       icon: Icons.code_rounded,
       title: 'Encoder ou décoder du texte',
-      description: 'Base64, URL, entités HTML et hexadécimal.',
+      description: 'Base64, URL, entités HTML et hexadécimal UTF-8.',
     );
   }
 }
@@ -324,10 +324,10 @@ class _CardHeader extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: ShapeDecoration(
-            color: scheme.primary.withValues(alpha: 0.14),
+            color: scheme.primaryContainer,
             shape: const StadiumBorder(),
           ),
-          child: Icon(icon, size: 18, color: scheme.primary),
+          child: Icon(icon, size: 18, color: scheme.onPrimaryContainer),
         ),
         const SizedBox(width: 10),
         Expanded(

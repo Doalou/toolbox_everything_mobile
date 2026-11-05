@@ -1,8 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
-import 'package:flutter/services.dart';
 import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 
 class LoremGeneratorScreen extends StatefulWidget {
   final String heroTag;
@@ -13,12 +17,8 @@ class LoremGeneratorScreen extends StatefulWidget {
   State<LoremGeneratorScreen> createState() => _LoremGeneratorScreenState();
 }
 
-class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
-    with TickerProviderStateMixin {
+class _LoremGeneratorScreenState extends State<LoremGeneratorScreen> {
   final TextEditingController _resultController = TextEditingController();
-
-  late AnimationController _generateController;
-  late Animation<double> _generateAnimation;
 
   int _paragraphCount = 3;
   int _sentenceCount = 5;
@@ -30,30 +30,16 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
   @override
   void initState() {
     super.initState();
-
-    _generateController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _generateAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _generateController, curve: Curves.elasticOut),
-    );
-
     _generateLorem();
   }
 
   @override
   void dispose() {
-    _generateController.dispose();
     _resultController.dispose();
     super.dispose();
   }
 
   void _generateLorem() {
-    _generateController.forward().then((_) {
-      _generateController.reverse();
-    });
-
     String result = '';
 
     switch (_generationType) {
@@ -74,22 +60,20 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
   }
 
   String _generateParagraphs(int count) {
-    List<String> paragraphs = [];
-
+    final List<String> paragraphs = [];
     for (int i = 0; i < count; i++) {
       paragraphs.add(_generateSentences(5 + _random.nextInt(8)));
     }
-
     return paragraphs.join('\n\n');
   }
 
   String _generateSentences(int count) {
-    List<String> sentences = [];
+    final List<String> sentences = [];
     final words = _getWordsForType(_selectedType);
 
     for (int i = 0; i < count; i++) {
-      int sentenceLength = 8 + _random.nextInt(15);
-      List<String> sentenceWords = [];
+      final int sentenceLength = 8 + _random.nextInt(15);
+      final List<String> sentenceWords = [];
 
       for (int j = 0; j < sentenceLength; j++) {
         sentenceWords.add(words[_random.nextInt(words.length)]);
@@ -106,7 +90,7 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
 
   String _generateWords(int count) {
     final words = _getWordsForType(_selectedType);
-    List<String> result = [];
+    final List<String> result = [];
 
     for (int i = 0; i < count; i++) {
       result.add(words[_random.nextInt(words.length)]);
@@ -131,18 +115,7 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
   void _copyResult() {
     if (_resultController.text.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: _resultController.text));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.content_copy, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text('Texte copié dans le presse-papiers'),
-            ],
-          ),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      AppFeedback.copied(context, 'Texte copié dans le presse-papiers');
     }
   }
 
@@ -156,7 +129,7 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
       actions: [
         IconButton(
           onPressed: _copyResult,
-          icon: Icon(Icons.content_copy, color: colorScheme.primary),
+          icon: Icon(Icons.content_copy_rounded, color: colorScheme.primary),
           tooltip: 'Copier le texte',
         ),
       ],
@@ -164,50 +137,22 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
         physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const EditorialToolIntro(
               icon: Icons.text_snippet_rounded,
               title: 'Générer du texte',
               description: 'Lorem ipsum pour vos maquettes et prototypes.',
             ),
-
             const SizedBox(height: 16),
-
             _buildGenerationOptions(),
-
             const SizedBox(height: 16),
-
-            AnimatedBuilder(
-              animation: _generateAnimation,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: 1 + (_generateAnimation.value * 0.1),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _generateLorem,
-                      icon: Icon(Icons.auto_awesome, size: 20),
-                      label: const Text(
-                        'Générer le texte',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: colorScheme.primary,
-                        foregroundColor: colorScheme.onPrimary,
-                      ),
-                    ),
-                  ),
-                );
-              },
+            ExpressiveActionButton.iconLabel(
+              onPressed: _generateLorem,
+              icon: Icons.auto_awesome_rounded,
+              label: 'Générer le texte',
             ),
-
-            const SizedBox(height: 24),
-
-            // Résultat
+            const SizedBox(height: 16),
             _buildResultArea(),
           ],
         ),
@@ -216,60 +161,53 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
   }
 
   Widget _buildGenerationOptions() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-      ),
+    return ExpressiveCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Type de génération
           Text(
             'Type de génération',
             style: Theme.of(
               context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
-          SegmentedButton<GenerationType>(
-            segments: const [
-              ButtonSegment(
-                value: GenerationType.paragraphs,
-                icon: Icon(Icons.subject, size: 16),
-                label: Text('Paragraphes'),
-              ),
-              ButtonSegment(
-                value: GenerationType.sentences,
-                icon: Icon(Icons.format_align_left, size: 16),
-                label: Text('Phrases'),
-              ),
-              ButtonSegment(
-                value: GenerationType.words,
-                icon: Icon(Icons.text_fields, size: 16),
-                label: Text('Mots'),
-              ),
-            ],
-            selected: {_generationType},
-            onSelectionChanged: (newSelection) {
-              setState(() {
-                _generationType = newSelection.first;
-              });
-            },
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<GenerationType>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(
+                  value: GenerationType.paragraphs,
+                  icon: Icon(Icons.subject_rounded, size: 16),
+                  label: Text('Paragraphes'),
+                ),
+                ButtonSegment(
+                  value: GenerationType.sentences,
+                  icon: Icon(Icons.format_align_left_rounded, size: 16),
+                  label: Text('Phrases'),
+                ),
+                ButtonSegment(
+                  value: GenerationType.words,
+                  icon: Icon(Icons.text_fields_rounded, size: 16),
+                  label: Text('Mots'),
+                ),
+              ],
+              selected: {_generationType},
+              onSelectionChanged: (newSelection) {
+                setState(() {
+                  _generationType = newSelection.first;
+                });
+                _generateLorem();
+              },
+            ),
           ),
-
-          const SizedBox(height: 24),
-
-          // Style de texte
+          const SizedBox(height: 20),
           Text(
             'Style de texte',
             style: Theme.of(
               context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -277,70 +215,29 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
             runSpacing: 8,
             children: LoremType.values.map((type) {
               final isSelected = _selectedType == type;
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedType = type;
-                  });
+              return ChoiceChip(
+                selected: isSelected,
+                avatar: Icon(_getIconForType(type), size: 16),
+                label: Text(_getNameForType(type)),
+                onSelected: (_) {
+                  setState(() => _selectedType = type);
+                  _generateLorem();
                 },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? colorScheme.primaryContainer
-                        : colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected
-                          ? colorScheme.primary
-                          : colorScheme.outline.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _getIconForType(type),
-                        size: 16,
-                        color: isSelected
-                            ? colorScheme.onPrimaryContainer
-                            : colorScheme.onSurface,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _getNameForType(type),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: isSelected
-                              ? colorScheme.onPrimaryContainer
-                              : colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               );
             }).toList(),
           ),
-
-          const SizedBox(height: 24),
-
-          // Quantité
+          const SizedBox(height: 20),
           Text(
             _generationType == GenerationType.paragraphs
-                ? 'Nombre de paragraphes: $_paragraphCount'
+                ? 'Nombre de paragraphes : $_paragraphCount'
                 : _generationType == GenerationType.sentences
-                ? 'Nombre de phrases: $_sentenceCount'
-                : 'Nombre de mots: ${_sentenceCount * 10}',
+                ? 'Nombre de phrases : $_sentenceCount'
+                : 'Nombre de mots : ${_sentenceCount * 10}',
             style: Theme.of(
               context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Slider(
             value: _generationType == GenerationType.paragraphs
                 ? _paragraphCount.toDouble()
@@ -356,6 +253,7 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
                   _sentenceCount = value.round();
                 }
               });
+              _generateLorem();
             },
           ),
         ],
@@ -366,55 +264,45 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
   Widget _buildResultArea() {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      width: double.infinity,
-      height: 300,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-      ),
+    return ExpressiveCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(Icons.text_snippet, color: colorScheme.primary, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Texte généré',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: _copyResult,
-                  icon: Icon(
-                    Icons.content_copy,
-                    size: 18,
-                    color: colorScheme.primary,
-                  ),
-                  tooltip: 'Copier',
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: _resultController,
-              maxLines: null,
-              readOnly: true,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(height: 1.6),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+          Row(
+            children: [
+              Icon(
+                Icons.text_snippet_rounded,
+                color: colorScheme.primary,
+                size: 20,
               ),
-            ),
+              const SizedBox(width: 8),
+              Text(
+                'Texte généré',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: _copyResult,
+                icon: Icon(
+                  Icons.content_copy_rounded,
+                  size: 18,
+                  color: colorScheme.primary,
+                ),
+                tooltip: 'Copier',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _resultController,
+            minLines: 8,
+            maxLines: 14,
+            readOnly: true,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(height: 1.6),
           ),
         ],
       ),
@@ -424,13 +312,13 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen>
   IconData _getIconForType(LoremType type) {
     switch (type) {
       case LoremType.classic:
-        return Icons.history_edu;
+        return Icons.history_edu_rounded;
       case LoremType.hipster:
-        return Icons.coffee;
+        return Icons.coffee_rounded;
       case LoremType.tech:
-        return Icons.computer;
+        return Icons.computer_rounded;
       case LoremType.french:
-        return Icons.language;
+        return Icons.language_rounded;
     }
   }
 
@@ -452,7 +340,6 @@ enum LoremType { classic, hipster, tech, french }
 
 enum GenerationType { paragraphs, sentences, words }
 
-// Dictionnaires de mots
 const List<String> _classicLoremWords = [
   'lorem',
   'ipsum',
@@ -596,7 +483,7 @@ const List<String> _frenchWords = [
   'bonjour',
   'monde',
   'français',
-  'language',
+  'langage',
   'texte',
   'exemple',
   'contenu',

@@ -5,6 +5,83 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-05
+
+### Ajouté
+
+- **Refonte Material 3 Expressive (M3E)** :
+  - Échelle de formes M3E étendue (`extraSmall: 6` jusqu’à `extraExtraLarge: 36`),
+    composants pilules (`StadiumBorder`) et cartes « Hero » à coins asymétriques
+    (`ExpressiveShapes.asymmetricHero`).
+  - Palettes tonales dynamiques basées sur `DynamicSchemeVariant.expressive`
+    pour le thème global et pour chaque carte d’outil (`ExpressiveToolCard`,
+    `EditorialToolIntro`).
+  - Service de retour visuel et haptique unifié (`AppFeedback.show` /
+    `AppFeedback.copied`) remplaçant les `Fluttertoast` et `SnackBar` disparates.
+- **Accueil – section « Souvent utilisés »** : affichage automatique des outils
+  les plus consultés en haut du tableau de bord via `UsageStatsService.getMostUsedTools()`,
+  avec rafraîchissement au retour de navigation.
+- **Services métier découplés et testables** :
+  - `FileConversionService` : conversions JSON ↔ YAML, CSV ↔ JSON (parseur
+    conforme RFC 4180 gérant les virgules entre guillemets et les guillemets
+    doublés `""`) et Markdown ↔ HTML, accompagné de sa suite de tests unitaires.
+  - `NetworkDiagnosticService` : extraction des tests de ping, détection
+    IPv4/IPv6, géolocalisation/FAI multi-API et mesure de débit.
+- **Niveau à bulle 2D + 1D avec calibration** : lecture en direct des angles
+  **Roll (X)** et **Pitch (Y)** en degrés (`0.0°`), cible 2D centrale + jauges
+  tubulaires X/Y, bouton de tare **Calibrer 0°** sur surface inclinée et retour
+  haptique à l’équilibre.
+- **Minuteur & Chronomètre enrichis** : sélecteur de durée personnalisée
+  (heures, minutes, secondes), boutons rapides `+30 s` et `+1 min` en cours de
+  décompte, et formatage `HH:MM:SS`.
+
+### Modifié
+
+- **Boussole** : suppression de la fausse calibration temporisée (`Future.delayed`)
+  au profit de la précision matérielle réelle `CompassEvent.accuracy`, avec
+  feuille modale d’aide au calibrage en 8.
+- **Minuteur** : basculer entre les onglets *Minuteur* et *Chronomètre* ne
+  réinitialise plus le décompte ou le chronomètre actif.
+- **Bloc-notes** : remplacement du `SnackBar` d’enregistrement automatique
+  toutes les 2 secondes par un indicateur discret `StatusBadge` intégré à
+  l’éditeur (*« En cours… »* / *« Sauvegardé »*).
+- **Accueil** : pré-calcul des index d’outils (`_toolIndices`) pour supprimer
+  les recherches `indexOf` répétées lors du défilement de la grille.
+- **Feature flags** : respect strict de `AppFeatureFlags.quickActions`,
+  `AppFeatureFlags.youtubeDownloader` et `AppFeatureFlags.pdfExport` dans
+  `main.dart`, `QuickActionsService`, `QrCodeScreen` et `FileConverterScreen`.
+- **Harmonisation M3 Expressive** : refonte des écrans `PasswordGeneratorScreen`,
+  `HashCalculatorScreen`, `ColorPickerScreen`, `LoremGeneratorScreen`,
+  `NumberConverterScreen`, `TextEncoderScreen`, `QrCodeScreen`,
+  `FileConverterScreen`, `ConnectionTesterScreen`, `SettingsScreen` et des
+  outils `essentials/*`, avec calibrage des proportions (hauteurs de grilles,
+  boutons pilules, typographie Fraunces et cadrans circulaires) pour les écrans
+  mobiles.
+- **Splash screen natif** : réduction et centrage du logo (54 %) et du bandeau
+  de marque (72 %) sur l’ensemble des densités Android (dont le masque
+  circulaire Android 12+) et iOS pour éviter tout rognage.
+- **SDK, Kotlin 2.3.20 (Built-in Kotlin) & Dépendances** : migration vers
+  **Flutter 3.47.9 / Dart 3.13.7**, **Kotlin 2.3.20** et **Built-in Kotlin**
+  (suppression du plugin KGP obsolète sur `:app`), mise à jour de l’ensemble des
+  paquets vers leurs dernières versions compatibles (`file_picker 13.3.2`,
+  `connectivity_plus 7.3.2`, `image 4.12.0`, `archive 4.6.0`,
+  `dynamic_color 1.9.0`, `mobile_scanner 7.5.0`,
+  `ffmpeg_kit_flutter_new 4.6.8`, `flutter_local_notifications 22.3.3`,
+  `permission_handler 13.0.2`, `sensors_plus 7.1.1`, `shared_preferences 2.5.6`,
+  `pasteboard 0.6.0`, `url_launcher 6.3.3`, `http 1.6.0`, `crypto 3.0.8`,
+  `yaml 3.1.4`, `quick_actions 1.1.1`) et suppression définitive de
+  `fluttertoast`.
+
+### Corrigé
+
+- **Encodeur Hexadécimal UTF-8** : utilisation de `utf8.encode` / `utf8.decode`
+  au lieu de `codeUnits` pour supporter les caractères accentués et les emojis
+  sans corruption.
+- **Sélecteur de couleurs** : correction des valeurs `rgb()` / `rgba()` avec
+  l’API `Color.r/g/b` normalisée (`0.0–1.0` converti en `0–255`).
+- **Performance de rendu** : suppression de l’appel `SystemChrome.setSystemUIOverlayStyle`
+  exécuté à chaque `build()` de `MyApp`.
+
 ## [0.4.0] - 2026-08-08
 
 ### Ajouté

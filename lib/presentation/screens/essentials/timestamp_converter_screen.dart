@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
 import 'package:toolbox_everything_mobile/core/services/timestamp_service.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
-import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 
 class TimestampConverterScreen extends StatefulWidget {
   final String heroTag;
@@ -72,7 +72,8 @@ class _TimestampConverterScreenState extends State<TimestampConverterScreen> {
 
   Future<void> _copy(String text, [String label = 'Copié']) async {
     await Clipboard.setData(ClipboardData(text: text));
-    Fluttertoast.showToast(msg: label);
+    if (!mounted) return;
+    AppFeedback.copied(context, label);
   }
 
   @override
@@ -142,6 +143,7 @@ class _TimestampConverterScreenState extends State<TimestampConverterScreen> {
                     ),
                     const Spacer(),
                     SegmentedButton<bool>(
+                      showSelectedIcon: false,
                       segments: const [
                         ButtonSegment(value: false, label: Text('s')),
                         ButtonSegment(value: true, label: Text('ms')),

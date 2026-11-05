@@ -3,8 +3,10 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
+import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -78,10 +80,10 @@ class SettingsScreen extends StatelessWidget {
                           'Revient au thème auto et à l’accent par défaut.',
                       onTap: () {
                         themeProvider.resetAppearance();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Apparence réinitialisée'),
-                          ),
+                        AppFeedback.show(
+                          context,
+                          'Apparence réinitialisée',
+                          icon: Icons.restart_alt_rounded,
                         );
                       },
                     ),
@@ -233,10 +235,12 @@ class _SettingsPanel extends StatelessWidget {
           ),
         ),
         Material(
-          color: scheme.surface,
+          color: scheme.surfaceContainerLow,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: BorderSide(color: scheme.outline),
+            borderRadius: ExpressiveShapes.all(ExpressiveShapes.largeIncreased),
+            side: BorderSide(
+              color: scheme.outlineVariant.withValues(alpha: 0.55),
+            ),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(children: children),
@@ -319,7 +323,7 @@ class _AccentPanel extends StatelessWidget {
         : ColorScheme.fromSeed(
             seedColor: sourceColor,
             brightness: scheme.brightness,
-            dynamicSchemeVariant: DynamicSchemeVariant.expressive,
+            dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
           ).primary;
 
     return _SettingsPanel(
@@ -378,7 +382,7 @@ class _AccentPanel extends StatelessWidget {
                       appliedColor: ColorScheme.fromSeed(
                         seedColor: color,
                         brightness: scheme.brightness,
-                        dynamicSchemeVariant: DynamicSchemeVariant.expressive,
+                        dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
                       ).primary,
                       selected: color.toARGB32() == sourceColor.toARGB32(),
                       onTap: () => themeProvider.setSeedColor(color),
@@ -406,7 +410,7 @@ class _AccentPanel extends StatelessWidget {
             final appliedDraftColor = ColorScheme.fromSeed(
               seedColor: draftColor,
               brightness: scheme.brightness,
-              dynamicSchemeVariant: DynamicSchemeVariant.expressive,
+              dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
             ).primary;
 
             return SafeArea(
