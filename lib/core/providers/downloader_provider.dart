@@ -163,11 +163,11 @@ class DownloaderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final videoId = VideoId.parseVideoId(url.trim());
-      if (videoId == null) throw 'URL YouTube invalide';
+      final videoId = YoutubeService.parseVideoId(url);
+      if (videoId == null) throw const FormatException('URL YouTube invalide');
 
-      _video = await YoutubeService.getVideo(_yt, VideoId(videoId));
-      final manifest = await YoutubeService.getManifest(_yt, VideoId(videoId));
+      _video = await YoutubeService.getVideo(_yt, videoId);
+      final manifest = await YoutubeService.getManifest(_yt, videoId);
 
       _muxedStreams = manifest.muxed.sortByVideoQuality();
       _audioStreams = manifest.audioOnly.sortByBitrate();

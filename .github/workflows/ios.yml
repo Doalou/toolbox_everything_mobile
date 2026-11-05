@@ -27,5 +27,18 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Configure Xcode for iOS 26 / Xcode 16 compatibility
+        run: |
+          XCODE_26=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1 || true)
+          if [ -n "$XCODE_26" ]; then
+            echo "Selecting $XCODE_26"
+            sudo xcode-select -s "$XCODE_26/Contents/Developer"
+          else
+            # Xcode 16 SDK does not define NWPath.isUltraConstrained (added in iOS 26 SDK)
+            find "${PUB_CACHE:-$HOME/.pub-cache}" -name "PathMonitorConnectivityProvider.swift" \
+              -exec sed -i '' 's/if #available(iOS 26.0, \*), path.isUltraConstrained/if false/g' {} + || true
+          fi
+          xcodebuild -version
+
       - name: Build iOS simulator
         run: flutter build ios --simulator --debug

@@ -40,5 +40,40 @@ void main() {
       expect(message, 'Impossible de récupérer cette vidéo pour le moment.');
       expect(message, isNot(contains('secret details')));
     });
+
+    test('signale clairement une URL invalide', () {
+      final message = YoutubeService.userMessage(
+        const FormatException('URL YouTube invalide'),
+      );
+
+      expect(message, contains('Lien YouTube invalide'));
+    });
+  });
+
+  group('YoutubeService.parseVideoId', () {
+    test(
+      'extrait un identifiant depuis une URL standard, courte ou Shorts',
+      () {
+        expect(
+          YoutubeService.parseVideoId(
+            'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          )?.value,
+          'dQw4w9WgXcQ',
+        );
+        expect(
+          YoutubeService.parseVideoId(
+            'Regarde ça : https://youtu.be/jNQXAC9IVRw?si=abc123',
+          )?.value,
+          'jNQXAC9IVRw',
+        );
+        expect(
+          YoutubeService.parseVideoId(
+            'https://youtube.com/shorts/aqz-KE-bpKQ?feature=share',
+          )?.value,
+          'aqz-KE-bpKQ',
+        );
+        expect(YoutubeService.parseVideoId('pas un lien'), isNull);
+      },
+    );
   });
 }
