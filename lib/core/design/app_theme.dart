@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 
@@ -129,12 +129,12 @@ ThemeData buildExpressiveTheme({
       ),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      elevation: 2,
-      focusElevation: 3,
-      hoverElevation: 3,
-      highlightElevation: 4,
+      elevation: 1,
+      focusElevation: 2,
+      hoverElevation: 2,
+      highlightElevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ExpressiveShapes.largeIncreased),
+        borderRadius: BorderRadius.circular(ExpressiveShapes.extraLarge),
       ),
       backgroundColor: expressiveScheme.primaryContainer,
       foregroundColor: expressiveScheme.onPrimaryContainer,
@@ -144,11 +144,21 @@ ThemeData buildExpressiveTheme({
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        iconSize: const WidgetStatePropertyAll(17),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        ),
         minimumSize: const WidgetStatePropertyAll(Size(44, 40)),
         shape: const WidgetStatePropertyAll(StadiumBorder()),
-        side: WidgetStatePropertyAll(
-          BorderSide(color: expressiveScheme.outlineVariant),
-        ),
+        side: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return BorderSide(
+              color: expressiveScheme.secondary.withValues(alpha: 0.45),
+            );
+          }
+          return BorderSide(color: expressiveScheme.outlineVariant);
+        }),
         backgroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return expressiveScheme.secondaryContainer;
@@ -254,19 +264,35 @@ ThemeData buildExpressiveTheme({
       space: 20,
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(
+      // Flag officiel Flutter 3.x pour activer le rendu M3 Expressive gapped.
+      // ignore: deprecated_member_use
+      year2023: false,
       color: expressiveScheme.primary,
-      linearTrackColor: expressiveScheme.surfaceContainerHighest,
+      linearTrackColor: expressiveScheme.secondaryContainer,
+      circularTrackColor: expressiveScheme.secondaryContainer,
       linearMinHeight: 8,
+      stopIndicatorColor: expressiveScheme.primary,
+      stopIndicatorRadius: 3,
+      trackGap: 4,
+      circularTrackPadding: EdgeInsets.zero,
+      strokeCap: StrokeCap.round,
       borderRadius: BorderRadius.circular(999),
     ),
-    sliderTheme: SliderThemeData(
-      activeTrackColor: expressiveScheme.primary,
-      inactiveTrackColor: expressiveScheme.surfaceContainerHighest,
-      thumbColor: expressiveScheme.primary,
-      overlayColor: expressiveScheme.primary.withValues(alpha: 0.14),
-      trackHeight: 8,
+    sliderTheme: const SliderThemeData(
+      // Flag officiel Flutter 3.x pour le track 16dp et le thumb pilule M3E.
+      // ignore: deprecated_member_use
+      year2023: false,
     ),
     switchTheme: SwitchThemeData(
+      thumbIcon: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return Icon(Icons.check_rounded, color: expressiveScheme.primary);
+        }
+        return Icon(
+          Icons.close_rounded,
+          color: expressiveScheme.surfaceContainerHighest,
+        );
+      }),
       thumbColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return expressiveScheme.onPrimary;
@@ -282,13 +308,18 @@ ThemeData buildExpressiveTheme({
     ),
     tabBarTheme: TabBarThemeData(
       indicatorSize: TabBarIndicatorSize.tab,
-      dividerColor: expressiveScheme.outlineVariant.withValues(alpha: 0.4),
-      labelColor: expressiveScheme.primary,
+      dividerColor: Colors.transparent,
+      splashBorderRadius: BorderRadius.circular(999),
+      indicator: BoxDecoration(
+        color: expressiveScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      labelColor: expressiveScheme.onSecondaryContainer,
       unselectedLabelColor: expressiveScheme.onSurfaceVariant,
-      labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+      labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
       unselectedLabelStyle: const TextStyle(
         fontWeight: FontWeight.w600,
-        fontSize: 14,
+        fontSize: 13.5,
       ),
     ),
     pageTransitionsTheme: const PageTransitionsTheme(
@@ -299,17 +330,6 @@ ThemeData buildExpressiveTheme({
     ),
   );
 }
-
-/// Alias conservé pour la compatibilité des appels existants.
-ThemeData buildEditorialTheme({
-  required ColorScheme colorScheme,
-  required Brightness brightness,
-  bool amoled = false,
-}) => buildExpressiveTheme(
-  colorScheme: colorScheme,
-  brightness: brightness,
-  amoled: amoled,
-);
 
 TextTheme _expressiveTextTheme(ColorScheme scheme) {
   final ink = scheme.onSurface;

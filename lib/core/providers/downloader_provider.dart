@@ -291,8 +291,7 @@ class DownloaderProvider with ChangeNotifier {
 
       if (streamInfo is VideoOnlyStreamInfo && companionAudio == null) {
         _downloadActivity = DownloadActivityState.error;
-        _errorMessage =
-            "Cette vidéo ne propose pas de piste audio compatible pour la fusion. Choisissez un flux MP4 muxed ou un autre preset.";
+        _errorMessage = "Cette vidéo ne propose pas de piste audio compatible pour la fusion. Choisissez un flux MP4 muxed ou un autre preset.";
         notifyListeners();
         return;
       }
@@ -346,13 +345,6 @@ class DownloaderProvider with ChangeNotifier {
     if ((percent - _lastUiProgressEmittedValue) >= 0.01) return true; // +1%
     if (percent >= 0.999) return true; // flush at end
     return false;
-  }
-
-  Future<void> startMergedDownload({
-    required VideoOnlyStreamInfo video,
-    required AudioOnlyStreamInfo audio,
-  }) async {
-    await startDownload(video, preferredAudio: audio);
   }
 
   Future<void> startAudioMp3Conversion(AudioOnlyStreamInfo source) async {

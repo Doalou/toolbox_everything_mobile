@@ -1,18 +1,16 @@
 class Unit {
   final String name;
-  final double conversionFactor; // Factor to convert FROM the base unit
+  final String symbol;
 
-  Unit({required this.name, required this.conversionFactor});
+  /// Facteur multiplicatif vers l'unité de base de la catégorie.
+  final double conversionFactor;
+
+  Unit({required this.name, this.symbol = '', required this.conversionFactor});
 }
 
 class ConversionCategory {
   final String name;
   final List<Unit> units;
-  final String baseUnitName; // e.g., 'Meters' for Length
 
-  ConversionCategory({
-    required this.name,
-    required this.units,
-    required this.baseUnitName,
-  });
+  ConversionCategory({required this.name, required this.units});
 }

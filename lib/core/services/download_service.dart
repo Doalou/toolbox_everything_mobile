@@ -431,9 +431,8 @@ class DownloadService {
     final filename = path.substring(separatorIndex + 1, extensionIndex);
     final extension = path.substring(extensionIndex);
     var suffix = 1;
-    while (File(
-      '$directory$separator$filename ($suffix)$extension',
-    ).existsSync()) {
+    while (File('$directory$separator$filename ($suffix)$extension')
+        .existsSync()) {
       suffix++;
     }
     return '$directory$separator$filename ($suffix)$extension';

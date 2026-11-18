@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -253,10 +253,8 @@ class _AxisBar extends StatelessWidget {
             const Spacer(),
             Text(
               '${angleDeg >= 0 ? '+' : ''}${angleDeg.toStringAsFixed(1)}°',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontFamily: 'monospace',
-                color: accent,
-              ),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(fontFamily: 'monospace', color: accent),
             ),
           ],
         ),
@@ -333,17 +331,14 @@ class _AngleMetricCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: fg.withValues(alpha: 0.78),
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: fg.withValues(alpha: 0.78)),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontFamily: 'monospace',
-                    color: fg,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontFamily: 'monospace', color: fg),
                 ),
               ],
             ),

@@ -1,7 +1,8 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
@@ -85,9 +86,8 @@ class CompassScreenState extends State<CompassScreen> {
               const SizedBox(height: 14),
               Text(
                 'Si l’orientation semble imprécise, effectuez un mouvement en forme de 8 dans les airs avec votre téléphone pendant quelques secondes et éloignez-vous des coques magnétiques ou objets métalliques.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: scheme.onSurfaceVariant),
               ),
               const SizedBox(height: 18),
               SizedBox(
@@ -157,10 +157,9 @@ class CompassScreenState extends State<CompassScreen> {
   ) {
     final directionName = _getDirection(direction);
     final seed = _getDirectionSeed(direction);
-    final dirScheme = ColorScheme.fromSeed(
-      seedColor: seed,
-      brightness: colorScheme.brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+    final dirScheme = EditorialPalette.expressiveSeedScheme(
+      seed,
+      colorScheme.brightness,
     );
     final directionColor = dirScheme.primary;
     final needsCalibration = accuracy != null && accuracy > 25;
@@ -517,16 +516,14 @@ class CompassScreenState extends State<CompassScreen> {
               const SizedBox(height: 16),
               Text(
                 'Erreur de la boussole',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: colorScheme.onErrorContainer,
-                ),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(color: colorScheme.onErrorContainer),
               ),
               const SizedBox(height: 8),
               Text(
                 error,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onErrorContainer,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: colorScheme.onErrorContainer),
                 textAlign: TextAlign.center,
               ),
             ],

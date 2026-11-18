@@ -162,10 +162,8 @@ class YoutubeService {
     final clientType = (streamInfo.url.queryParameters['c'] ?? '')
         .toUpperCase();
     final userAgent = switch (clientType) {
-      'IOS' =>
-        'com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)',
-      'ANDROID_VR' =>
-        'com.google.android.apps.youtube.vr.oculus/1.56.21 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip',
+      'IOS' => 'com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)',
+      'ANDROID_VR' => 'com.google.android.apps.youtube.vr.oculus/1.56.21 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip',
       _ => 'com.google.android.youtube/20.10.38 (Linux; U; Android 11) gzip',
     };
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:toolbox_everything_mobile/core/services/haptics_service.dart';
 
 enum FeedbackTone { normal, success, warning, error }

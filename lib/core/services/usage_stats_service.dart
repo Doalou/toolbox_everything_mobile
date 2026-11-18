@@ -100,12 +100,6 @@ class UsageStatsService {
     return prefs.getStringList(_favoritesKey) ?? [];
   }
 
-  // Obtenir le nombre total d'utilisations
-  static Future<int> getTotalUsage({SharedPreferences? preferences}) async {
-    final stats = await getUsageStats(preferences: preferences);
-    return stats.values.fold<int>(0, (sum, count) => sum + count);
-  }
-
   // Réinitialiser les statistiques
   static Future<void> resetStats({SharedPreferences? preferences}) async {
     final prefs = await _preferences(preferences);

@@ -5,6 +5,69 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-18
+
+### Ajouté
+
+- **Intégration système & routeur de partage entrant** (`ShareIntentService`,
+  `ShareRouterSheet`, `MainActivity.kt`, `AppDelegate.swift`) : réception des
+  intentions `ACTION_SEND` / `PROCESS_TEXT`, ouverture de fichiers et gestion du
+  schéma d’URL `toolbox://` sur Android et iOS.
+- **Raccourcis dynamiques d’icône** (`QuickActionsService`) alignés
+  automatiquement sur les outils favoris.
+- **Bloc-notes multi-notes enrichi** (`NotesService`, `NoteItem`,
+  `SimpleMarkdownView`, `NotesScreen`) : épinglage, recherche, étiquettes,
+  checklists interactives, aperçu Markdown léger et exports `.txt`, `.md` et
+  PDF.
+- **Suite temporelle & alertes système** (`TimerScreen`, `NotificationService`) :
+  minuteur à presets personnalisables avec notification planifiée écran
+  verrouillé, chronomètre à tours persistés et Pomodoro configurable.
+- **Studio QR Code étendu** (`QrCodeScreen`, `QrHistoryService`) : modèles
+  Wi-Fi, vCard, e-mail et SMS, scan depuis la galerie et historique local.
+- **Empreintes & vérification de fichiers** (`HashService`,
+  `HashCalculatorScreen`) : calcul en flux MD5/SHA-1/SHA-256/SHA-512 sur texte
+  UTF-8, hexadécimal ou fichier, avec comparateur d’empreinte attendue.
+- **Convertisseurs enrichis** : 10 catégories avec inversion rapide et tableau
+  d’équivalences dans `ConversionService` / `UnitConverterScreen`, et saisie
+  directe ISO 8601 ou `JJ/MM/AAAA HH:mm[:ss]` en heure locale/UTC dans
+  `TimestampService` / `TimestampConverterScreen`.
+- **Sauvegarde & restauration JSON complète** (`BackupService`,
+  `SettingsScreen`) : export et import des notes, favoris, statistiques,
+  historique QR, presets et réglages avec fusion ou remplacement.
+
+### Modifié
+
+- **Material 3 Expressive & sobriété éditoriale** : passage à
+  `DynamicSchemeVariant.expressive`, indicateurs et curseurs M3E
+  (`year2023: false`), interrupteurs à icônes d’état, sélecteurs `TabBar`
+  pilule tonale, barre de transport animée du minuteur, morphing de rayons au
+  toucher, retrait des badges décoratifs redondants et suppression des widgets
+  inutilisés (`ErrorStateWidget`, `ExpressiveSection`).
+- **SDK, Kotlin `2.4.20` & Dépendances** : migration vers **Flutter `3.50.0`**,
+  **Dart `3.14.0`**, **Kotlin `2.4.20`** (AGP `9.3.1`, Gradle `9.5.0`) avec
+  alignement des workflows CI Android/iOS, adoption des paquets découplés
+  `material_ui ^1.11.1` et `cupertino_ui ^1.1.7` (avec pont transitoire
+  `MaterialUiCompatibilityBridge` et `LegacyMaterialScope` pour
+  `flutter_colorpicker`), et mise à jour des dépendances (`dynamic_color ^2.1.0`,
+  `flutter_local_notifications ^23.0.2`, `file_picker ^13.4.0`,
+  `path_provider ^2.1.6`, `provider ^6.1.5+1`, `timezone ^0.11.2`,
+  `pasteboard ^0.6.1`, `ffmpeg_kit_flutter_new ^4.7.2`, `archive ^4.7.1`).
+
+## [0.5.1] - 2026-11-05
+
+### Ajouté
+
+- **Android CI** : publication automatique de `app-release.apk` dans la GitHub
+  Release liée au tag lors des builds sur `master`.
+
+### Corrigé
+
+- **Téléchargeur YouTube** : chaînage des profils Innertube (`androidSdkless`,
+  `android`, `ios`, `androidVr`) et repli sur `oEmbed` dans `YoutubeService`.
+- **Build iOS & CI** : ajout de `ios/Podfile` (`IPHONEOS_DEPLOYMENT_TARGET = 15.5`,
+  préparation du framework `ffmpeg_kit_flutter_new`) et contournement Xcode 16 /
+  SDK iOS 26 sur le workflow iOS.
+
 ## [0.5.0] - 2026-11-05
 
 ### Ajouté

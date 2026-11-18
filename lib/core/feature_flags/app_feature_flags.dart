@@ -20,17 +20,6 @@ class AppFeatureFlags {
   /// Les politiques d'App Store/Play Store changent — vérifier avant publication.
   static const bool youtubeDownloader = true;
 
-  /// Permet le téléchargement de la **vidéo** (et donc la fusion audio/vidéo).
-  /// Dépend de FFmpeg.
-  static const bool youtubeVideoDownload = true;
-
-  // --- Conversion média -------------------------------------------------
-  /// Conversion vidéo locale via FFmpeg Kit (LGPL — vérifier les codecs).
-  static const bool ffmpegVideoConversion = true;
-
-  /// Conversion image locale (toujours dispo).
-  static const bool imageConversion = true;
-
   // --- Capteurs ---------------------------------------------------------
   /// Boussole (`flutter_compass`). iOS Simulator ne fournit pas de magnétomètre.
   static bool get compass => Platform.isAndroid || Platform.isIOS;

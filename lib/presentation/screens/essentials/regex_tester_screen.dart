@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/regex_service.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 
@@ -32,22 +33,25 @@ class _RegexTesterScreenState extends State<RegexTesterScreen> {
   }
 
   void _evaluate() {
-    setState(() {
-      _error = null;
-      _matches = const [];
-    });
-    if (_patternController.text.isEmpty) return;
-    try {
-      _matches = _service.findAll(
-        _patternController.text,
-        _inputController.text,
-        multiLine: _multiline,
-        caseSensitive: _caseSensitive,
-        dotAll: _dotAll,
-      );
-    } on FormatException catch (e) {
-      _error = e.message;
+    String? nextError;
+    List<RegexMatchInfo> nextMatches = const [];
+    if (_patternController.text.isNotEmpty) {
+      try {
+        nextMatches = _service.findAll(
+          _patternController.text,
+          _inputController.text,
+          multiLine: _multiline,
+          caseSensitive: _caseSensitive,
+          dotAll: _dotAll,
+        );
+      } on FormatException catch (e) {
+        nextError = e.message;
+      }
     }
+    setState(() {
+      _error = nextError;
+      _matches = nextMatches;
+    });
   }
 
   @override
@@ -59,6 +63,13 @@ class _RegexTesterScreenState extends State<RegexTesterScreen> {
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [
+          const EditorialToolIntro(
+            icon: Icons.manage_search_rounded,
+            title: 'Motifs & captures',
+            description:
+                'Testez vos expressions régulières et inspectez les résultats.',
+          ),
+          const SizedBox(height: ExpressiveTokens.spacingLg),
           ExpressiveCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,13 +163,9 @@ class _RegexTesterScreenState extends State<RegexTesterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        '${_matches.length} correspondance(s)',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
+                  Text(
+                    '${_matches.length} correspondance(s)',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
                   if (_matches.isEmpty)

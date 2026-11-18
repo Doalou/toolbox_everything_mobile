@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
@@ -13,8 +13,9 @@ enum EncodingType { base64, url, html, hex }
 
 class TextEncoderScreen extends StatefulWidget {
   final String heroTag;
+  final String? initialText;
 
-  const TextEncoderScreen({super.key, required this.heroTag});
+  const TextEncoderScreen({super.key, required this.heroTag, this.initialText});
 
   @override
   State<TextEncoderScreen> createState() => _TextEncoderScreenState();
@@ -25,6 +26,15 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
   final _outputController = TextEditingController();
   EncodingType _selectedType = EncodingType.base64;
   bool _isEncoding = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialText != null && widget.initialText!.isNotEmpty) {
+      _inputController.text = widget.initialText!;
+      _process();
+    }
+  }
 
   @override
   void dispose() {
@@ -262,9 +272,8 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
                   const SizedBox(height: 8),
                   Text(
                     _getDescription(),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: scheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -283,8 +292,7 @@ class _TextEncoderScreenState extends State<TextEncoderScreen> {
   };
 
   String _getDescription() => switch (_selectedType) {
-    EncodingType.base64 =>
-      'Base64 encode les octets UTF-8 en caractères ASCII sûrs pour le transfert.',
+    EncodingType.base64 => 'Base64 encode les octets UTF-8 en caractères ASCII sûrs pour le transfert.',
     EncodingType.url =>
       'URL encoding remplace les caractères réservés par des séquences %XX.',
     EncodingType.html =>
@@ -333,9 +341,8 @@ class _CardHeader extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         ?action,

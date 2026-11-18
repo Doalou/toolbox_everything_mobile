@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -29,8 +29,13 @@ enum ConversionType {
 
 class FileConverterScreen extends StatefulWidget {
   final String heroTag;
+  final String? initialFilePath;
 
-  const FileConverterScreen({super.key, required this.heroTag});
+  const FileConverterScreen({
+    super.key,
+    required this.heroTag,
+    this.initialFilePath,
+  });
 
   @override
   FileConverterScreenState createState() => FileConverterScreenState();
@@ -45,6 +50,47 @@ class FileConverterScreenState extends State<FileConverterScreen> {
   ConversionType _selectedConversion = ConversionType.jsonToYaml;
   bool _isConverting = false;
   String? _lastConvertedFile;
+
+  @override
+  void initState() {
+    super.initState();
+    final path = widget.initialFilePath?.trim();
+    if (path != null && path.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadFileFromPath(path);
+      });
+    }
+  }
+
+  Future<void> _loadFileFromPath(String path) async {
+    try {
+      final file = File(path);
+      if (!await file.exists()) return;
+      final content = await file.readAsString();
+      final name = path.split(RegExp(r'[/\\]')).lastWhere((s) => s.isNotEmpty);
+      final lower = name.toLowerCase();
+      var suggested = _selectedConversion;
+      if (lower.endsWith('.json')) {
+        suggested = ConversionType.jsonToYaml;
+      } else if (lower.endsWith('.yaml') || lower.endsWith('.yml')) {
+        suggested = ConversionType.yamlToJson;
+      } else if (lower.endsWith('.csv')) {
+        suggested = ConversionType.csvToJson;
+      } else if (lower.endsWith('.md')) {
+        suggested = ConversionType.markdownToHtml;
+      } else if (lower.endsWith('.html') || lower.endsWith('.htm')) {
+        suggested = ConversionType.htmlToMarkdown;
+      } else if (lower.endsWith('.txt') && AppFeatureFlags.pdfExport) {
+        suggested = ConversionType.textToPdf;
+      }
+      if (!mounted) return;
+      setState(() {
+        _inputController.text = content;
+        _lastConvertedFile = name;
+        _selectedConversion = suggested;
+      });
+    } catch (_) {}
+  }
 
   List<ConversionType> get _availableConversions => [
     ConversionType.jsonToYaml,
@@ -403,9 +449,8 @@ class FileConverterScreenState extends State<FileConverterScreen> {
             controller: _inputController,
             minLines: 7,
             maxLines: 14,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(fontFamily: 'monospace'),
             decoration: InputDecoration(
               hintText: _getInputHint(_selectedConversion),
             ),
@@ -450,10 +495,8 @@ class FileConverterScreenState extends State<FileConverterScreen> {
             ),
             child: SelectableText(
               _outputController.text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontFamily: 'monospace',
-                height: 1.45,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(fontFamily: 'monospace', height: 1.45),
             ),
           ),
         ],

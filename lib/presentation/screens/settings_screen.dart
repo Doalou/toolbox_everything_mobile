@@ -1,12 +1,23 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
+import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
 import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
+import 'package:toolbox_everything_mobile/core/services/backup_service.dart';
+import 'package:toolbox_everything_mobile/core/services/downloads_saver.dart';
+import 'package:toolbox_everything_mobile/core/services/quick_actions_service.dart';
+import 'package:toolbox_everything_mobile/core/services/usage_stats_service.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/legacy_material_scope.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -48,18 +59,16 @@ class SettingsScreen extends StatelessWidget {
                     _SwitchTile(
                       icon: Icons.tune_rounded,
                       title: 'Personnalisation avancée',
-                      subtitle:
-                          'Autorise un accent personnalisé ou les couleurs système.',
+                      subtitle: 'Autorise un accent personnalisé ou les couleurs système.',
                       value: themeProvider.advancedCustomization,
                       onChanged: themeProvider.setAdvancedCustomization,
                     ),
                     if (themeProvider.advancedCustomization) ...[
                       _SettingsDivider(),
                       _SwitchTile(
-                        icon: Icons.auto_awesome_rounded,
+                        icon: Icons.wallpaper_rounded,
                         title: 'Couleurs système',
-                        subtitle:
-                            'Utilise la palette Material You fournie par Android.',
+                        subtitle: 'Utilise la palette Material You fournie par Android.',
                         value: themeProvider.useDynamicColor,
                         onChanged: themeProvider.setUseDynamicColor,
                       ),
@@ -101,8 +110,7 @@ class SettingsScreen extends StatelessWidget {
                     _SwitchTile(
                       icon: Icons.screen_lock_rotation,
                       title: 'Niveau à bulle en portrait',
-                      subtitle:
-                          'Verrouille l’orientation pour stabiliser la lecture.',
+                      subtitle: 'Verrouille l’orientation pour stabiliser la lecture.',
                       value: settingsProvider.lockBubbleLevelPortrait,
                       onChanged: settingsProvider.setLockBubbleLevelPortrait,
                     ),
@@ -125,12 +133,178 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                _SettingsPanel(
+                  title: 'Données & sauvegarde',
+                  icon: Icons.save_outlined,
+                  children: [
+                    _ActionTile(
+                      icon: Icons.file_upload_outlined,
+                      title: 'Exporter une sauvegarde (.json)',
+                      subtitle:
+                          'Notes, favoris, historique QR, presets et réglages.',
+                      onTap: () => _exportBackup(context),
+                    ),
+                    _SettingsDivider(),
+                    _ActionTile(
+                      icon: Icons.file_download_outlined,
+                      title: 'Importer une sauvegarde (.json)',
+                      subtitle:
+                          'Restaurer ou fusionner depuis un fichier JSON.',
+                      onTap: () => _importBackup(
+                        context,
+                        themeProvider,
+                        settingsProvider,
+                      ),
+                    ),
+                    _SettingsDivider(),
+                    _ActionTile(
+                      icon: Icons.analytics_outlined,
+                      title: 'Réinitialiser les statistiques',
+                      subtitle: 'Efface les compteurs « Souvent utilisés » sans toucher aux favoris.',
+                      onTap: () => _resetStats(context),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _exportBackup(BuildContext context) async {
+    try {
+      const backupService = BackupService();
+      final jsonStr = await backupService.createBackupJson();
+      final dir = await getApplicationDocumentsDirectory();
+      final stamp = DateTime.now()
+          .toIso8601String()
+          .split('.')
+          .first
+          .replaceAll(':', '-');
+      final fileName = 'toolbox_backup_$stamp.json';
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsString(jsonStr);
+      final saved = await DownloadsSaver.saveFileToDownloads(
+        file.path,
+        displayName: fileName,
+        mimeType: 'application/json',
+      );
+      if (!context.mounted) return;
+      AppFeedback.show(
+        context,
+        'Sauvegarde exportée : $saved',
+        tone: FeedbackTone.success,
+        icon: Icons.download_done_rounded,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      AppFeedback.show(
+        context,
+        'Impossible d’exporter la sauvegarde : $e',
+        tone: FeedbackTone.error,
+      );
+    }
+  }
+
+  Future<void> _importBackup(
+    BuildContext context,
+    ThemeProvider themeProvider,
+    SettingsProvider settingsProvider,
+  ) async {
+    try {
+      final picked = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+      );
+      if (picked.isEmpty || picked.single.path == null || !context.mounted) {
+        return;
+      }
+      final path = picked.single.path!;
+
+      final rawJson = await File(path).readAsString();
+      if (!context.mounted) return;
+
+      final mode = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Importer la sauvegarde'),
+          content: const Text(
+            'Voulez-vous fusionner cette sauvegarde avec vos données actuelles ou tout remplacer ?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Remplacer tout'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Fusionner'),
+            ),
+          ],
+        ),
+      );
+      if (mode == null || !context.mounted) return;
+
+      const backupService = BackupService();
+      final summary = await backupService.restoreFromJson(rawJson, merge: mode);
+      await themeProvider.reloadFromPrefs();
+      settingsProvider.reloadFromPrefs();
+      unawaited(QuickActionsService.instance.refreshShortcuts());
+
+      if (!context.mounted) return;
+      AppFeedback.show(
+        context,
+        'Import réussi : ${summary.notesCount} note(s), '
+        '${summary.favoritesCount} favori(s), '
+        '${summary.qrHistoryCount} QR.',
+        tone: FeedbackTone.success,
+      );
+    } on FormatException catch (e) {
+      if (!context.mounted) return;
+      AppFeedback.show(context, e.message, tone: FeedbackTone.error);
+    } catch (e) {
+      if (!context.mounted) return;
+      AppFeedback.show(
+        context,
+        'Erreur d’importation : $e',
+        tone: FeedbackTone.error,
+      );
+    }
+  }
+
+  Future<void> _resetStats(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Réinitialiser les statistiques'),
+        content: const Text(
+          'Les compteurs d’outils les plus utilisés seront remis à zéro.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Réinitialiser'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await UsageStatsService.resetStats();
+    unawaited(QuickActionsService.instance.refreshShortcuts());
+    if (context.mounted) {
+      AppFeedback.show(context, 'Statistiques réinitialisées');
+    }
   }
 }
 
@@ -162,9 +336,12 @@ class _SettingsHeader extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: ShapeDecoration(
+                  decoration: BoxDecoration(
                     color: scheme.primaryContainer,
-                    shape: const StadiumBorder(),
+                    borderRadius: ExpressiveShapes.asymmetricHero(
+                      major: 16,
+                      minor: 8,
+                    ),
                   ),
                   child: Icon(
                     Icons.settings_rounded,
@@ -190,9 +367,8 @@ class _SettingsHeader extends StatelessWidget {
                         'Apparence et comportement de l’application',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: scheme.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -320,10 +496,9 @@ class _AccentPanel extends StatelessWidget {
     final sourceColor = themeProvider.seedColor;
     final appliedColor = themeProvider.useDynamicColor
         ? scheme.primary
-        : ColorScheme.fromSeed(
-            seedColor: sourceColor,
-            brightness: scheme.brightness,
-            dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+        : EditorialPalette.expressiveSeedScheme(
+            sourceColor,
+            scheme.brightness,
           ).primary;
 
     return _SettingsPanel(
@@ -379,10 +554,9 @@ class _AccentPanel extends StatelessWidget {
                   for (final color in AppConstants.expressiveColors)
                     _AccentSwatch(
                       sourceColor: color,
-                      appliedColor: ColorScheme.fromSeed(
-                        seedColor: color,
-                        brightness: scheme.brightness,
-                        dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+                      appliedColor: EditorialPalette.expressiveSeedScheme(
+                        color,
+                        scheme.brightness,
                       ).primary,
                       selected: color.toARGB32() == sourceColor.toARGB32(),
                       onTap: () => themeProvider.setSeedColor(color),
@@ -407,10 +581,9 @@ class _AccentPanel extends StatelessWidget {
 
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final appliedDraftColor = ColorScheme.fromSeed(
-              seedColor: draftColor,
-              brightness: scheme.brightness,
-              dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+            final appliedDraftColor = EditorialPalette.expressiveSeedScheme(
+              draftColor,
+              scheme.brightness,
             ).primary;
 
             return SafeArea(
@@ -449,22 +622,23 @@ class _AccentPanel extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       'Aperçu : la pastille principale montre l’accent appliqué, le petit point la couleur source.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: scheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 12),
-                    ColorPicker(
-                      pickerColor: draftColor,
-                      onColorChanged: (color) {
-                        setModalState(() => draftColor = color);
-                      },
-                      labelTypes: const [],
-                      pickerAreaHeightPercent: 0.55,
-                      displayThumbColor: true,
-                      portraitOnly: true,
-                      paletteType: PaletteType.hsl,
-                      enableAlpha: false,
+                    LegacyMaterialScope(
+                      child: ColorPicker(
+                        pickerColor: draftColor,
+                        onColorChanged: (color) {
+                          setModalState(() => draftColor = color);
+                        },
+                        labelTypes: const [],
+                        pickerAreaHeightPercent: 0.55,
+                        displayThumbColor: true,
+                        portraitOnly: true,
+                        paletteType: PaletteType.hsl,
+                        enableAlpha: false,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -486,9 +660,8 @@ class _AccentPanel extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         'Les couleurs dynamiques Android seront réactivables ici à tout moment.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: scheme.onSurfaceVariant),
                       ),
                     ],
                   ],
@@ -709,9 +882,8 @@ class _SettingsTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: scheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -731,9 +903,8 @@ class _SettingsDivider extends StatelessWidget {
     return Divider(
       height: 1,
       indent: 72,
-      color: Theme.of(
-        context,
-      ).colorScheme.outlineVariant.withValues(alpha: 0.45),
+      color: Theme.of(context).colorScheme.outlineVariant
+          .withValues(alpha: 0.45),
     );
   }
 }

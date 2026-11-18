@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
@@ -10,7 +10,12 @@ import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 
 class JsonFormatterScreen extends StatefulWidget {
   final String heroTag;
-  const JsonFormatterScreen({super.key, required this.heroTag});
+  final String? initialText;
+  const JsonFormatterScreen({
+    super.key,
+    required this.heroTag,
+    this.initialText,
+  });
 
   @override
   State<JsonFormatterScreen> createState() => _JsonFormatterScreenState();
@@ -24,30 +29,52 @@ class _JsonFormatterScreenState extends State<JsonFormatterScreen> {
   int _indent = 2;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialText != null && widget.initialText!.isNotEmpty) {
+      _input.text = widget.initialText!;
+      _applyFormat(notify: false);
+    }
+  }
+
+  @override
   void dispose() {
     _input.dispose();
     _output.dispose();
     super.dispose();
   }
 
-  void _format() {
-    setState(() {
-      _error = null;
-    });
+  void _applyFormat({bool notify = true}) {
+    String? nextError;
+    String nextOutput = '';
     try {
-      _output.text = _service.prettify(_input.text, indent: _indent);
+      nextOutput = _service.prettify(_input.text, indent: _indent);
     } on FormatException catch (e) {
-      setState(() => _error = e.message);
+      nextError = e.message;
+    }
+    if (notify) {
+      setState(() {
+        _error = nextError;
+        _output.text = nextOutput;
+      });
+    } else {
+      _error = nextError;
+      _output.text = nextOutput;
     }
   }
 
   void _minify() {
-    setState(() => _error = null);
+    String? nextError;
+    String nextOutput = '';
     try {
-      _output.text = _service.minify(_input.text);
+      nextOutput = _service.minify(_input.text);
     } on FormatException catch (e) {
-      setState(() => _error = e.message);
+      nextError = e.message;
     }
+    setState(() {
+      _error = nextError;
+      _output.text = nextOutput;
+    });
   }
 
   Future<void> _copy() async {
@@ -85,7 +112,7 @@ class _JsonFormatterScreenState extends State<JsonFormatterScreen> {
                   style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
                   decoration: const InputDecoration(
                     hintText:
-                        '{\n  "name": "Toolbox",\n  "version": "0.4.0"\n}',
+                        '{\n  "name": "Toolbox",\n  "version": "0.6.0"\n}',
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -115,7 +142,7 @@ class _JsonFormatterScreenState extends State<JsonFormatterScreen> {
                     ExpressiveActionButton.iconLabel(
                       icon: Icons.format_align_left_rounded,
                       label: 'Formater',
-                      onPressed: _format,
+                      onPressed: () => _applyFormat(),
                     ),
                     ExpressiveActionButton.iconLabel(
                       icon: Icons.compress_rounded,

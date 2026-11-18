@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +7,7 @@ import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/legacy_material_scope.dart';
 
 class ColorPickerScreen extends StatefulWidget {
   final String heroTag;
@@ -115,15 +116,17 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
                     color: colorScheme.primary,
                   ),
                   const SizedBox(height: 12),
-                  ColorPicker(
-                    pickerColor: _selectedColor,
-                    onColorChanged: (color) {
-                      setState(() => _selectedColor = color);
-                    },
-                    enableAlpha: true,
-                    hexInputBar: true,
-                    displayThumbColor: true,
-                    pickerAreaHeightPercent: 0.6,
+                  LegacyMaterialScope(
+                    child: ColorPicker(
+                      pickerColor: _selectedColor,
+                      onColorChanged: (color) {
+                        setState(() => _selectedColor = color);
+                      },
+                      enableAlpha: true,
+                      hexInputBar: true,
+                      displayThumbColor: true,
+                      pickerAreaHeightPercent: 0.6,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   FilledButton.icon(
@@ -264,9 +267,8 @@ class _ColorPickerScreenState extends State<ColorPickerScreen> {
           Expanded(
             child: Text(
               value,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(fontFamily: 'monospace'),
             ),
           ),
           IconButton(

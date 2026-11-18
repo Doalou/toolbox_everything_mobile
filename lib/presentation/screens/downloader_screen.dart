@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_action_button.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/providers/downloader_provider.dart';
@@ -10,22 +12,24 @@ import 'package:toolbox_everything_mobile/presentation/widgets/downloader_widget
 
 class DownloaderScreen extends StatelessWidget {
   final String heroTag;
+  final String? initialUrl;
 
-  const DownloaderScreen({super.key, required this.heroTag});
+  const DownloaderScreen({super.key, required this.heroTag, this.initialUrl});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => DownloaderProvider()..initialize(),
-      child: _DownloaderView(heroTag: heroTag),
+      child: _DownloaderView(heroTag: heroTag, initialUrl: initialUrl),
     );
   }
 }
 
 class _DownloaderView extends StatelessWidget {
   final String heroTag;
+  final String? initialUrl;
 
-  const _DownloaderView({required this.heroTag});
+  const _DownloaderView({required this.heroTag, this.initialUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +45,7 @@ class _DownloaderView extends StatelessWidget {
             slivers: [
               SliverToBoxAdapter(child: const _DownloaderHeader()),
               const SliverToBoxAdapter(child: SizedBox(height: 12)),
-              const SliverToBoxAdapter(child: UrlInputPanel()),
+              SliverToBoxAdapter(child: UrlInputPanel(initialUrl: initialUrl)),
               if (provider.hasDownloadStatus)
                 const SliverToBoxAdapter(
                   child: Padding(
@@ -105,7 +109,9 @@ class _DownloaderHeader extends StatelessWidget {
 }
 
 class UrlInputPanel extends StatefulWidget {
-  const UrlInputPanel({super.key});
+  final String? initialUrl;
+
+  const UrlInputPanel({super.key, this.initialUrl});
 
   @override
   State<UrlInputPanel> createState() => _UrlInputPanelState();
@@ -113,6 +119,18 @@ class UrlInputPanel extends StatefulWidget {
 
 class _UrlInputPanelState extends State<UrlInputPanel> {
   final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final preset = widget.initialUrl?.trim();
+    if (preset != null && preset.isNotEmpty) {
+      _controller.text = preset;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _fetch();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,74 +142,60 @@ class _UrlInputPanelState extends State<UrlInputPanel> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: DecoratedBox(
-        decoration: ShapeDecoration(
-          color: scheme.surfaceContainer,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ExpressiveShapes.large),
-            side: BorderSide(color: scheme.outlineVariant),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _controller,
-                enabled: !busy,
-                minLines: 1,
-                maxLines: 2,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: 'https://www.youtube.com/watch?v=...',
-                  prefixIcon: const Icon(Icons.link_rounded),
-                  filled: true,
-                  fillColor: scheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                  suffixIcon: IconButton(
-                    tooltip: 'Coller',
-                    icon: const Icon(Icons.content_paste_rounded),
-                    onPressed: busy ? null : _pasteAndFetch,
+      child: ExpressiveCard(
+        color: scheme.surfaceContainerLow,
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _controller,
+              enabled: !busy,
+              minLines: 1,
+              maxLines: 2,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: 'https://www.youtube.com/watch?v=...',
+                prefixIcon: const Icon(Icons.link_rounded),
+                filled: true,
+                fillColor: scheme.surfaceContainerHighest,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                suffixIcon: IconButton(
+                  tooltip: 'Coller',
+                  icon: const Icon(Icons.content_paste_rounded),
+                  onPressed: busy ? null : _pasteAndFetch,
+                ),
+              ),
+              onSubmitted: busy ? null : (_) => _fetch(),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ExpressiveActionButton.iconLabel(
+                    onPressed: busy ? null : _fetch,
+                    loading: provider.isFetching,
+                    icon: Icons.travel_explore_rounded,
+                    label: provider.isFetching ? 'Analyse...' : 'Analyser',
                   ),
                 ),
-                onSubmitted: busy ? null : (_) => _fetch(),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: busy ? null : _fetch,
-                      icon: provider.isFetching
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.travel_explore_rounded),
-                      label: Text(
-                        provider.isFetching ? 'Analyse...' : 'Analyser',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.outlined(
-                    tooltip: 'Effacer',
-                    onPressed: busy
-                        ? null
-                        : () {
-                            _controller.clear();
-                            context.read<DownloaderProvider>().clear();
-                          },
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                const SizedBox(width: 8),
+                IconButton.outlined(
+                  tooltip: 'Effacer',
+                  onPressed: busy
+                      ? null
+                      : () {
+                          _controller.clear();
+                          context.read<DownloaderProvider>().clear();
+                        },
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -320,9 +324,8 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: ExpressiveTokens.spacing),
             Text(
               'Prêt à analyser',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsProvider with ChangeNotifier {
@@ -40,11 +40,12 @@ class SettingsProvider with ChangeNotifier {
     await _prefs.setBool(_keyHaptics, value);
   }
 
+  void reloadFromPrefs() => _loadPrefs();
+
   void _loadPrefs() {
-    _lockBubbleLevelPortrait =
-        _prefs.getBool(_keyLockBubblePortrait) ?? _lockBubbleLevelPortrait;
-    _lowResourceMode = _prefs.getBool(_keyLowResourceMode) ?? _lowResourceMode;
-    _hapticsEnabled = _prefs.getBool(_keyHaptics) ?? _hapticsEnabled;
+    _lockBubbleLevelPortrait = _prefs.getBool(_keyLockBubblePortrait) ?? true;
+    _lowResourceMode = _prefs.getBool(_keyLowResourceMode) ?? false;
+    _hapticsEnabled = _prefs.getBool(_keyHaptics) ?? true;
     notifyListeners();
   }
 }

@@ -1,16 +1,19 @@
 import 'dart:async';
 
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/painting.dart' as painting;
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
 import 'package:toolbox_everything_mobile/core/feature_flags/app_feature_flags.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/core/providers/theme_provider.dart';
 import 'package:toolbox_everything_mobile/core/services/quick_actions_service.dart';
+import 'package:toolbox_everything_mobile/core/services/share_intent_service.dart';
 import 'package:toolbox_everything_mobile/presentation/screens/home_screen.dart';
 
 // Builder de transition de page personnalisé pour une animation de fondu et de glissement
@@ -105,15 +108,23 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _initializeDeferredServices() async {
-    if (!AppFeatureFlags.quickActions) return;
     await Future<void>.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
 
+    if (AppFeatureFlags.quickActions) {
+      try {
+        await QuickActionsService.instance.initialize();
+        QuickActionsService.instance.processPendingAction();
+      } catch (_) {
+        // Les raccourcis ne doivent pas bloquer l'ouverture de l'app.
+      }
+    }
+
     try {
-      await QuickActionsService.instance.initialize();
-      QuickActionsService.instance.processPendingAction();
+      await ShareIntentService.instance.initialize();
+      ShareIntentService.instance.processPendingShare();
     } catch (_) {
-      // Les raccourcis ne doivent pas bloquer l'ouverture de l'app.
+      // Le partage entrant ne doit pas bloquer l'ouverture de l'app.
     }
   }
 
@@ -143,12 +154,16 @@ class _MyAppState extends State<MyApp> {
                     builders: {
                       TargetPlatform.android:
                           FadeUpwardsPageTransitionsBuilder(),
+                      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
                     },
                   )
                 : const PageTransitionsTheme(
                     builders: {
                       TargetPlatform.android:
                           PredictiveBackPageTransitionsBuilder(),
+                      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
                     },
                   );
 
@@ -166,8 +181,13 @@ class _MyAppState extends State<MyApp> {
               themeAnimationDuration: lowResource
                   ? Duration.zero
                   : EditorialTokens.duration,
-              themeAnimationCurve: Curves.easeOut,
+              themeAnimationCurve: ExpressiveMotion.spatialMorph,
               scrollBehavior: const NoGlowScrollBehavior(),
+              builder: (context, child) {
+                // Pont transitoire tant que flutter_colorpicker importe flutter/material.dart.
+                // ignore: deprecated_member_use
+                return MaterialUiCompatibilityBridge(child: child!);
+              },
               home: const HomeScreen(),
             );
           },

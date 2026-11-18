@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 
@@ -23,10 +24,9 @@ class EditorialToolIntro extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final resolvedAccent = accent ?? scheme.primary;
-    final accentScheme = ColorScheme.fromSeed(
-      seedColor: resolvedAccent,
-      brightness: scheme.brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+    final accentScheme = EditorialPalette.expressiveSeedScheme(
+      resolvedAccent,
+      scheme.brightness,
     );
 
     return ExpressiveCard.hero(
@@ -38,11 +38,14 @@ class EditorialToolIntro extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: accentScheme.primary.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(ExpressiveShapes.medium),
+              color: accentScheme.primary.withValues(alpha: 0.18),
+              borderRadius: ExpressiveShapes.asymmetricHero(
+                major: 15,
+                minor: 8,
+              ),
             ),
             child: Icon(icon, color: accentScheme.primary, size: 20),
           ),

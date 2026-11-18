@@ -53,5 +53,33 @@
 		<string>Cette application a besoin d'accéder à la caméra pour scanner les QR codes.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>com.toolbox.everything.mobile</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>toolbox</string>
+				</array>
+			</dict>
+		</array>
+		<key>CFBundleDocumentTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeName</key>
+				<string>Shared Item</string>
+				<key>LSHandlerRank</key>
+				<string>Alternate</string>
+				<key>LSItemContentTypes</key>
+				<array>
+					<string>public.item</string>
+					<string>public.content</string>
+					<string>public.data</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>

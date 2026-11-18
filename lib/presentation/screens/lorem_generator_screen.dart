@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
@@ -149,7 +149,7 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen> {
             const SizedBox(height: 16),
             ExpressiveActionButton.iconLabel(
               onPressed: _generateLorem,
-              icon: Icons.auto_awesome_rounded,
+              icon: Icons.refresh_rounded,
               label: 'Générer le texte',
             ),
             const SizedBox(height: 16),
@@ -167,9 +167,8 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen> {
         children: [
           Text(
             'Type de génération',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -205,9 +204,8 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen> {
           const SizedBox(height: 20),
           Text(
             'Style de texte',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -233,9 +231,8 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen> {
                 : _generationType == GenerationType.sentences
                 ? 'Nombre de phrases : $_sentenceCount'
                 : 'Nombre de mots : ${_sentenceCount * 10}',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Slider(
@@ -278,9 +275,8 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen> {
               const SizedBox(width: 8),
               Text(
                 'Texte généré',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
               const Spacer(),
               IconButton(
@@ -300,9 +296,8 @@ class _LoremGeneratorScreenState extends State<LoremGeneratorScreen> {
             minLines: 8,
             maxLines: 14,
             readOnly: true,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(height: 1.6),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(height: 1.6),
           ),
         ],
       ),

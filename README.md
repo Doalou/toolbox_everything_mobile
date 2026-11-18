@@ -2,8 +2,8 @@
 
 [![Android CI](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/android.yml/badge.svg)](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/android.yml)
 [![iOS CI](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/ios.yml/badge.svg)](https://github.com/Doalou/toolbox_everything_mobile/actions/workflows/ios.yml)
-![Flutter](https://img.shields.io/badge/Flutter-3.47.9-02569B?logo=flutter)
-![Version](https://img.shields.io/badge/version-0.5.1-2544D8)
+![Flutter](https://img.shields.io/badge/Flutter-3.50.0-02569B?logo=flutter)
+![Version](https://img.shields.io/badge/version-0.6.0-2544D8)
 
 La boîte à outils locale pour Android et iOS : générer, convertir, inspecter et
 mesurer sans compte ni backend.
@@ -12,7 +12,7 @@ La majorité des fonctions travaillent directement sur l’appareil. Seuls le
 téléchargeur et le diagnostic réseau contactent des services externes.
 
 <p align="center">
-  <img src="docs/screenshots/home-android.png" width="31%" alt="Accueil de Toolbox Everything Mobile 0.5.1">
+  <img src="docs/screenshots/home-android.png" width="31%" alt="Accueil de Toolbox Everything Mobile">
   <img src="docs/screenshots/downloader-formats-android.png" width="31%" alt="Formats audio et vidéo proposés par le téléchargeur">
   <img src="docs/screenshots/about-android.png" width="31%" alt="Écran À propos de Toolbox Everything Mobile">
 </p>
@@ -20,7 +20,9 @@ téléchargeur et le diagnostic réseau contactent des services externes.
 ## Points clés
 
 - **21 outils** réunis dans un catalogue recherchable et organisé par catégorie.
-- **Local-first** pour les générateurs, convertisseurs, notes et capteurs.
+- **Local-first** pour les générateurs, convertisseurs, notes Markdown/checklists et capteurs.
+- **Intégration système** : cible du menu *Partager* Android (`ACTION_SEND` / `PROCESS_TEXT`), ouverture de fichiers et schéma `toolbox://` sur Android/iOS, et raccourcis dynamiques d’icône alignés sur vos favoris.
+- **Sauvegarde & restauration JSON** complète (notes, favoris, statistiques, historique QR, presets et réglages) avec fusion ou remplacement.
 - Thèmes clair, sombre, système et AMOLED avec prise en charge de Material You (`dynamic_color`).
 - Design **Material 3 Expressive** associé à la typographie éditoriale **Fraunces**, aux formes asymétriques et aux couleurs distinctes par catégorie.
 - Retours unifiés dans l’application (`AppFeedback` via `SnackBar` Material 3).
@@ -30,12 +32,12 @@ téléchargeur et le diagnostic réseau contactent des services externes.
 
 | Catégorie | Outils | Réseau requis |
 |---|---|:---:|
-| Essentiels | Mots de passe, QR Code, hash, encodeur/décodeur, JSON, UUID, timestamp, JWT, regex, diff, Lorem Ipsum, couleurs | Non, sauf scan caméra |
-| Convertisseurs | Unités, binaire/hexadécimal/décimal/texte | Non |
+| Essentiels | Mots de passe, QR Code (Wi-Fi, vCard, e-mail, scan galerie & historique), hash (MD5/SHA-1/SHA-256/SHA-512 texte & fichier + vérificateur), encodeur/décodeur, JSON, UUID, timestamp (Epoch ↔ date), JWT, regex, diff, Lorem Ipsum, couleurs | Non, sauf scan caméra |
+| Convertisseurs | Unités (10 catégories & tableau d’équivalences), binaire/hexadécimal/décimal/texte | Non |
 | Capteurs | Boussole, niveau à bulle | Non |
 | Média | Conversion de fichiers, téléchargement audio/vidéo | Téléchargeur uniquement |
 | Réseau | Type de connexion, IPv4/IPv6 publiques, localisation FAI, latence HTTP et débit mesuré | Oui |
-| Productivité | Notes locales, minuteur et chronomètre | Non |
+| Productivité | Notes locales multiples (checklists, Markdown, tags, export `.md`/`.txt`/PDF), minuteur avec alertes système écran verrouillé, chronomètre à tours persistés et Pomodoro | Non |
 
 Les fonctions disponibles dans une release peuvent être contrôlées dans
 `lib/core/feature_flags/app_feature_flags.dart` afin de respecter les
@@ -55,8 +57,8 @@ font pas partie de ce dépôt.
 
 ### Prérequis
 
-- Flutter `3.47.9` stable et Dart `3.13.7` ;
-- Android Studio avec le SDK Android `37.0`, AGP `9.3.1`, Kotlin `2.3.20` (Built-in Kotlin), un JDK `21` et le NDK `28.2.13676358` ;
+- Flutter `3.50.0` stable et Dart `3.14.0` ;
+- Android Studio avec le SDK Android `37.0`, AGP `9.3.1`, Kotlin `2.4.20`, Gradle `9.5.0`, un JDK `21` et le NDK `28.2.13676358` ;
 - Xcode récent et CocoaPods pour iOS (`IPHONEOS_DEPLOYMENT_TARGET = 15.5`) ;
 - un émulateur ou un appareil physique.
 
@@ -83,12 +85,13 @@ flutter test
 flutter test --coverage
 ```
 
-La suite couvre les services purs (`FileConversionService`, `NetworkDiagnosticService`,
-`YoutubeService`, `DownloadService`), les migrations de préférences, le catalogue,
-le thème, les golden tests de l’accueil (`test/goldens/home_golden_test.dart`) et
-les parcours essentiels. Les vérifications natives caméra, capteurs,
-notifications, MediaStore et FFmpeg doivent également être exécutées sur
-appareil avant une release.
+La suite couvre les services purs (`BackupService`, `ConversionService`,
+`FileConversionService`, `HashService`, `NetworkDiagnosticService`, `NotesService`,
+`QrHistoryService`, `ShareIntentService`, `YoutubeService`, `DownloadService`),
+les migrations de préférences, le catalogue, le thème, les golden tests de
+l’accueil (`test/goldens/home_golden_test.dart`) et les parcours essentiels. Les
+vérifications natives caméra, capteurs, notifications, MediaStore et FFmpeg doivent
+également être exécutées sur appareil avant une release.
 
 ## Builds
 
@@ -142,7 +145,7 @@ L’interface combine **Material 3 Expressive** et l’identité éditoriale de
 
 - titres **Fraunces** (romain et italique accentué) ;
 - cartes héroïques à rayons asymétriques (`ExpressiveCard.hero`) ;
-- teintes chromatiques dédiées par catégorie et par outil (`tonalSpot` sans rotation de teinte artificielle) ;
+- palettes tonales expressives dédiées par catégorie et par outil (`DynamicSchemeVariant.expressive`) ;
 - écran d’accueil structuré avec couverture éditoriale, grille de catégories 2×3 compacte, raccourcis d’accès rapide et cartes d’outils épurées ;
 - shell commun pour tous les outils, avec largeur de lecture adaptée aux
   téléphones et tablettes, en-têtes compacts et actions cohérentes ;
@@ -186,8 +189,8 @@ conditions d’utilisation, licences et droits d’auteur applicables.
 Le téléchargeur repose sur les points d’accès Innertube utilisés par
 `youtube_explode_dart`, pas sur l’API YouTube Data officielle. YouTube peut
 modifier ses clients, ses limites et l’exigence de PO Tokens sans préavis : une
-vidéo peut donc devenir temporairement indisponible ou répondre HTTP 403. La
-version 0.5.1 chaîne automatiquement les profils `androidSdkless`, `android`,
+vidéo peut donc devenir temporairement indisponible ou répondre HTTP 403. Depuis
+la version 0.5.1, il chaîne automatiquement les profils `androidSdkless`, `android`,
 `ios` et `androidVr` (sans dépendre des cookies de la page web par défaut), avec
 repli sur `oEmbed` pour les métadonnées et téléchargement segmenté via l’en-tête
 HTTP `Range` et régénération d’URL signée lors des fusions audio/vidéo.

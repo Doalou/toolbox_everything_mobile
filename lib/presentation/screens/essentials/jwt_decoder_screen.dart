@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
@@ -12,7 +12,8 @@ import 'package:toolbox_everything_mobile/shared/widgets/status_badge.dart';
 
 class JwtDecoderScreen extends StatefulWidget {
   final String heroTag;
-  const JwtDecoderScreen({super.key, required this.heroTag});
+  final String? initialText;
+  const JwtDecoderScreen({super.key, required this.heroTag, this.initialText});
 
   @override
   State<JwtDecoderScreen> createState() => _JwtDecoderScreenState();
@@ -25,26 +26,45 @@ class _JwtDecoderScreenState extends State<JwtDecoderScreen> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialText != null && widget.initialText!.isNotEmpty) {
+      _input.text = widget.initialText!;
+      _decode(notify: false);
+    }
+  }
+
+  @override
   void dispose() {
     _input.dispose();
     super.dispose();
   }
 
-  void _decode() {
-    setState(() {
-      _error = null;
-      _decoded = null;
-    });
-    if (_input.text.trim().isEmpty) return;
-    try {
-      _decoded = _service.decode(_input.text.trim());
-    } catch (e) {
-      _error = e.toString();
+  void _decode({bool notify = true}) {
+    DecodedJwt? nextDecoded;
+    String? nextError;
+    final trimmed = _input.text.trim();
+    if (trimmed.isNotEmpty) {
+      try {
+        nextDecoded = _service.decode(trimmed);
+      } catch (e) {
+        nextError = e.toString();
+      }
+    }
+    if (notify) {
+      setState(() {
+        _decoded = nextDecoded;
+        _error = nextError;
+      });
+    } else {
+      _decoded = nextDecoded;
+      _error = nextError;
     }
   }
 
   Future<void> _paste() async {
-    final data = await Clipboard.getData('text/plain');
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
     if (data?.text != null) {
       _input.text = data!.text!;
       _decode();
@@ -71,7 +91,7 @@ class _JwtDecoderScreenState extends State<JwtDecoderScreen> {
             icon: Icons.vpn_key_rounded,
             title: 'Inspecter un token JWT',
             description:
-                'Décodez Header, Payload et date d’expiration hors-ligne.',
+                'Décodez Header, Payload et date d’expiration hors ligne.',
           ),
           const SizedBox(height: ExpressiveTokens.spacingLg),
           ExpressiveCard(
@@ -82,9 +102,8 @@ class _JwtDecoderScreenState extends State<JwtDecoderScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Lecture du contenu uniquement, sans vérification de signature.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: scheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 8),
                 TextField(

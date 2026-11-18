@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
@@ -252,9 +252,8 @@ class _NumberConverterScreenState extends State<NumberConverterScreen> {
               const SizedBox(width: 12),
               Text(
                 label,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
               const Spacer(),
               if (_controllers[key]!.text.isNotEmpty)
@@ -308,9 +307,8 @@ class _NumberConverterScreenState extends State<NumberConverterScreen> {
                   ),
                   child: Text(
                     _groupBinaryForDisplay(_controllers['binary']!.text),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(fontFamily: 'monospace'),
                   ),
                 ),
                 Container(
@@ -324,9 +322,8 @@ class _NumberConverterScreenState extends State<NumberConverterScreen> {
                   ),
                   child: Text(
                     '${_controllers['binary']!.text.length} bits',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSecondaryContainer,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall
+                        ?.copyWith(color: colorScheme.onSecondaryContainer),
                   ),
                 ),
               ],
@@ -357,9 +354,8 @@ class _NumberConverterScreenState extends State<NumberConverterScreen> {
               const SizedBox(width: 8),
               Text(
                 'Exemples rapides',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
             ],
           ),

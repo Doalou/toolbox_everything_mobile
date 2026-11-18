@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Shell commun pour les outils : barre native, titre Fraunces et surface
 /// éditoriale. Les écrans historiques peuvent migrer sans modifier leur body.

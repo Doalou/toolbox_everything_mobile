@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/diff_service.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_components.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/editorial_tool_scaffold.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/status_badge.dart';
 
 class TextDiffScreen extends StatefulWidget {
   final String heroTag;
@@ -41,6 +43,13 @@ class _TextDiffScreenState extends State<TextDiffScreen> {
       body: ListView(
         padding: const EdgeInsets.all(ExpressiveTokens.spacingLg),
         children: [
+          const EditorialToolIntro(
+            icon: Icons.compare_arrows_rounded,
+            title: 'Comparer deux textes',
+            description:
+                'Visualisez ligne par ligne les ajouts et suppressions.',
+          ),
+          const SizedBox(height: ExpressiveTokens.spacingLg),
           ExpressiveCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,16 +91,20 @@ class _TextDiffScreenState extends State<TextDiffScreen> {
                 children: [
                   Row(
                     children: [
-                      Text(
-                        'Différences',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const Spacer(),
-                      Text(
-                        '+${summary.added} / -${summary.removed}',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: scheme.onSurfaceVariant,
+                      Expanded(
+                        child: Text(
+                          'Différences',
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
+                      ),
+                      StatusBadge(
+                        label: '+${summary.added}',
+                        tone: BadgeTone.success,
+                      ),
+                      const SizedBox(width: 6),
+                      StatusBadge(
+                        label: '-${summary.removed}',
+                        tone: BadgeTone.danger,
                       ),
                     ],
                   ),

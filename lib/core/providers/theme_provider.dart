@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toolbox_everything_mobile/core/design/app_theme.dart';
 import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
@@ -106,11 +106,18 @@ class ThemeProvider with ChangeNotifier {
     _hydrateFromPrefs();
   }
 
+  Future<void> reloadFromPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    _hydrateFromPrefs();
+  }
+
   void _hydrateFromPrefs() {
     _useDynamicColor = _prefs?.getBool(_prefUseDynamic) ?? false;
     _useAmoledBlack = _prefs?.getBool(_prefAmoled) ?? false;
     final storedSeed = _prefs?.getInt(_prefSeedColor);
-    if (storedSeed != null) _seedColor = Color(storedSeed);
+    _seedColor = storedSeed != null
+        ? Color(storedSeed)
+        : EditorialPalette.accentLight;
 
     final storedAdvanced = _prefs?.getBool(_prefAdvanced);
     _advancedCustomization =
@@ -165,7 +172,7 @@ class ThemeProvider with ChangeNotifier {
   ThemeData createThemeFromScheme(
     ColorScheme colorScheme,
     Brightness brightness,
-  ) => buildEditorialTheme(
+  ) => buildExpressiveTheme(
     colorScheme: colorScheme,
     brightness: brightness,
     amoled: _useAmoledBlack,

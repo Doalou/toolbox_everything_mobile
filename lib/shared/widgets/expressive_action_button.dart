@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
@@ -101,37 +101,55 @@ class _ExpressiveActionButtonState extends State<ExpressiveActionButton> {
       content = widget.child;
     }
 
-    final material = Material(
-      color: disabled ? bg.withValues(alpha: 0.45) : bg,
-      shape: ExpressiveShapes.pill,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: disabled ? null : _handleTap,
-        onHighlightChanged: lowResource
-            ? null
-            : (v) {
-                if (mounted) setState(() => _pressed = v);
-              },
-        splashColor: lowResource
-            ? Colors.transparent
-            : fg.withValues(alpha: 0.18),
-        highlightColor: lowResource
-            ? Colors.transparent
-            : fg.withValues(alpha: 0.10),
+    final inkChild = InkWell(
+      onTap: disabled ? null : _handleTap,
+      onHighlightChanged: lowResource
+          ? null
+          : (v) {
+              if (mounted) setState(() => _pressed = v);
+            },
+      splashColor: lowResource
+          ? Colors.transparent
+          : fg.withValues(alpha: 0.18),
+      highlightColor: lowResource
+          ? Colors.transparent
+          : fg.withValues(alpha: 0.10),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-          child: content,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Center(widthFactor: 1, child: content),
         ),
       ),
     );
 
-    if (lowResource) return material;
+    if (lowResource) {
+      return Material(
+        color: disabled ? bg.withValues(alpha: 0.45) : bg,
+        shape: ExpressiveShapes.morphButton(pressed: false),
+        clipBehavior: Clip.antiAlias,
+        child: inkChild,
+      );
+    }
 
     return AnimatedScale(
-      scale: _pressed ? 0.96 : 1.0,
+      scale: _pressed ? 0.97 : 1.0,
       duration: ExpressiveMotion.short4,
       curve: ExpressiveMotion.springStandard,
-      child: material,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(end: _pressed ? 14 : 28),
+        duration: ExpressiveMotion.short3,
+        curve: ExpressiveMotion.spatialMorph,
+        builder: (context, radius, child) => Material(
+          color: disabled ? bg.withValues(alpha: 0.45) : bg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: child,
+        ),
+        child: inkChild,
+      ),
     );
   }
 }

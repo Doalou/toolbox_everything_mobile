@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
@@ -58,47 +58,90 @@ class _ExpressiveCardState extends State<ExpressiveCard> {
     final lowResource = context.select<SettingsProvider, bool>(
       (s) => s.lowResourceMode,
     );
-    final shape =
-        widget.shape ??
-        RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            widget.dense
-                ? ExpressiveShapes.large
-                : ExpressiveShapes.largeIncreased,
-          ),
-          side: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 0.65),
-          ),
-        );
+    final side = BorderSide(
+      color: scheme.outlineVariant.withValues(alpha: 0.65),
+    );
+    ShapeBorder resolveStaticShape() {
+      final custom = widget.shape;
+      if (custom != null) {
+        if (custom is RoundedRectangleBorder &&
+            custom.side == BorderSide.none) {
+          return custom.copyWith(
+            side: BorderSide(
+              color: scheme.outlineVariant.withValues(alpha: 0.45),
+            ),
+          );
+        }
+        return custom;
+      }
+      return ExpressiveShapes.morphCard(
+        pressed: false,
+        dense: widget.dense,
+        side: side,
+      );
+    }
 
-    final material = Material(
-      color: widget.color ?? scheme.surface,
-      shape: shape,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: widget.onTap,
-        onHighlightChanged: lowResource || widget.onTap == null
-            ? null
-            : (v) {
-                if (mounted) setState(() => _pressed = v);
-              },
-        splashColor: lowResource
-            ? Colors.transparent
-            : scheme.primary.withValues(alpha: 0.10),
-        highlightColor: lowResource
-            ? Colors.transparent
-            : scheme.primary.withValues(alpha: 0.05),
-        child: Padding(padding: widget.padding, child: widget.child),
-      ),
+    final inkChild = InkWell(
+      onTap: widget.onTap,
+      onHighlightChanged: lowResource || widget.onTap == null
+          ? null
+          : (v) {
+              if (mounted) setState(() => _pressed = v);
+            },
+      splashColor: lowResource
+          ? Colors.transparent
+          : scheme.primary.withValues(alpha: 0.10),
+      highlightColor: lowResource
+          ? Colors.transparent
+          : scheme.primary.withValues(alpha: 0.05),
+      child: Padding(padding: widget.padding, child: widget.child),
     );
 
-    if (lowResource || widget.onTap == null) return material;
+    if (lowResource || widget.onTap == null) {
+      return Material(
+        color: widget.color ?? scheme.surface,
+        shape: resolveStaticShape(),
+        clipBehavior: Clip.antiAlias,
+        child: inkChild,
+      );
+    }
+
+    final Widget interactiveCard;
+    if (widget.shape == null) {
+      final restRadius = widget.dense
+          ? ExpressiveShapes.large
+          : ExpressiveShapes.largeIncreased;
+      interactiveCard = TweenAnimationBuilder<double>(
+        tween: Tween<double>(
+          end: _pressed ? ExpressiveShapes.medium : restRadius,
+        ),
+        duration: ExpressiveMotion.short3,
+        curve: ExpressiveMotion.spatialMorph,
+        builder: (context, radius, child) => Material(
+          color: widget.color ?? scheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radius),
+            side: side,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: child,
+        ),
+        child: inkChild,
+      );
+    } else {
+      interactiveCard = Material(
+        color: widget.color ?? scheme.surface,
+        shape: resolveStaticShape(),
+        clipBehavior: Clip.antiAlias,
+        child: inkChild,
+      );
+    }
 
     return AnimatedScale(
-      scale: _pressed ? 0.975 : 1.0,
+      scale: _pressed ? 0.98 : 1.0,
       duration: ExpressiveMotion.short4,
       curve: ExpressiveMotion.springStandard,
-      child: material,
+      child: interactiveCard,
     );
   }
 }

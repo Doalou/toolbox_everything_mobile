@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:open_file/open_file.dart';
 import 'package:provider/provider.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/providers/downloader_provider.dart';
 import 'package:toolbox_everything_mobile/core/services/downloads_saver.dart';
+import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 class VideoInfoCard extends StatelessWidget {
@@ -16,94 +15,85 @@ class VideoInfoCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final duration = video.duration;
 
-    return DecoratedBox(
-      decoration: ShapeDecoration(
-        color: scheme.surfaceContainer,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ExpressiveShapes.large),
-          side: BorderSide(color: scheme.outlineVariant),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Image.network(
-                video.thumbnails.mediumResUrl,
-                width: 116,
-                height: 82,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => ColoredBox(
+    return ExpressiveCard(
+      color: scheme.surfaceContainerLow,
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.network(
+              video.thumbnails.mediumResUrl,
+              width: 116,
+              height: 82,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => ColoredBox(
+                color: scheme.surfaceContainerHighest,
+                child: const SizedBox(
+                  width: 116,
+                  height: 82,
+                  child: Icon(Icons.broken_image_rounded),
+                ),
+              ),
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return ColoredBox(
                   color: scheme.surfaceContainerHighest,
                   child: const SizedBox(
                     width: 116,
                     height: 82,
-                    child: Icon(Icons.broken_image_rounded),
+                    child: Center(
+                      child: SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
                   ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  video.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return ColoredBox(
-                    color: scheme.surfaceContainerHighest,
-                    child: const SizedBox(
-                      width: 116,
-                      height: 82,
-                      child: Center(
-                        child: SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
+                const SizedBox(height: 6),
+                Text(
+                  video.author,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _MetaPill(
+                      icon: Icons.schedule_rounded,
+                      label: duration == null
+                          ? 'Durée inconnue'
+                          : _formatDuration(duration),
                     ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    video.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+                    const _MetaPill(
+                      icon: Icons.verified_rounded,
+                      label: 'Formats prêts',
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    video.author,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: scheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: [
-                      _MetaPill(
-                        icon: Icons.schedule_rounded,
-                        label: duration == null
-                            ? 'Durée inconnue'
-                            : _formatDuration(duration),
-                      ),
-                      const _MetaPill(
-                        icon: Icons.verified_rounded,
-                        label: 'Formats prêts',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -244,13 +234,13 @@ class _PresetButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
+    return FilledButton.tonalIcon(
       onPressed: onPressed,
       icon: Icon(icon, size: 18),
       label: Text(label, overflow: TextOverflow.ellipsis),
-      style: OutlinedButton.styleFrom(
+      style: FilledButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
@@ -305,9 +295,8 @@ class _OutputPreferences extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'Les flux vidéo seuls sont fusionnés avec la meilleure piste audio compatible.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -477,9 +466,8 @@ class _DownloadTile extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: scheme.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -545,11 +533,7 @@ class DownloadProgressIndicator extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
             builder: (context, value, _) {
-              return LinearProgressIndicator(
-                value: value,
-                borderRadius: BorderRadius.circular(8),
-                minHeight: 8,
-              );
+              return LinearProgressIndicator(value: value, minHeight: 8);
             },
           ),
           const SizedBox(height: 10),
@@ -560,9 +544,8 @@ class DownloadProgressIndicator extends StatelessWidget {
                   '${provider.downloadedMbText} / ${provider.totalMbText} • ${provider.speedText} • ${provider.etaText}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: scheme.onSurfaceVariant),
                 ),
               ),
               TextButton.icon(
@@ -609,9 +592,8 @@ class CompletedDownloadCard extends StatelessWidget {
           SelectableText(
             path,
             maxLines: 3,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 12),
           Align(
@@ -687,20 +669,9 @@ class _Panel extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return DecoratedBox(
-      decoration: ShapeDecoration(
-        color: color ?? scheme.surfaceContainer,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ExpressiveShapes.large),
-          side: BorderSide(
-            color: color == null ? scheme.outlineVariant : Colors.transparent,
-          ),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(ExpressiveTokens.spacing),
-        child: child,
-      ),
+    return ExpressiveCard(
+      color: color ?? scheme.surfaceContainerLow,
+      child: child,
     );
   }
 }
@@ -731,16 +702,14 @@ class _SectionTitle extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ],
           ),

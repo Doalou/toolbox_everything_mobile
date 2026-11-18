@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Échelle de formes Material 3 Expressive (M3E).
 /// Formes généreuses, coins asymétriques « Hero » et composants pilules.
 class ExpressiveShapes {
   ExpressiveShapes._();
 
-  // Rayons M3 Expressive (corner-shape scale étendue)
-  static const double none = 0;
+  // Rayons M3 Expressive
   static const double extraSmall = 6;
   static const double small = 10;
   static const double medium = 16;
@@ -14,14 +13,8 @@ class ExpressiveShapes {
   static const double largeIncreased = 24;
   static const double extraLarge = 28;
   static const double extraLargeIncreased = 32;
-  static const double extraExtraLarge = 36;
-  static const double full = 999;
 
-  // Formes expressives par défaut (cards, sheets, dialogs)
-  static const Radius radiusMedium = Radius.circular(medium);
-  static const Radius radiusLarge = Radius.circular(large);
   static const Radius radiusExtraLarge = Radius.circular(extraLarge);
-  static const Radius radiusFull = Radius.circular(full);
 
   static BorderRadius all(double r) => BorderRadius.circular(r);
 
@@ -41,13 +34,30 @@ class ExpressiveShapes {
     ),
   );
 
-  /// Carte standard expressive.
-  static RoundedRectangleBorder card({double radius = largeIncreased}) =>
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius));
-
   /// Carte hero (asymétrique M3E).
-  static RoundedRectangleBorder cardHero() =>
-      RoundedRectangleBorder(borderRadius: asymmetricHero());
+  static RoundedRectangleBorder cardHero({BorderSide side = BorderSide.none}) =>
+      RoundedRectangleBorder(borderRadius: asymmetricHero(), side: side);
+
+  /// Morphing bouton M3E (pilule 28dp -> squircle 14dp au toucher).
+  static RoundedRectangleBorder morphButton({
+    required bool pressed,
+    BorderSide side = BorderSide.none,
+  }) => RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(pressed ? 14 : 28),
+    side: side,
+  );
+
+  /// Morphing carte M3E au toucher.
+  static RoundedRectangleBorder morphCard({
+    required bool pressed,
+    bool dense = false,
+    BorderSide side = BorderSide.none,
+  }) => RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(
+      pressed ? medium : (dense ? large : largeIncreased),
+    ),
+    side: side,
+  );
 
   /// Dialog M3E (extra-large rounded).
   static const RoundedRectangleBorder dialog = RoundedRectangleBorder(

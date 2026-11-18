@@ -33,12 +33,14 @@ class DownloadsSaver {
           );
         }
       }
-      final String? saved = await _channel
-          .invokeMethod<String>('saveToDownloads', {
-            'sourcePath': sourcePath,
-            'displayName': displayName,
-            'mimeType': mimeType ?? _guessMimeType(displayName),
-          });
+      final String? saved = await _channel.invokeMethod<String>(
+        'saveToDownloads',
+        {
+          'sourcePath': sourcePath,
+          'displayName': displayName,
+          'mimeType': mimeType ?? _guessMimeType(displayName),
+        },
+      );
       if (deleteOriginal) {
         try {
           final file = File(sourcePath);
@@ -74,14 +76,8 @@ class DownloadsSaver {
           'uri': savedPathOrUri,
           'mimeType': mimeType ?? _guessMimeType(savedPathOrUri),
         });
-        return;
       } catch (_) {}
     }
-    // Fallback: utiliser open_file
-    try {
-      // importé dynamiquement par l'appelant si nécessaire
-      // Ici on ne dépend pas de open_file pour ne pas coupler ce service
-    } catch (_) {}
   }
 
   static String _guessMimeType(String fileName) {

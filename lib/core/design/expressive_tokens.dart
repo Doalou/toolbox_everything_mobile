@@ -1,21 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
-import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Tokens centralisés du design system Material 3 Expressive.
 class ExpressiveTokens {
   ExpressiveTokens._();
 
   // Espacements (spacing scale)
-  static const double spacingXxs = 2;
   static const double spacingXs = 4;
   static const double spacingSm = 8;
   static const double spacingMd = 12;
   static const double spacing = 16;
   static const double spacingLg = 20;
-  static const double spacingXl = 24;
-  static const double spacingXxl = 32;
-  static const double spacingXxxl = 48;
 
   // Tailles d'icônes
   static const double iconSm = 18;
@@ -23,13 +17,8 @@ class ExpressiveTokens {
   static const double iconLg = 32;
   static const double iconXl = 48;
 
-  // Élévations expressives — plus subtiles que M3 classique.
+  // Élévation expressive par défaut.
   static const double elevation0 = 0;
-  static const double elevation1 = 1;
-  static const double elevation2 = 3;
-  static const double elevation3 = 6;
-  static const double elevation4 = 8;
-  static const double elevation5 = 12;
 }
 
 /// Palette M3 Expressive : couleurs plus saturées et émotionnelles.
@@ -56,17 +45,4 @@ class ExpressivePalette {
     skyClarity,
     amberWarm,
   ];
-
-  /// Retourne une couleur expressive dérivée d'un texte (stable, hash).
-  static Color seedFor(String text) =>
-      seeds[text.hashCode.abs() % seeds.length];
-}
-
-/// Re-export des tokens motion/shapes pour un accès groupé.
-class Expressive {
-  Expressive._();
-
-  static ExpressiveMotion get motion => throw UnimplementedError();
-  static ExpressiveShapes get shapes => throw UnimplementedError();
-  static ExpressiveTokens get tokens => throw UnimplementedError();
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 
 typedef WidgetScreenBuilder = Widget Function(String heroTag);
@@ -57,7 +57,6 @@ class ToolItem {
   final IconData icon;
   final WidgetScreenBuilder screenBuilder;
   final String heroTag;
-  final bool animates;
   final Color cardColor;
   final ToolCategory category;
 
@@ -73,6 +72,5 @@ class ToolItem {
     this.subtitle,
     this.category = ToolCategory.essentials,
     this.tags = const [],
-    this.animates = true,
   }) : cardColor = AppConstants.expressiveColors.getColorByText(title);
 }

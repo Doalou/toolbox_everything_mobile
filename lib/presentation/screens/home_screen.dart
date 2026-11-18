@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_motion.dart';
@@ -6,6 +8,7 @@ import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/models/tool_item.dart';
 import 'package:toolbox_everything_mobile/core/providers/settings_provider.dart';
 import 'package:toolbox_everything_mobile/core/services/haptics_service.dart';
+import 'package:toolbox_everything_mobile/core/services/quick_actions_service.dart';
 import 'package:toolbox_everything_mobile/core/services/usage_stats_service.dart';
 import 'package:toolbox_everything_mobile/core/tool_catalog.dart';
 import 'package:toolbox_everything_mobile/presentation/navigation/unified_navigation.dart';
@@ -23,9 +26,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final List<ToolItem> _allTools;
-  late final Map<String, int> _toolIndices;
   late List<ToolItem> _filteredTools;
   final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
   Set<String> _favoriteIds = <String>{};
   List<String> _mostUsedIds = <String>[];
   ToolCategory? _activeCategory;
@@ -35,9 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _allTools = ToolCatalog.all();
-    _toolIndices = {
-      for (var i = 0; i < _allTools.length; i++) _allTools[i].id: i + 1,
-    };
     _filteredTools = _allTools;
     _searchController.addListener(_applyFilters);
     _loadUserPreferences();
@@ -46,7 +46,23 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _toggleSearch() {
+    HapticsService.perform(context, HapticType.light);
+    setState(() => _searching = !_searching);
+    if (_searching) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _searching) {
+          _searchFocusNode.requestFocus();
+        }
+      });
+    } else {
+      _searchFocusNode.unfocus();
+      _searchController.clear();
+    }
   }
 
   Future<void> _loadUserPreferences() async {
@@ -86,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
       selected ? _favoriteIds.add(tool.id) : _favoriteIds.remove(tool.id);
     });
     UsageStatsService.saveFavorites(_favoriteIds);
+    unawaited(QuickActionsService.instance.refreshShortcuts());
   }
 
   Future<void> _open(Widget screen) async {
@@ -98,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openTool(ToolItem tool) async {
     HapticsService.perform(context, HapticType.selection);
     await UsageStatsService.recordToolUsage(tool.id);
+    unawaited(QuickActionsService.instance.refreshShortcuts());
     if (!mounted) return;
     await _open(tool.screenBuilder(tool.heroTag));
   }
@@ -113,6 +131,9 @@ class _HomeScreenState extends State<HomeScreen> {
           if (tool.id == id && !_favoriteIds.contains(tool.id)) tool,
     ];
 
+    final lowResource = context.select<SettingsProvider, bool>(
+      (s) => s.lowResourceMode,
+    );
     final textScale = MediaQuery.textScalerOf(context).scale(1);
     final grouped = <ToolCategory, List<ToolItem>>{};
     for (final tool in _filteredTools) {
@@ -130,11 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
             title: const _Wordmark(),
             actions: [
               IconButton.filledTonal(
-                onPressed: () {
-                  HapticsService.perform(context, HapticType.light);
-                  setState(() => _searching = !_searching);
-                  if (!_searching) _searchController.clear();
-                },
+                onPressed: _toggleSearch,
                 tooltip: _searching ? 'Fermer la recherche' : 'Rechercher',
                 icon: Icon(
                   _searching ? Icons.close_rounded : Icons.search_rounded,
@@ -156,28 +173,39 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           if (_searching)
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: SearchBar(
-                  controller: _searchController,
-                  hintText: 'Rechercher un outil, format ou tag…',
-                  leading: const Icon(Icons.search_rounded),
-                  trailing: [
-                    if (_searchController.text.isNotEmpty)
-                      IconButton(
-                        onPressed: _searchController.clear,
-                        icon: const Icon(Icons.clear_rounded),
-                      ),
-                  ],
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: lowResource ? 1.0 : 0.0, end: 1.0),
+                duration: lowResource
+                    ? Duration.zero
+                    : ExpressiveMotion.medium2,
+                curve: ExpressiveMotion.spatialMorph,
+                builder: (context, t, child) => Transform.translate(
+                  offset: Offset(0, -12 * (1 - t)),
+                  child: Transform.scale(
+                    scale: 0.96 + 0.04 * t,
+                    alignment: Alignment.topCenter,
+                    child: child,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: SearchBar(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    hintText: 'Rechercher un outil, format ou tag…',
+                    leading: const Icon(Icons.search_rounded),
+                    trailing: [
+                      if (_searchController.text.isNotEmpty)
+                        IconButton(
+                          onPressed: _searchController.clear,
+                          icon: const Icon(Icons.clear_rounded),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          SliverToBoxAdapter(
-            child: _HomeCover(
-              totalTools: _allTools.length,
-              favoritesCount: favorites.length,
-            ),
-          ),
+          const SliverToBoxAdapter(child: _HomeCover()),
           SliverToBoxAdapter(
             child: _SectionFrame(
               title: 'Catégories',
@@ -213,8 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_activeCategory != null)
             SliverToBoxAdapter(
               child: _DirectoryHeading(
-                count: _filteredTools.length,
-                activeCategory: _activeCategory,
+                activeCategory: _activeCategory!,
                 onClear: () => _selectCategory(null),
               ),
             ),
@@ -245,8 +272,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       final tool = entry.value[index];
                       return ExpressiveToolCard(
                         tool: tool,
-                        index: _toolIndices[tool.id] ?? (index + 1),
                         isFavorite: _favoriteIds.contains(tool.id),
+                        onOpen: () => _openTool(tool),
                         onFavoriteChanged: (selected) =>
                             _setFavorite(tool, selected),
                       );
@@ -287,9 +314,8 @@ class _Wordmark extends StatelessWidget {
           child: RichText(
             overflow: TextOverflow.ellipsis,
             text: TextSpan(
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontFamily: 'Fraunces'),
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontFamily: 'Fraunces'),
               children: [
                 const TextSpan(text: 'Toolbox'),
                 TextSpan(
@@ -309,10 +335,7 @@ class _Wordmark extends StatelessWidget {
 }
 
 class _HomeCover extends StatelessWidget {
-  final int totalTools;
-  final int favoritesCount;
-
-  const _HomeCover({required this.totalTools, required this.favoritesCount});
+  const _HomeCover();
 
   @override
   Widget build(BuildContext context) {
@@ -333,9 +356,8 @@ class _HomeCover extends StatelessWidget {
           children: [
             RichText(
               text: TextSpan(
-                style: Theme.of(
-                  context,
-                ).textTheme.displaySmall?.copyWith(color: scheme.onSurface),
+                style: Theme.of(context).textTheme.displaySmall
+                    ?.copyWith(color: scheme.onSurface),
                 children: [
                   const TextSpan(text: 'Tous vos outils,\n'),
                   TextSpan(
@@ -355,9 +377,8 @@ class _HomeCover extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 650),
               child: Text(
                 'Générer, convertir, inspecter ou mesurer, directement sur votre appareil.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ),
           ],
@@ -411,9 +432,8 @@ class _SectionFrame extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
                 if (meta != null)
@@ -428,10 +448,8 @@ class _SectionFrame extends StatelessWidget {
                     ),
                     child: Text(
                       meta!,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontFamily: null,
-                        letterSpacing: 0.2,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall
+                          ?.copyWith(fontFamily: null, letterSpacing: 0.2),
                     ),
                   ),
               ],
@@ -483,7 +501,6 @@ class _WorkshopGrid extends StatelessWidget {
                 .where((tool) => tool.category == category)
                 .length;
             return _WorkshopCard(
-              index: index + 1,
               category: category,
               count: count,
               selected: selected == category,
@@ -497,14 +514,12 @@ class _WorkshopGrid extends StatelessWidget {
 }
 
 class _WorkshopCard extends StatefulWidget {
-  final int index;
   final ToolCategory category;
   final int count;
   final bool selected;
   final VoidCallback onTap;
 
   const _WorkshopCard({
-    required this.index,
     required this.category,
     required this.count,
     required this.selected,
@@ -538,100 +553,117 @@ class _WorkshopCardState extends State<_WorkshopCard> {
           );
     final fgColor = scheme.onSurface;
 
-    final card = Material(
-      color: bgColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: ExpressiveShapes.asymmetricHero(major: 22, minor: 12),
-        side: BorderSide(
-          color: widget.selected
-              ? seed
-              : seed.withValues(alpha: isDark ? 0.24 : 0.18),
-          width: widget.selected ? 2 : 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: widget.onTap,
-        onHighlightChanged: lowResource
-            ? null
-            : (v) {
-                if (mounted) setState(() => _pressed = v);
-              },
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: ShapeDecoration(
-                      color: widget.selected
-                          ? seed
-                          : seed.withValues(alpha: isDark ? 0.20 : 0.14),
-                      shape: const StadiumBorder(),
-                    ),
-                    child: Icon(
-                      widget.category.icon,
-                      size: 16,
-                      color: widget.selected ? Colors.white : seed,
-                    ),
+    final restRadius = ExpressiveShapes.asymmetricHero(major: 22, minor: 12);
+    final selectedRadius = BorderRadius.circular(26);
+    final pressedRadius = BorderRadius.circular(ExpressiveShapes.medium);
+    final targetRadius = _pressed
+        ? pressedRadius
+        : (widget.selected ? selectedRadius : restRadius);
+    final borderColor = widget.selected
+        ? seed
+        : seed.withValues(alpha: isDark ? 0.24 : 0.18);
+    final borderWidth = widget.selected ? 2.0 : 1.0;
+
+    final ink = InkWell(
+      onTap: widget.onTap,
+      onHighlightChanged: lowResource
+          ? null
+          : (v) {
+              if (mounted) setState(() => _pressed = v);
+            },
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: ShapeDecoration(
+                    color: widget.selected
+                        ? seed
+                        : seed.withValues(alpha: isDark ? 0.20 : 0.14),
+                    shape: const StadiumBorder(),
                   ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 2.5,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: seed.withValues(alpha: isDark ? 0.18 : 0.12),
-                      shape: const StadiumBorder(),
-                    ),
-                    child: Text(
-                      '${widget.count}',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: seed,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                  child: Icon(
+                    widget.category.icon,
+                    size: 16,
+                    color: widget.selected ? Colors.white : seed,
                   ),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                widget.category.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontSize: 14.5,
-                  color: fgColor,
-                  fontWeight: FontWeight.w800,
                 ),
-              ),
-              const SizedBox(height: 1),
-              Text(
-                _categoryCaption(widget.category),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 11.5,
-                  color: scheme.onSurfaceVariant,
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 2.5,
+                  ),
+                  decoration: ShapeDecoration(
+                    color: seed.withValues(alpha: isDark ? 0.18 : 0.12),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: Text(
+                    '${widget.count}',
+                    style: Theme.of(context).textTheme.labelSmall
+                        ?.copyWith(color: seed, fontWeight: FontWeight.w800),
+                  ),
                 ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              widget.category.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontSize: 14.5,
+                color: fgColor,
+                fontWeight: FontWeight.w800,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              _categoryCaption(widget.category),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(fontSize: 11.5, color: scheme.onSurfaceVariant),
+            ),
+          ],
         ),
       ),
     );
 
-    if (lowResource) return card;
+    if (lowResource) {
+      return Material(
+        color: bgColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: widget.selected ? selectedRadius : restRadius,
+          side: BorderSide(color: borderColor, width: borderWidth),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ink,
+      );
+    }
+
     return AnimatedScale(
       scale: _pressed ? 0.96 : 1.0,
       duration: ExpressiveMotion.short4,
       curve: ExpressiveMotion.springStandard,
-      child: card,
+      child: AnimatedContainer(
+        duration: ExpressiveMotion.medium2,
+        curve: ExpressiveMotion.spatialMorph,
+        decoration: ShapeDecoration(
+          color: bgColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: targetRadius,
+            side: BorderSide(color: borderColor, width: borderWidth),
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Material(type: MaterialType.transparency, child: ink),
+      ),
     );
   }
 }
@@ -683,12 +715,10 @@ class _QuickAccessRow extends StatelessWidget {
 }
 
 class _DirectoryHeading extends StatelessWidget {
-  final int count;
-  final ToolCategory? activeCategory;
+  final ToolCategory activeCategory;
   final VoidCallback onClear;
 
   const _DirectoryHeading({
-    required this.count,
     required this.activeCategory,
     required this.onClear,
   });
@@ -716,35 +746,16 @@ class _DirectoryHeading extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              activeCategory == null
-                  ? 'Tous les outils'
-                  : activeCategory!.label,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              activeCategory.label,
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
           ),
-          if (activeCategory != null)
-            FilledButton.tonalIcon(
-              onPressed: onClear,
-              icon: const Icon(Icons.close_rounded, size: 16),
-              label: const Text('Tout voir'),
-            )
-          else
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: ShapeDecoration(
-                color: scheme.surfaceContainerHigh,
-                shape: const StadiumBorder(),
-              ),
-              child: Text(
-                '$count outils',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontFamily: null,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ),
+          FilledButton.tonalIcon(
+            onPressed: onClear,
+            icon: const Icon(Icons.close_rounded, size: 16),
+            label: const Text('Tout voir'),
+          ),
         ],
       ),
     );
@@ -777,9 +788,8 @@ class _CategoryHeading extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             category.label,
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontFamily: 'Fraunces'),
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(fontFamily: 'Fraunces'),
           ),
           const Spacer(),
           Container(
@@ -790,10 +800,8 @@ class _CategoryHeading extends StatelessWidget {
             ),
             child: Text(
               '$count',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: color, fontWeight: FontWeight.w800),
             ),
           ),
         ],

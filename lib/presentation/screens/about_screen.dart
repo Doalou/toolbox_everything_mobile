@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:toolbox_everything_mobile/core/constants/app_constants.dart';
 import 'package:toolbox_everything_mobile/shared/widgets/expressive_card.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -220,10 +220,8 @@ class _PurposeCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'L’application regroupe des convertisseurs, générateurs, encodeurs et utilitaires de diagnostic dans une interface unique. Les actions courantes restent directes : entrer une donnée, obtenir un résultat, copier ou exporter.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-              height: 1.52,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: scheme.onSurfaceVariant, height: 1.52),
           ),
         ],
       ),
@@ -358,9 +356,8 @@ class _ContactCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Une idée d’outil, un bug ou une amélioration ? Les retours peuvent partir directement par e-mail.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 14),
           FilledButton.icon(
@@ -467,9 +464,8 @@ class _CardHeading extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
       ],

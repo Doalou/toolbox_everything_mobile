@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:toolbox_everything_mobile/core/design/editorial_tokens.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 import 'package:toolbox_everything_mobile/core/services/app_feedback.dart';
@@ -271,10 +272,9 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen> {
     Color seedColor,
   ) {
     final baseScheme = Theme.of(context).colorScheme;
-    final cardScheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
-      brightness: baseScheme.brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+    final cardScheme = EditorialPalette.expressiveSeedScheme(
+      seedColor,
+      baseScheme.brightness,
     );
 
     return ExpressiveCard(
@@ -299,9 +299,8 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen> {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -318,10 +317,9 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen> {
     Color seedColor,
   ) {
     final baseScheme = Theme.of(context).colorScheme;
-    final metricScheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
-      brightness: baseScheme.brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
+    final metricScheme = EditorialPalette.expressiveSeedScheme(
+      seedColor,
+      baseScheme.brightness,
     );
 
     return ExpressiveCard(
@@ -374,9 +372,8 @@ class _ConnectionTesterScreenState extends State<ConnectionTesterScreen> {
         children: [
           Text(
             key,
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(color: cs.primary),
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: cs.primary),
           ),
           const SizedBox(height: 6),
           SelectableText(

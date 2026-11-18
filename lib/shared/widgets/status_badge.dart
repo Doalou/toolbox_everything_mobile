@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:toolbox_everything_mobile/core/design/expressive_shapes.dart';
 import 'package:toolbox_everything_mobile/core/design/expressive_tokens.dart';
 
 enum BadgeTone { neutral, info, success, warning, danger, accent }
@@ -17,46 +18,6 @@ class StatusBadge extends StatelessWidget {
     this.tone = BadgeTone.neutral,
     this.padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
   });
-
-  /// Pré-réglages courants.
-  factory StatusBadge.local() => const StatusBadge(
-    label: 'Local',
-    icon: Icons.smartphone,
-    tone: BadgeTone.success,
-  );
-
-  factory StatusBadge.offline() => const StatusBadge(
-    label: 'Offline',
-    icon: Icons.cloud_off,
-    tone: BadgeTone.info,
-  );
-
-  factory StatusBadge.beta() => const StatusBadge(
-    label: 'Bêta',
-    icon: Icons.science,
-    tone: BadgeTone.warning,
-  );
-
-  factory StatusBadge.upcoming() => const StatusBadge(
-    label: 'À venir',
-    icon: Icons.schedule,
-    tone: BadgeTone.neutral,
-  );
-
-  factory StatusBadge.permission() => const StatusBadge(
-    label: 'Permission requise',
-    icon: Icons.lock_outline,
-    tone: BadgeTone.warning,
-  );
-
-  factory StatusBadge.android() => const StatusBadge(
-    label: 'Android',
-    icon: Icons.android,
-    tone: BadgeTone.info,
-  );
-
-  factory StatusBadge.ios() =>
-      const StatusBadge(label: 'iOS', icon: Icons.apple, tone: BadgeTone.info);
 
   ({Color bg, Color fg}) _palette(ColorScheme c) {
     switch (tone) {
@@ -149,7 +110,8 @@ class StatusBanner extends StatelessWidget {
       padding: const EdgeInsets.all(ExpressiveTokens.spacing),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(ExpressiveTokens.spacing),
+        borderRadius: ExpressiveShapes.asymmetricHero(major: 20, minor: 10),
+        border: Border.all(color: fg.withValues(alpha: 0.18)),
       ),
       child: Row(
         children: [
